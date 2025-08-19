@@ -1,0 +1,19 @@
+{
+  "name": "scraper",
+  "private": true,
+  "type": "module",
+  "main": "dist/jora.js",
+  "types": "dist/jora.d.ts",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "playwright": "^1.47.0",
+    "p-limit": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json -w"
+  }
+}
