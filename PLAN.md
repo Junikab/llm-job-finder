@@ -22,19 +22,19 @@ Last updated: 2025-08-20
 
 ### M2 — Scraper Stability & Speed (Day 2–4)
 - Tasks
-  - Ensure deterministic pagination limits (MAX_PAGES, MAX_JOBS)
-  - Dedupe jobs by id/url
-  - Retry transient failures once; skip on second failure
-  - Add timeouts (e.g., per page) and per-run overall timeout
+    - Deterministic limits: Always stop after X pages and Y jobs (from env vars MAX_PAGES, MAX_JOBS).
+    - Dedupe: If the same job shows up twice, keep only one.
+    - Retry once: If a page or request fails, try it one more time. If it fails again, skip it and move on.
+    - Timeouts: Set a max time per page, and a max total time for the whole scraping run. If it’s too slow, abort cleanly.
 - Acceptance
   - On default limits, request returns in <10s with 20–40 jobs in Sydney
   - No crashes on missing fields; logs show scraper timing
 
 ### M3 — Seed Titles/Skills Heuristic (Day 4–5)
 - Tasks
-  - Implement simple keyword extraction from summary (.txt/.docx) OR
-  - Use fixed fallbacks by language stack (e.g., frontend: React, JS, TS)
-  - Build search query string: `(primary OR secondary)` guarded by location/days
+    - Simple keyword extraction: From the CV text, pick obvious tech/role keywords (e.g., React, Node, “Frontend Developer”) using a small list or basic rules.
+    - Fixed fallbacks: If we can’t find keywords, use a preset list for the stack (e.g., frontend: React, JavaScript, TypeScript).
+    - Build the query: Combine keywords into a search like “(React Developer OR Frontend Developer)” and also apply the chosen location and days filters.
 - Acceptance
   - Queries reflect at least one relevant title from CV or fallback
 

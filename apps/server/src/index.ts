@@ -104,11 +104,26 @@ app.post('/api/jobs/find', async (req, reply) => {
     const analysis = await analyzeCV(cvText);
     const searchUrls = toJoraSearchUrls(analysis, { location, days });
 
-    const rawJobs: JobItem[] = await scrapeJora(searchUrls, {
-      headless: (process.env.SCRAPER_HEADLESS || 'true') === 'true',
-      maxPages: Number(process.env.MAX_PAGES || 3),
-      maxJobs,
-    });
+    const t0 = Date.now();
+    let rawJobs: JobItem[];
+    try {
+      rawJobs = await scrapeJora(searchUrls, {
+        headless: (process.env.SCRAPER_HEADLESS || 'true') === 'true',
+        maxPages: Number(process.env.MAX_PAGES || 3),
+        maxJobs,
+        totalTimeoutMs: process.env.SCRAPE_TOTAL_TIMEOUT_MS ? Number(process.env.SCRAPE_TOTAL_TIMEOUT_MS) : undefined,
+      });
+    } catch (err) {
+      req.log.warn({ err }, 'scrape attempt 1 failed, retrying once');
+      rawJobs = await scrapeJora(searchUrls, {
+        headless: (process.env.SCRAPER_HEADLESS || 'true') === 'true',
+        maxPages: Number(process.env.MAX_PAGES || 3),
+        maxJobs,
+        totalTimeoutMs: process.env.SCRAPE_TOTAL_TIMEOUT_MS ? Number(process.env.SCRAPE_TOTAL_TIMEOUT_MS) : undefined,
+      });
+    }
+    const scrapeMs = Date.now() - t0;
+    req.log.info({ scrapeMs, rawCount: rawJobs.length }, 'scrape finished');
 
     // optional post-filter by days
     const filteredJobs = typeof days === 'number'

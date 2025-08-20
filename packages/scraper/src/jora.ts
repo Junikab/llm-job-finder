@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import * as cheerio from 'cheerio';
 import pLimit from 'p-limit';
 
-export type ScrapeOpts = { headless?: boolean; maxPages?: number; maxJobs?: number };
+export type ScrapeOpts = { headless?: boolean; maxPages?: number; maxJobs?: number; totalTimeoutMs?: number };
 
 export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
   const headless = opts.headless !== false;
@@ -12,6 +12,7 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
       userAgent: randomUA(),
       viewport: { width: 1366, height: 900 },
     });
+    const deadline = typeof opts.totalTimeoutMs === 'number' ? Date.now() + opts.totalTimeoutMs : null;
 
     // speed up by blocking heavy resources
     await page.route('**/*', (route) => {
@@ -24,13 +25,37 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
     });
 
     const jobs = new Map<string, any>();
+    // tracking for timeout logging
+    let pagesVisited = 0;
+    let detailsVisited = 0;
+    let __timeoutLogged = false;
+    const logTimeoutOnce = () => {
+      if (__timeoutLogged) return;
+      __timeoutLogged = true;
+      console.warn(JSON.stringify({
+        level: 'warn',
+        msg: 'scrape aborted due to total timeout',
+        pagesVisited,
+        jobsSoFar: jobs.size,
+        detailsVisited,
+      }));
+    };
 
     for (const startUrl of urls) {
       let url: string | null = startUrl;
       let pageCount = 0;
       while (url && pageCount < (opts.maxPages ?? 3) && jobs.size < (opts.maxJobs ?? 40)) {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 });
-        await page.waitForTimeout(800 + Math.random()*400);
+        if (deadline && Date.now() >= deadline) { logTimeoutOnce(); url = null; break; }
+        const gotoTimeout = deadline ? Math.max(1, Math.min(45_000, deadline - Date.now())) : 45_000;
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
+        const sleepMs = 800 + Math.random()*400;
+        if (deadline) {
+          const left = deadline - Date.now();
+          if (left <= 0) { logTimeoutOnce(); url = null; break; }
+          await page.waitForTimeout(Math.min(sleepMs, left));
+        } else {
+          await page.waitForTimeout(sleepMs);
+        }
         const html = await page.content();
         const $ = cheerio.load(html);
 
@@ -53,6 +78,7 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
         const nextHref = $('a[aria-label="Next"], a[rel="next"], a:contains("Next")').attr('href');
         url = nextHref ? new URL(nextHref, url).toString() : null;
         pageCount++;
+        pagesVisited++;
       }
     }
 
@@ -62,9 +88,19 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
     // limit concurrency to avoid hammering
     const limit = pLimit(3);
     const withDesc = await Promise.all(all.map(j => limit(async () => {
+      if (deadline && Date.now() >= deadline) { logTimeoutOnce(); return j; }
       try {
-        await page.goto(j.url, { waitUntil: 'domcontentloaded', timeout: 45_000 });
-        await page.waitForTimeout(700 + Math.random()*400);
+        const gotoTimeout = deadline ? Math.max(1, Math.min(45_000, deadline - Date.now())) : 45_000;
+        detailsVisited++;
+        await page.goto(j.url, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
+        const sleepMs = 700 + Math.random()*400;
+        if (deadline) {
+          const left = deadline - Date.now();
+          if (left <= 0) { logTimeoutOnce(); return j; }
+          await page.waitForTimeout(Math.min(sleepMs, left));
+        } else {
+          await page.waitForTimeout(sleepMs);
+        }
         const html = await page.content();
         const $ = cheerio.load(html);
         const desc = $('[data-automation="jobAdDetails"], .jobdesc, [class*="job-description"], article').text().trim();
