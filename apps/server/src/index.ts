@@ -103,6 +103,10 @@ app.post('/api/jobs/find', async (req, reply) => {
 
     const analysis = await analyzeCV(cvText);
     const searchUrls = toJoraSearchUrls(analysis, { location, days });
+    // Step 1: add structured log for queries built (using effective fallbacks)
+    const effectiveTitles = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
+    const effectiveSkills = (analysis.topSkills && analysis.topSkills.length ? analysis.topSkills.slice(0, 4) : []);
+    req.log.info({ titles: effectiveTitles, topSkills: effectiveSkills, urlCount: searchUrls.length, urls: searchUrls }, 'queries built');
 
     const t0 = Date.now();
     let rawJobs: JobItem[];
