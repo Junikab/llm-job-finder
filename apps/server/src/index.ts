@@ -97,6 +97,8 @@ app.post('/api/jobs/find', async (req, reply) => {
     }
 
     const buf = await data.toBuffer();
+    // Structured log for upload details (M1 acceptance)
+    req.log.info({ filename: data.filename, bytes: buf.length, location, days }, 'cv upload received');
     const cvText = await bufferToText(data.filename, buf);
 
     const analysis = await analyzeCV(cvText);
