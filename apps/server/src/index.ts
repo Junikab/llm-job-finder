@@ -77,27 +77,72 @@ async function analyzeCV(cvText: string): Promise<CVAnalysis> {
     .map(([canon]) => canon)
     .slice(0, 3);
 
-  return { summary, titles, topSkills: [], niceToHave: [] };
+  // Tiny skills heuristic: map common synonyms to canonical skills and tally
+  const SKILL_SYNONYMS: Record<string, string> = {
+    'javascript': 'JavaScript', 'js': 'JavaScript',
+    'typescript': 'TypeScript', 'ts': 'TypeScript',
+    'react': 'React', 'react.js': 'React', 'reactjs': 'React',
+    'node': 'Node.js', 'node.js': 'Node.js', 'nodejs': 'Node.js',
+    'express': 'Express', 'express.js': 'Express',
+    'next': 'Next.js', 'next.js': 'Next.js', 'nextjs': 'Next.js',
+    'graphql': 'GraphQL',
+    'rest': 'REST', 'restful': 'REST',
+    'html': 'HTML', 'css': 'CSS', 'sass': 'Sass', 'scss': 'Sass',
+    'webpack': 'Webpack', 'vite': 'Vite', 'babel': 'Babel',
+    'jest': 'Jest', 'testing library': 'Testing Library', 'cypress': 'Cypress', 'playwright': 'Playwright',
+    'docker': 'Docker', 'kubernetes': 'Kubernetes', 'k8s': 'Kubernetes',
+    'aws': 'AWS', 'azure': 'Azure', 'gcp': 'GCP',
+    'python': 'Python', 'django': 'Django', 'flask': 'Flask',
+    'java': 'Java', 'spring': 'Spring',
+    'go': 'Go', 'golang': 'Go',
+    'postgres': 'PostgreSQL', 'postgresql': 'PostgreSQL', 'mysql': 'MySQL', 'sqlite': 'SQLite', 'mongodb': 'MongoDB', 'mongo': 'MongoDB',
+    'ci/cd': 'CI/CD', 'ci cd': 'CI/CD',
+  };
+
+  const skillTallies = new Map<string, number>();
+  for (const [syn, canon] of Object.entries(SKILL_SYNONYMS)) {
+    const c = count(syn);
+    if (c > 0) skillTallies.set(canon, (skillTallies.get(canon) || 0) + c);
+  }
+  const topSkills = Array.from(skillTallies.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([canon]) => canon)
+    .slice(0, 8);
+
+  return { summary, titles, topSkills, niceToHave: [] };
 }
 
 function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string; days?: number; }): string[] {
   const region = process.env.JORA_REGION || 'au';
   const base = `https://${region}.jora.com/j`;
-  const titles = analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer'];
-  const qParts = [titles.slice(0, 3).join(' OR ')];
-  if (analysis.topSkills?.length) {
-    qParts.push(analysis.topSkills.slice(0, 4).join(' '));
-  }
-  const q = encodeURIComponent(qParts.join(' '));
+  const titlesRaw = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
+  const titlesQuoted = titlesRaw.map(t => `"${t}"`);
+  const titleOr = titlesQuoted.length > 1 ? `(${titlesQuoted.join(' OR ')})` : titlesQuoted[0];
+
+  const skills = (analysis.topSkills && analysis.topSkills.length ? analysis.topSkills.slice(0, 4) : []);
   const l = encodeURIComponent(opts.location || (analysis.locationHints?.[0] || 'Sydney NSW'));
-  const params = (extra: string = '') => `${base}?q=${q}&l=${l}${extra}`;
+
+  const makeUrl = (query: string) => {
+    const q = encodeURIComponent(query.trim());
+    return `${base}?q=${q}&l=${l}`;
+  };
+
   const urls: string[] = [];
-  urls.push(params());
-  if (analysis.topSkills?.length) {
-    const alt = encodeURIComponent(`${titles[0]} ${analysis.topSkills[0]}`);
-    urls.push(`${base}?q=${alt}&l=${l}`);
+  // Variant 1: OR across titles + up to 4 skills
+  urls.push(makeUrl([titleOr, ...skills].join(' ')));
+
+  // Variant 2: first title + first skill
+  if (skills.length > 0) {
+    urls.push(makeUrl(`${titlesQuoted[0]} ${skills[0]}`));
   }
-  return urls;
+
+  // Variant 3: second title + first skill (or just second title)
+  if (titlesQuoted.length > 1) {
+    urls.push(makeUrl(skills.length > 0 ? `${titlesQuoted[1]} ${skills[0]}` : `${titlesQuoted[1]}`));
+  }
+
+  // Ensure uniqueness
+  return Array.from(new Set(urls));
 }
 
 async function scoreJob(analysis: CVAnalysis, job: JobItem): Promise<Pick<RankedJob,'score'|'reason'>> {
