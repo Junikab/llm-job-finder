@@ -72,6 +72,15 @@ Last updated: 2025-08-20
 - Acceptance
   - README updated; DESIGN.md/PLAN.md current; .env.example present
 
+### M8 — Lightweight Job DB (JSON snapshots)
+- Tasks
+  - DB-1 (done): Optional per-job JSON write right after scrape with modelScore/userScore = null; gated by JOB_DB_WRITE; directory via JOB_DB_DIR (default: db/).
+  - DB-2: After scoring, write a companion JSON (or update file) that includes modelScore, keeping the original raw snapshot intact.
+  - DB-3: Expose simple API endpoints: GET /api/db/jobs (server aggregates latest per job) and POST /api/db/feedback to record userScore; Web UI reads from GET and posts feedback.
+  - DB-4: Add a small Node script to compact/aggregate into db/compiled/jobs-latest.json merging raw + scored + feedback.
+- Acceptance
+  - When enabled, JSON files are emitted; API returns aggregated jobs with latest modelScore/userScore; UI feedback persists to disk.
+
 ## 2. Work Breakdown (Checklist)
 
 - [ ] API: ensure req.file() + fields from data.fields fallback
@@ -89,6 +98,11 @@ Last updated: 2025-08-20
 - [ ] Fixtures: sample CVs and SERP HTML
 - [ ] README: quickstart; curl examples; troubleshooting
 - [ ] .env.example: template for local dev
+
+- [ ] DB-1: per-job JSON snapshots after scrape (done)
+- [ ] DB-2: write scored JSON after scoring
+- [ ] DB-3: API list + feedback write; UI displays and posts
+- [ ] DB-4: compaction script to jobs-latest.json
 
 ## 3. Timeline (Suggestive)
 - Week 1: M1–M4 complete (API, scraper, heuristics, ranking)

@@ -52,6 +52,32 @@ function shortHash(input: string): string {
   return createHash('md5').update(input).digest('hex').slice(0, 8);
 }
 
+async function readJsonFiles(dir: string): Promise<any[]> {
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files = entries.filter(e => e.isFile() && e.name.endsWith('.json')).map(e => path.join(dir, e.name));
+    const items = await Promise.all(files.map(async f => {
+      try { return JSON.parse(await fs.readFile(f, 'utf8')); } catch { return null; }
+    }));
+    return items.filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function getJobKey(rec: any): string | null {
+  return rec?.id || rec?.data?.url || rec?.data?.title || null;
+}
+
+function pickLatest<T extends { [k: string]: any }>(arr: T[], dateKey: string): T | null {
+  if (!arr.length) return null;
+  return arr.reduce((best, x) => {
+    const a = Date.parse(best?.[dateKey] || '');
+    const b = Date.parse(x?.[dateKey] || '');
+    return isNaN(a) || (!isNaN(b) && b > a) ? x : best;
+  });
+}
+
 async function analyzeCV(cvText: string): Promise<CVAnalysis> {
   // Step 2: tiny titles heuristic (skills left empty)
   const summary = cvText.slice(0, 200);
@@ -271,6 +297,32 @@ app.post('/api/jobs/find', async (req, reply) => {
       toScore.map(job => limit(async () => ({ ...job, ...(await scoreJob(analysis, job)) })))
     );
     scored.sort((a, b) => b.score - a.score);
+    // Step DB-2: optionally persist scored jobs as per-job JSON files with modelScore filled
+    if ((process.env.JOB_DB_WRITE || 'false') === 'true') {
+      const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
+      try {
+        await fs.mkdir(dir, { recursive: true });
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        await Promise.all(scored.map(async (job, idx) => {
+          const base = safeFileName((job as any).id || job.url || job.title || `job-${idx}`);
+          const fname = `${base}_${shortHash(((job as any).id || job.url || base) as string)}_${ts}_scored.json`;
+          const record = {
+            id: (job as any).id ?? null,
+            source: 'jora',
+            scoredAt: new Date().toISOString(),
+            modelScore: typeof job.score === 'number' ? job.score : null,
+            userScore: null as number | null,
+            reqId: (req as any).id,
+            reason: job.reason,
+            data: job,
+          };
+          await fs.writeFile(path.join(dir, fname), JSON.stringify(record, null, 2), 'utf8');
+        }));
+        req.log.info({ dir, count: scored.length }, 'db scored write completed');
+      } catch (err) {
+        req.log.warn({ err }, 'db scored write failed');
+      }
+    }
     return reply.send({ analysis, searchUrls, total: scored.length, results: scored });
   } catch (err: any) {
     req.log.error({ err }, 'jobs.find failed');
@@ -279,6 +331,74 @@ app.post('/api/jobs/find', async (req, reply) => {
 });
 
 app.get('/health', async () => ({ ok: true }));
+
+// DB-3: aggregate latest jobs from JSON snapshots
+app.get('/api/db/jobs', async (req, reply) => {
+  try {
+    const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
+    const all = await readJsonFiles(dir);
+    // group by job key
+    const groups = new Map<string, any[]>();
+    for (const rec of all) {
+      const key = getJobKey(rec);
+      if (!key) continue;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(rec);
+    }
+    const merged = [] as any[];
+    for (const [key, arr] of groups) {
+      const raw = pickLatest(arr.filter(r => r.scrapedAt), 'scrapedAt');
+      const scored = pickLatest(arr.filter(r => r.scoredAt), 'scoredAt');
+      const feedback = pickLatest(arr.filter(r => r.userScoredAt), 'userScoredAt');
+      const base = scored || raw || arr[0];
+      merged.push({
+        id: base?.id || key,
+        key,
+        modelScore: scored?.modelScore ?? null,
+        userScore: feedback?.userScore ?? null,
+        title: base?.data?.title || base?.data?.jobTitle || null,
+        url: base?.data?.url || null,
+        company: base?.data?.company || null,
+        listedAgo: base?.data?.listedAgo || null,
+        source: base?.source || 'jora',
+        data: base?.data || null,
+      });
+    }
+    return reply.send({ total: merged.length, results: merged });
+  } catch (err) {
+    (req as any).log?.error?.({ err }, 'db list failed');
+    return reply.code(500).send({ error: 'Failed to list db jobs' });
+  }
+});
+
+// DB-3: accept user feedback (userScore) and persist as a tiny JSON file
+app.post('/api/db/feedback', async (req, reply) => {
+  try {
+    const body = (req as any).body || {};
+    const jobId = body.jobId?.toString();
+    const userScore = body.userScore != null ? Number(body.userScore) : null;
+    if (!jobId || userScore == null || isNaN(userScore)) {
+      return reply.code(400).send({ error: 'jobId and numeric userScore are required' });
+    }
+    const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
+    await fs.mkdir(dir, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const fname = `${safeFileName(jobId)}_${shortHash(jobId)}_${ts}_feedback.json`;
+    const record = {
+      id: jobId,
+      source: 'jora',
+      userScoredAt: new Date().toISOString(),
+      userScore,
+      reqId: (req as any).id,
+    };
+    await fs.writeFile(path.join(dir, fname), JSON.stringify(record, null, 2), 'utf8');
+    (req as any).log?.info?.({ jobId, userScore, dir }, 'feedback stored');
+    return reply.send({ ok: true });
+  } catch (err) {
+    (req as any).log?.error?.({ err }, 'feedback failed');
+    return reply.code(500).send({ error: 'Failed to store feedback' });
+  }
+});
 
 app.listen({ port: PORT, host: '0.0.0.0' }).then(() => {
   console.log(`API listening on http://localhost:${PORT}`);
