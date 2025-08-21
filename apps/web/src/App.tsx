@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { listCVs, getCVFile, saveCV, removeCV, type CVMeta } from './idb';
 
 // Use same-origin by default so Vite can proxy /api to 5174 in dev
 const API_BASE = (((import.meta as any).env?.VITE_API_BASE_URL) ?? '').trim();
@@ -42,6 +43,9 @@ export default function App() {
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // Recent CVs (IndexedDB)
+  const [recent, setRecent] = useState<CVMeta[]>([]);
+  const [recentSelectedId, setRecentSelectedId] = useState<string>('');
   // Live filters
   const [liveMinScore, setLiveMinScore] = useState<number>(0);
   const [liveCompany, setLiveCompany] = useState('');
@@ -109,12 +113,58 @@ export default function App() {
       setAnalysis(json.analysis);
       setSearchUrls(json.searchUrls || []);
       setResults(json.results || []);
+      // Save CV into IndexedDB (dedupe by name+size)
+      try {
+        const existing = await listCVs();
+        const has = existing.some(m => m.name === file.name && m.size === file.size);
+        if (!has) await saveCV(file);
+        setRecent(await listCVs());
+      } catch {}
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  }
+
+  // Load recent CVs on mount
+  useEffect(() => {
+    (async () => {
+      try { setRecent(await listCVs()); } catch {}
+    })();
+  }, []);
+
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] || null;
+    setFile(f);
+    if (f) {
+      try {
+        const existing = await listCVs();
+        const has = existing.some(m => m.name === f.name && m.size === f.size);
+        if (!has) await saveCV(f);
+        setRecent(await listCVs());
+      } catch {}
+    }
+  }
+
+  async function useSelectedRecent() {
+    const id = parseInt(recentSelectedId, 10);
+    if (!id) return;
+    try {
+      const f = await getCVFile(id);
+      if (f) setFile(f);
+    } catch {}
+  }
+
+  async function removeSelectedRecent() {
+    const id = parseInt(recentSelectedId, 10);
+    if (!id) return;
+    try {
+      await removeCV(id);
+      setRecentSelectedId('');
+      setRecent(await listCVs());
+    } catch {}
   }
 
   return (
@@ -143,8 +193,30 @@ export default function App() {
           <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, alignItems: 'center', gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
             <label style={{ gridColumn: '1 / -1' }}>
               <div>CV (PDF/DOCX/TXT)</div>
-              <input type="file" accept=".pdf,.docx,.txt" onChange={e => setFile(e.target.files?.[0] || null)} />
+              <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} />
             </label>
+            {/* Recent CVs picker */}
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, alignItems: 'center' }}>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span>Recent CVs</span>
+                <select value={recentSelectedId} onChange={e => setRecentSelectedId(e.target.value)}>
+                  <option value="">Choose…</option>
+                  {recent.map(m => (
+                    <option key={m.id} value={String(m.id)}>
+                      {m.name} • {(m.size/1024).toFixed(0)} KB • {new Date(m.addedAt).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" onClick={useSelectedRecent} disabled={!recentSelectedId}
+                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: recentSelectedId ? '#111' : '#ccc', color: '#fff' }}>
+                Use selected
+              </button>
+              <button type="button" onClick={removeSelectedRecent} disabled={!recentSelectedId}
+                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>
+                Remove
+              </button>
+            </div>
             <label>
               <div>Location</div>
               <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Sydney NSW" />
