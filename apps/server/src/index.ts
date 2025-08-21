@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import mammoth from 'mammoth';
 // pdf-parse temporarily disabled (no PDF support in mock mode)
 import path from 'path';
+import fs from 'fs/promises';
+import { createHash } from 'crypto';
 import pLimit from 'p-limit';
 import type { CVAnalysis, JobItem, RankedJob } from './types.js';
 import { scrapeJora } from 'scraper';
@@ -40,6 +42,14 @@ async function bufferToText(filename: string, buf: Buffer): Promise<string> {
     return value;
   }
   return buf.toString('utf8');
+}
+
+function safeFileName(input: string): string {
+  return input.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+}
+
+function shortHash(input: string): string {
+  return createHash('md5').update(input).digest('hex').slice(0, 8);
 }
 
 async function analyzeCV(cvText: string): Promise<CVAnalysis> {
@@ -206,6 +216,32 @@ app.post('/api/jobs/find', async (req, reply) => {
     }
     const scrapeMs = Date.now() - t0;
     req.log.info({ scrapeMs, rawCount: rawJobs.length }, 'scrape finished');
+
+    // Step DB-1: optionally persist raw scraped jobs as per-job JSON files with empty modelScore
+    if ((process.env.JOB_DB_WRITE || 'false') === 'true') {
+      const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
+      try {
+        await fs.mkdir(dir, { recursive: true });
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        await Promise.all(rawJobs.map(async (job, idx) => {
+          const base = safeFileName(job.id || job.url || job.title || `job-${idx}`);
+          const fname = `${base}_${shortHash(job.id || job.url || base)}_${ts}.json`;
+          const record = {
+            id: job.id ?? null,
+            source: 'jora',
+            scrapedAt: new Date().toISOString(),
+            modelScore: null as number | null,
+            userScore: null as number | null,
+            reqId: (req as any).id,
+            data: job,
+          };
+          await fs.writeFile(path.join(dir, fname), JSON.stringify(record, null, 2), 'utf8');
+        }));
+        req.log.info({ dir, count: rawJobs.length }, 'db write completed');
+      } catch (err) {
+        req.log.warn({ err }, 'db write failed');
+      }
+    }
 
     // optional post-filter by days
     const filteredJobs = typeof days === 'number'

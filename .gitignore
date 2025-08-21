@@ -5,3 +5,4 @@ dist
 *.log
 .playwright
 out.json
+db/
