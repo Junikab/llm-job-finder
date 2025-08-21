@@ -65,8 +65,20 @@ async function readJsonFiles(dir: string): Promise<any[]> {
   }
 }
 
+function normalizeJobKey(value: string): string {
+  const raw = String(value).trim();
+  try {
+    const u = raw.startsWith('http') ? new URL(raw) : new URL('https://' + raw.replace(/^\/+/, ''));
+    return `${u.host}${u.pathname}`.toLowerCase();
+  } catch {
+    const noQuery = raw.split('?')[0];
+    return noQuery.replace(/^https?:\/\//, '').replace(/\/+$/, '').toLowerCase();
+  }
+}
+
 function getJobKey(rec: any): string | null {
-  return rec?.id || rec?.data?.url || rec?.data?.title || null;
+  const v = rec?.id || rec?.data?.url || rec?.data?.id || null;
+  return v ? normalizeJobKey(v) : null;
 }
 
 function pickLatest<T extends { [k: string]: any }>(arr: T[], dateKey: string): T | null {
