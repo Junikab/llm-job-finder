@@ -70,7 +70,8 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
           if (!href || !title) return;
           // url is guaranteed truthy by the while guard; narrow for TS inside this callback
           const fullUrl = new URL(href, url!).toString();
-          const id = fullUrl.replace(/^https?:\/\//, '');
+          const u = new URL(fullUrl);
+          const id = `${u.host}${u.pathname}`.toLowerCase().replace(/\/+$/, '');
           if (!jobs.has(id)) jobs.set(id, { id, title, company, location, url: fullUrl, listedAgo });
         });
 
