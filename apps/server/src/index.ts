@@ -261,12 +261,12 @@ app.post('/api/jobs/find', async (req, reply) => {
       const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
       try {
         await fs.mkdir(dir, { recursive: true });
-        const ts = new Date().toISOString().replace(/[:.]/g, '-');
         await Promise.all(rawJobs.map(async (job, idx) => {
-          const base = safeFileName(job.id || job.url || job.title || `job-${idx}`);
-          const fname = `${base}_${shortHash(job.id || job.url || base)}_${ts}.json`;
+          const stableKey = normalizeJobKey(job.url || job.id || '');
+          const base = safeFileName(stableKey || job.title || `job-${idx}`);
+          const fname = `${base}_${shortHash(stableKey || base)}_raw.json`;
           const record = {
-            id: job.id ?? null,
+            id: stableKey || null,
             source: 'jora',
             scrapedAt: new Date().toISOString(),
             modelScore: null as number | null,
@@ -315,12 +315,12 @@ app.post('/api/jobs/find', async (req, reply) => {
       const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
       try {
         await fs.mkdir(dir, { recursive: true });
-        const ts = new Date().toISOString().replace(/[:.]/g, '-');
         await Promise.all(scored.map(async (job, idx) => {
-          const base = safeFileName((job as any).id || job.url || job.title || `job-${idx}`);
-          const fname = `${base}_${shortHash(((job as any).id || job.url || base) as string)}_${ts}_scored.json`;
+          const stableKey = normalizeJobKey(((job as any).url || (job as any).id || '') as string);
+          const base = safeFileName(stableKey || job.title || `job-${idx}`);
+          const fname = `${base}_${shortHash(stableKey || base)}_scored.json`;
           const record = {
-            id: (job as any).id ?? null,
+            id: stableKey || null,
             source: 'jora',
             scoredAt: new Date().toISOString(),
             modelScore: typeof job.score === 'number' ? job.score : null,
@@ -384,7 +384,7 @@ app.get('/api/db/jobs', async (req, reply) => {
   }
 });
 
-// DB-3: accept user feedback (userScore) and persist as a tiny JSON file
+// DB-3: accept user feedback (userScore) and update the existing job JSON (prefer scored) in-place
 app.post('/api/db/feedback', async (req, reply) => {
   try {
     const body = (req as any).body || {};
@@ -395,17 +395,64 @@ app.post('/api/db/feedback', async (req, reply) => {
     }
     const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
     await fs.mkdir(dir, { recursive: true });
-    const ts = new Date().toISOString().replace(/[:.]/g, '-');
-    const fname = `${safeFileName(jobId)}_${shortHash(jobId)}_${ts}_feedback.json`;
-    const record = {
-      id: jobId,
-      source: 'jora',
-      userScoredAt: new Date().toISOString(),
-      userScore,
-      reqId: (req as any).id,
-    };
-    await fs.writeFile(path.join(dir, fname), JSON.stringify(record, null, 2), 'utf8');
-    (req as any).log?.info?.({ jobId, userScore, dir }, 'feedback stored');
+    const key = normalizeJobKey(jobId);
+
+    // Find existing record files for this job key
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const matches: { path: string; rec: any }[] = [];
+    for (const e of entries) {
+      if (!e.isFile() || !e.name.endsWith('.json')) continue;
+      const filePath = path.join(dir, e.name);
+      try {
+        const text = await fs.readFile(filePath, 'utf8');
+        const rec = JSON.parse(text);
+        const recKey = getJobKey(rec);
+        if (recKey === key) matches.push({ path: filePath, rec });
+      } catch {}
+    }
+
+    // Choose target: prefer latest scored, else latest raw
+    let target: { path: string; rec: any } | null = null;
+    for (const m of matches) {
+      if (m.rec?.scoredAt) {
+        if (!target || Date.parse(m.rec.scoredAt) > Date.parse(target.rec.scoredAt || '')) target = m;
+      }
+    }
+    if (!target) {
+      for (const m of matches) {
+        if (m.rec?.scrapedAt) {
+          if (!target || Date.parse(m.rec.scrapedAt) > Date.parse(target.rec.scrapedAt || '')) target = m;
+        }
+      }
+    }
+
+    // As a last fallback, try the stable filenames if nothing matched (e.g. legacy files not yet present)
+    if (!target) {
+      const base = safeFileName(key);
+      const candidates = [
+        path.join(dir, `${base}_${shortHash(key)}_scored.json`),
+        path.join(dir, `${base}_${shortHash(key)}_raw.json`),
+      ];
+      for (const p of candidates) {
+        try {
+          const text = await fs.readFile(p, 'utf8');
+          const rec = JSON.parse(text);
+          target = { path: p, rec };
+          break;
+        } catch {}
+      }
+    }
+
+    if (!target) {
+      return reply.code(404).send({ error: 'job record not found to update' });
+    }
+
+    // Update in-place
+    target.rec.userScoredAt = new Date().toISOString();
+    target.rec.userScore = userScore;
+    target.rec.reqId = (req as any).id;
+    await fs.writeFile(target.path, JSON.stringify(target.rec, null, 2), 'utf8');
+    (req as any).log?.info?.({ jobId: key, userScore, file: target.path }, 'feedback updated');
     return reply.send({ ok: true });
   } catch (err) {
     (req as any).log?.error?.({ err }, 'feedback failed');
