@@ -1,6 +1,6 @@
 # Project Plan — Jora LLM Job Finder (Mock Mode)
 
-Last updated: 2025-08-20
+Last updated: 2025-08-21
 
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
@@ -13,7 +13,7 @@ Last updated: 2025-08-20
 ### M1 — API Solidification (Day 1–2)
 - Tasks
   - Keep @fastify/multipart with req.file() path (attachFieldsToBody disabled)
-  - Support .docx and .txt; reject PDF with clear error
+  - Support .pdf, .docx, and .txt; clear 400 for others
   - Add structured logs for uploads and query params
   - Cap pages/jobs via env vars; document in README/DESIGN
 - Acceptance
@@ -74,12 +74,12 @@ Last updated: 2025-08-20
 
 ### M8 — Lightweight Job DB (JSON snapshots)
 - Tasks
-  - DB-1 (done): Optional per-job JSON write right after scrape with modelScore/userScore = null; gated by JOB_DB_WRITE; directory via JOB_DB_DIR (default: db/).
-  - DB-2: After scoring, write a companion JSON (or update file) that includes modelScore, keeping the original raw snapshot intact.
-  - DB-3: Expose simple API endpoints: GET /api/db/jobs (server aggregates latest per job) and POST /api/db/feedback to record userScore; Web UI reads from GET and posts feedback.
-  - DB-4: Add a small Node script to compact/aggregate into db/compiled/jobs-latest.json merging raw + scored + feedback.
+  - DB-1 (done): Optional per-job JSON written right after scrape with modelScore/userScore = null; gated by JOB_DB_WRITE; written to JOB_DB_DIR/raw with stable filenames derived from normalized URL (host + pathname, no query/fragments).
+  - DB-2 (done): After scoring, write per-job JSON with modelScore to JOB_DB_DIR/scored using the same stable naming; repeated runs overwrite the same job.
+  - DB-3 (done): API endpoints — GET /api/db/jobs aggregates latest per job across JOB_DB_DIR, JOB_DB_DIR/raw, and JOB_DB_DIR/scored; POST /api/db/feedback updates the existing scored file (or raw as fallback) in-place with userScore and userScoredAt (no separate feedback files).
+  - DB-4 (removed): Compaction to db/compiled/jobs-latest.json was dropped to keep the system simple; aggregation happens on demand.
 - Acceptance
-  - When enabled, JSON files are emitted; API returns aggregated jobs with latest modelScore/userScore; UI feedback persists to disk.
+  - When enabled, JSON files are emitted under raw/ and scored/; API returns aggregated jobs with latest modelScore/userScore; UI feedback updates the same scored file and persists to disk.
 
 ## 2. Work Breakdown (Checklist)
 
@@ -99,10 +99,10 @@ Last updated: 2025-08-20
 - [ ] README: quickstart; curl examples; troubleshooting
 - [ ] .env.example: template for local dev
 
-- [ ] DB-1: per-job JSON snapshots after scrape (done)
-- [ ] DB-2: write scored JSON after scoring
-- [ ] DB-3: API list + feedback write; UI displays and posts
-- [ ] DB-4: compaction script to jobs-latest.json
+- [x] DB-1: per-job JSON snapshots after scrape (db/raw; stable filenames)
+- [x] DB-2: write scored JSON after scoring (db/scored; stable filenames; overwrite)
+- [x] DB-3: API list + feedback update in-place; UI displays and posts
+- [ ] DB-4: compaction script to jobs-latest.json (removed)
 
 ## 3. Timeline (Suggestive)
 - Week 1: M1–M4 complete (API, scraper, heuristics, ranking)
@@ -122,7 +122,7 @@ Last updated: 2025-08-20
 - Basic tests pass; docs (README, DESIGN, PLAN) are accurate
 
 ## 6. Follow-ups (Post-MVP)
-- Re-enable PDF parsing behind a feature flag and fix typings
+- PDF parsing is enabled; consider gating behind a feature flag if needed
 - Bring back LLM analysis (OpenAI or local) with schema validation
 - Better ranking using embeddings or learned weights
 - Job detail enrichment (salary range parse, benefits, remote policy)
