@@ -47,6 +47,7 @@ export default function App() {
   const [liveCompany, setLiveCompany] = useState('');
   const [liveLocation, setLiveLocation] = useState('');
   const [liveMaxDays, setLiveMaxDays] = useState<number | ''>('');
+  const [sortByLive, setSortByLive] = useState<'model' | 'recency'>('model');
   const canSubmit = useMemo(() => !!file && !loading, [file, loading]);
 
   function parseListedDays(text?: string | null): number | null {
@@ -63,7 +64,7 @@ export default function App() {
   const filteredLive = useMemo(() => {
     const comp = liveCompany.trim().toLowerCase();
     const locq = liveLocation.trim().toLowerCase();
-    return results.filter(r => {
+    const arr = results.filter(r => {
       if (typeof liveMinScore === 'number' && liveMinScore > 0) {
         if (r.score == null || r.score < liveMinScore) return false;
       }
@@ -75,7 +76,19 @@ export default function App() {
       }
       return true;
     });
-  }, [results, liveMinScore, liveCompany, liveLocation, liveMaxDays]);
+    // sort
+    const copy = [...arr];
+    if (sortByLive === 'model') {
+      copy.sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
+    } else if (sortByLive === 'recency') {
+      const ad = (x: RankedJob) => {
+        const d = parseListedDays(x.listedAgo);
+        return d == null ? Infinity : d;
+      };
+      copy.sort((a, b) => ad(a) - ad(b)); // newest (fewest days) first
+    }
+    return copy;
+  }, [results, liveMinScore, liveCompany, liveLocation, liveMaxDays, sortByLive]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -137,8 +150,13 @@ export default function App() {
               <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Sydney NSW" />
             </label>
             <label>
-              <div>Listed within (days)</div>
-              <input type="number" min={1} max={60} value={days} onChange={e => setDays(Number(e.target.value))} />
+              <div>Listed within</div>
+              <select value={days} onChange={e => setDays(Number(e.target.value))}>
+                <option value={1}>Last 24 hours</option>
+                <option value={7}>Last 7 days</option>
+                <option value={14}>Last 14 days</option>
+                <option value={30}>Last 30 days</option>
+              </select>
             </label>
             <div style={{ gridColumn: '1 / -1' }}>
               <button disabled={!canSubmit} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: canSubmit ? '#111' : '#888', color: 'white' }}>
@@ -199,6 +217,13 @@ export default function App() {
             </label>
             <button type="button" onClick={() => { setLiveMinScore(0); setLiveCompany(''); setLiveLocation(''); setLiveMaxDays(''); }}
               style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
+            <label style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 8 }}>
+              <span style={{ color: '#333' }}>Sort by</span>
+              <select value={sortByLive} onChange={e => setSortByLive(e.target.value as any)}>
+                <option value="model">Model score</option>
+                <option value="recency">Recency</option>
+              </select>
+            </label>
           </div>
 
           <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
@@ -299,6 +324,8 @@ function SavedList(props: {
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
   const [maxDays, setMaxDays] = useState<number | ''>('');
+  const [sortBy, setSortBy] = useState<'model' | 'user' | 'recency'>('model');
+  const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
   function parseListedDays(text?: string | null): number | null {
     if (!text) return null;
@@ -314,7 +341,7 @@ function SavedList(props: {
   const filtered = useMemo(() => {
     const comp = company.trim().toLowerCase();
     const loc = location.trim().toLowerCase();
-    return items.filter((j: any) => {
+    const arr = items.filter((j: any) => {
       // min model score
       if (typeof minScore === 'number' && minScore > 0) {
         if (j.modelScore == null || j.modelScore < minScore) return false;
@@ -333,7 +360,39 @@ function SavedList(props: {
       }
       return true;
     });
-  }, [items, minScore, company, location, maxDays]);
+    const copy = [...arr];
+    if (sortBy === 'model') {
+      copy.sort((a, b) => (b.modelScore ?? -Infinity) - (a.modelScore ?? -Infinity));
+    } else if (sortBy === 'user') {
+      copy.sort((a, b) => (b.userScore ?? -Infinity) - (a.userScore ?? -Infinity));
+    } else if (sortBy === 'recency') {
+      const ad = (x: SavedJob) => {
+        const d = parseListedDays(x.listedAgo);
+        return d == null ? Infinity : d;
+      };
+      copy.sort((a, b) => ad(a) - ad(b));
+    }
+    return copy;
+  }, [items, minScore, company, location, maxDays, sortBy]);
+
+  const commitScore = (jobId: string) => {
+    const current = draftScores[jobId];
+    const job = items.find(j => j.id === jobId);
+    if (current == null || !job || current === (job.userScore ?? 0)) {
+      // nothing to do
+      setDraftScores(prev => {
+        if (prev[jobId] == null) return prev;
+        const { [jobId]: _omit, ...rest } = prev;
+        return rest;
+      });
+      return;
+    }
+    onRate(jobId, current);
+    setDraftScores(prev => {
+      const { [jobId]: _omit, ...rest } = prev;
+      return rest;
+    });
+  };
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -355,17 +414,28 @@ function SavedList(props: {
             <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Sydney" />
           </label>
           <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: '#333' }}>Days</span>
-            <input type="number" min={0} max={60}
-              value={maxDays}
-              onChange={e => {
-                const v = e.target.value;
-                setMaxDays(v === '' ? '' : Math.max(0, Math.min(60, Number(v))));
-              }}
-              style={{ width: 72 }} />
+            <span style={{ color: '#333' }}>Listed within</span>
+            <select value={maxDays === '' ? '' : String(maxDays)} onChange={e => {
+              const v = e.target.value;
+              setMaxDays(v === '' ? '' : Number(v));
+            }}>
+              <option value="">Any time</option>
+              <option value="1">Last 24 hours</option>
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30">Last 30 days</option>
+            </select>
           </label>
           <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
             style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ color: '#333' }}>Sort by</span>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+              <option value="model">Model score</option>
+              <option value="user">Your score</option>
+              <option value="recency">Recency</option>
+            </select>
+          </label>
         </div>
       </div>
       {loading && <div style={{ color: '#666' }}>Loading…</div>}
@@ -389,11 +459,13 @@ function SavedList(props: {
                   type="range"
                   min={0}
                   max={100}
-                  value={j.userScore ?? 0}
-                  onChange={e => onRate(j.id, Number(e.target.value))}
+                  value={draftScores[j.id] ?? (j.userScore ?? 0)}
+                  onChange={e => setDraftScores(prev => ({ ...prev, [j.id]: Number(e.target.value) }))}
+                  onPointerUp={() => commitScore(j.id)}
+                  onBlur={() => commitScore(j.id)}
                   style={{ flex: 1 }}
                 />
-                <span style={{ width: 36, textAlign: 'right', color: '#333' }}>{j.userScore ?? 0}</span>
+                <span style={{ width: 36, textAlign: 'right', color: '#333' }}>{draftScores[j.id] ?? (j.userScore ?? 0)}</span>
               </label>
             </div>
           </li>

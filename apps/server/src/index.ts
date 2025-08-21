@@ -4,7 +4,7 @@ import cors from '@fastify/cors';
 import formbody from '@fastify/formbody';
 import dotenv from 'dotenv';
 import mammoth from 'mammoth';
-// pdf-parse temporarily disabled (no PDF support in mock mode)
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import path from 'path';
 import fs from 'fs/promises';
 import { createHash } from 'crypto';
@@ -35,7 +35,8 @@ const PORT = Number(process.env.PORT || 5174);
 async function bufferToText(filename: string, buf: Buffer): Promise<string> {
   const ext = path.extname(filename).toLowerCase();
   if (ext === '.pdf') {
-    throw new Error('PDF uploads are temporarily disabled. Please upload a .docx or .txt file.');
+    const data: any = await pdfParse(buf);
+    return data.text as string;
   }
   if (ext === '.docx') {
     const { value } = await mammoth.extractRawText({ buffer: buf });
@@ -218,8 +219,8 @@ app.post('/api/jobs/find', async (req, reply) => {
     const maxJobs = Number(process.env.MAX_JOBS || 40);
 
     if (!data) return reply.code(400).send({ error: 'cv file required' });
-    if (!/\.(docx|txt)$/i.test(data.filename)) {
-      return reply.code(400).send({ error: 'Unsupported file type. Allowed: docx, txt' });
+    if (!/\.(pdf|docx|txt)$/i.test(data.filename)) {
+      return reply.code(400).send({ error: 'Unsupported file type. Allowed: pdf, docx, txt' });
     }
 
     const buf = await data.toBuffer();
