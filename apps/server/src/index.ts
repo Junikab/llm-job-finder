@@ -7,10 +7,10 @@ import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import path from 'path';
 import fs from 'fs/promises';
-import { createHash } from 'crypto';
 import pLimit from 'p-limit';
 import type { CVAnalysis, JobItem, RankedJob } from './types.js';
 import { scrapeJora } from 'scraper';
+import { normalizeJobKey, getJobKey, safeFileName, shortHash } from './lib/job-keys.js';
 
 dotenv.config();
 
@@ -45,14 +45,6 @@ async function bufferToText(filename: string, buf: Buffer): Promise<string> {
   return buf.toString('utf8');
 }
 
-function safeFileName(input: string): string {
-  return input.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80);
-}
-
-function shortHash(input: string): string {
-  return createHash('md5').update(input).digest('hex').slice(0, 8);
-}
-
 async function readJsonFiles(dir: string): Promise<any[]> {
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -64,22 +56,6 @@ async function readJsonFiles(dir: string): Promise<any[]> {
   } catch {
     return [];
   }
-}
-
-function normalizeJobKey(value: string): string {
-  const raw = String(value).trim();
-  try {
-    const u = raw.startsWith('http') ? new URL(raw) : new URL('https://' + raw.replace(/^\/+/, ''));
-    return `${u.host}${u.pathname}`.toLowerCase();
-  } catch {
-    const noQuery = raw.split('?')[0];
-    return noQuery.replace(/^https?:\/\//, '').replace(/\/+$/, '').toLowerCase();
-  }
-}
-
-function getJobKey(rec: any): string | null {
-  const v = rec?.id || rec?.data?.url || rec?.data?.id || null;
-  return v ? normalizeJobKey(v) : null;
 }
 
 function pickLatest<T extends { [k: string]: any }>(arr: T[], dateKey: string): T | null {
