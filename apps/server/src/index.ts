@@ -3,14 +3,15 @@ import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
 import formbody from '@fastify/formbody';
 import dotenv from 'dotenv';
-import mammoth from 'mammoth';
-import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import path from 'path';
 import fs from 'fs/promises';
 import pLimit from 'p-limit';
 import type { CVAnalysis, JobItem, RankedJob } from './types.js';
 import { scrapeJora } from 'scraper';
 import { normalizeJobKey, getJobKey, safeFileName, shortHash } from './lib/job-keys.js';
+import { bufferToText } from './lib/cv.js';
+import { parseListedAgoToDays } from './lib/utils.js';
+import { saveRawJobs, saveScoredJobs, listJobs, updateFeedback } from './services/job-db.js';
 
 dotenv.config();
 
@@ -32,40 +33,9 @@ const PORT = Number(process.env.PORT || 5174);
 // (mock) schemas removed as OpenAI calls are disabled
 
 // --- utils ---
-async function bufferToText(filename: string, buf: Buffer): Promise<string> {
-  const ext = path.extname(filename).toLowerCase();
-  if (ext === '.pdf') {
-    const data: any = await pdfParse(buf);
-    return data.text as string;
-  }
-  if (ext === '.docx') {
-    const { value } = await mammoth.extractRawText({ buffer: buf });
-    return value;
-  }
-  return buf.toString('utf8');
-}
+ 
 
-async function readJsonFiles(dir: string): Promise<any[]> {
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    const files = entries.filter(e => e.isFile() && e.name.endsWith('.json')).map(e => path.join(dir, e.name));
-    const items = await Promise.all(files.map(async f => {
-      try { return JSON.parse(await fs.readFile(f, 'utf8')); } catch { return null; }
-    }));
-    return items.filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
-function pickLatest<T extends { [k: string]: any }>(arr: T[], dateKey: string): T | null {
-  if (!arr.length) return null;
-  return arr.reduce((best, x) => {
-    const a = Date.parse(best?.[dateKey] || '');
-    const b = Date.parse(x?.[dateKey] || '');
-    return isNaN(a) || (!isNaN(b) && b > a) ? x : best;
-  });
-}
+ 
 
 async function analyzeCV(cvText: string): Promise<CVAnalysis> {
   // Step 2: tiny titles heuristic (skills left empty)
@@ -175,16 +145,7 @@ async function scoreJob(analysis: CVAnalysis, job: JobItem): Promise<Pick<Ranked
   return { score: Math.floor(Math.random() * 101), reason: 'Mock score' };
 }
 
-function parseListedAgoToDays(text?: string): number | null {
-  if (!text) return null;
-  const m = text.match(/(\d+)\s*(day|days|d|week|weeks|w|hour|hours|h)/i);
-  if (!m) return null;
-  const n = Number(m[1]);
-  const unit = m[2].toLowerCase();
-  if (unit.startsWith('hour') || unit === 'h') return 0;
-  if (unit.startsWith('week') || unit === 'w') return n * 7;
-  return n;
-}
+ 
 
 app.post('/api/jobs/find', async (req, reply) => {
   try {
@@ -236,23 +197,7 @@ app.post('/api/jobs/find', async (req, reply) => {
     if ((process.env.JOB_DB_WRITE || 'false') === 'true') {
       const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
       try {
-        const rawDir = path.join(dir, 'raw');
-        await fs.mkdir(rawDir, { recursive: true });
-        await Promise.all(rawJobs.map(async (job, idx) => {
-          const stableKey = normalizeJobKey(job.url || job.id || '');
-          const base = safeFileName(stableKey || job.title || `job-${idx}`);
-          const fname = `${base}_${shortHash(stableKey || base)}_raw.json`;
-          const record = {
-            id: stableKey || null,
-            source: 'jora',
-            scrapedAt: new Date().toISOString(),
-            modelScore: null as number | null,
-            userScore: null as number | null,
-            reqId: (req as any).id,
-            data: job,
-          };
-          await fs.writeFile(path.join(rawDir, fname), JSON.stringify(record, null, 2), 'utf8');
-        }));
+        await saveRawJobs((req as any).id, dir, rawJobs);
         req.log.info({ dir: path.join(dir, 'raw'), count: rawJobs.length }, 'db write completed');
       } catch (err) {
         req.log.warn({ err }, 'db write failed');
@@ -291,24 +236,7 @@ app.post('/api/jobs/find', async (req, reply) => {
     if ((process.env.JOB_DB_WRITE || 'false') === 'true') {
       const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
       try {
-        const scoredDir = path.join(dir, 'scored');
-        await fs.mkdir(scoredDir, { recursive: true });
-        await Promise.all(scored.map(async (job, idx) => {
-          const stableKey = normalizeJobKey(((job as any).url || (job as any).id || '') as string);
-          const base = safeFileName(stableKey || job.title || `job-${idx}`);
-          const fname = `${base}_${shortHash(stableKey || base)}_scored.json`;
-          const record = {
-            id: stableKey || null,
-            source: 'jora',
-            scoredAt: new Date().toISOString(),
-            modelScore: typeof job.score === 'number' ? job.score : null,
-            userScore: null as number | null,
-            reqId: (req as any).id,
-            reason: job.reason,
-            data: job,
-          };
-          await fs.writeFile(path.join(scoredDir, fname), JSON.stringify(record, null, 2), 'utf8');
-        }));
+        await saveScoredJobs((req as any).id, dir, scored as any);
         req.log.info({ dir: path.join(dir, 'scored'), count: scored.length }, 'db scored write completed');
       } catch (err) {
         req.log.warn({ err }, 'db scored write failed');
@@ -327,38 +255,7 @@ app.get('/health', async () => ({ ok: true }));
 app.get('/api/db/jobs', async (req, reply) => {
   try {
     const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
-    const all = [
-      ...(await readJsonFiles(dir)),
-      ...(await readJsonFiles(path.join(dir, 'raw'))),
-      ...(await readJsonFiles(path.join(dir, 'scored'))),
-    ];
-    // group by job key
-    const groups = new Map<string, any[]>();
-    for (const rec of all) {
-      const key = getJobKey(rec);
-      if (!key) continue;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(rec);
-    }
-    const merged = [] as any[];
-    for (const [key, arr] of groups) {
-      const raw = pickLatest(arr.filter(r => r.scrapedAt), 'scrapedAt');
-      const scored = pickLatest(arr.filter(r => r.scoredAt), 'scoredAt');
-      const feedback = pickLatest(arr.filter(r => r.userScoredAt), 'userScoredAt');
-      const base = scored || raw || arr[0];
-      merged.push({
-        id: base?.id || key,
-        key,
-        modelScore: scored?.modelScore ?? null,
-        userScore: feedback?.userScore ?? null,
-        title: base?.data?.title || base?.data?.jobTitle || null,
-        url: base?.data?.url || null,
-        company: base?.data?.company || null,
-        listedAgo: base?.data?.listedAgo || null,
-        source: base?.source || 'jora',
-        data: base?.data || null,
-      });
-    }
+    const merged = await listJobs(dir);
     return reply.send({ total: merged.length, results: merged });
   } catch (err) {
     (req as any).log?.error?.({ err }, 'db list failed');
@@ -376,75 +273,11 @@ app.post('/api/db/feedback', async (req, reply) => {
       return reply.code(400).send({ error: 'jobId and numeric userScore are required' });
     }
     const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
-    const rawDir = path.join(dir, 'raw');
-    const scoredDir = path.join(dir, 'scored');
-    await fs.mkdir(rawDir, { recursive: true });
-    await fs.mkdir(scoredDir, { recursive: true });
-    const key = normalizeJobKey(jobId);
-
-    // Find existing record files for this job key
-    const scanDirs = [dir, rawDir, scoredDir];
-    const matches: { path: string; rec: any }[] = [];
-    for (const d of scanDirs) {
-      let entries: any[] = [];
-      try { entries = await fs.readdir(d, { withFileTypes: true }); } catch {}
-      for (const e of entries) {
-        if (!e.isFile() || !e.name.endsWith('.json')) continue;
-        const filePath = path.join(d, e.name);
-        try {
-          const text = await fs.readFile(filePath, 'utf8');
-          const rec = JSON.parse(text);
-          const recKey = getJobKey(rec);
-          if (recKey === key) matches.push({ path: filePath, rec });
-        } catch {}
-      }
-    }
-
-    // Choose target: prefer latest scored, else latest raw
-    let target: { path: string; rec: any } | null = null;
-    for (const m of matches) {
-      if (m.rec?.scoredAt) {
-        if (!target || Date.parse(m.rec.scoredAt) > Date.parse(target.rec.scoredAt || '')) target = m;
-      }
-    }
-    if (!target) {
-      for (const m of matches) {
-        if (m.rec?.scrapedAt) {
-          if (!target || Date.parse(m.rec.scrapedAt) > Date.parse(target.rec.scrapedAt || '')) target = m;
-        }
-      }
-    }
-
-    // As a last fallback, try the stable filenames if nothing matched (e.g. legacy files not yet present)
-    if (!target) {
-      const base = safeFileName(key);
-      const candidates = [
-        path.join(scoredDir, `${base}_${shortHash(key)}_scored.json`),
-        path.join(rawDir, `${base}_${shortHash(key)}_raw.json`),
-        // legacy locations
-        path.join(dir, `${base}_${shortHash(key)}_scored.json`),
-        path.join(dir, `${base}_${shortHash(key)}_raw.json`),
-      ];
-      for (const p of candidates) {
-        try {
-          const text = await fs.readFile(p, 'utf8');
-          const rec = JSON.parse(text);
-          target = { path: p, rec };
-          break;
-        } catch {}
-      }
-    }
-
-    if (!target) {
+    const result = await updateFeedback((req as any).id, dir, jobId, userScore);
+    if (!result.updated) {
       return reply.code(404).send({ error: 'job record not found to update' });
     }
-
-    // Update in-place
-    target.rec.userScoredAt = new Date().toISOString();
-    target.rec.userScore = userScore;
-    target.rec.reqId = (req as any).id;
-    await fs.writeFile(target.path, JSON.stringify(target.rec, null, 2), 'utf8');
-    (req as any).log?.info?.({ jobId: key, userScore, file: target.path }, 'feedback updated');
+    (req as any).log?.info?.({ jobId, userScore, file: result.file }, 'feedback updated');
     return reply.send({ ok: true });
   } catch (err) {
     (req as any).log?.error?.({ err }, 'feedback failed');
