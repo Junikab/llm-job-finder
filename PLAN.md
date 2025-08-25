@@ -1,6 +1,6 @@
 # Project Plan — Jora LLM Job Finder (Mock Mode)
 
-Last updated: 2025-08-21
+Last updated: 2025-08-25
 
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
@@ -83,26 +83,28 @@ Last updated: 2025-08-21
 
 ## 2. Work Breakdown (Checklist)
 
-- [ ] API: ensure req.file() + fields from data.fields fallback
-- [ ] File types: .docx/.txt only; clear 400 for others
-- [ ] Logging: file name, size (approx), location, days, timing
+- [x] API: ensure req.file() + fields from data.fields fallback
+- [x] File types: .pdf/.docx/.txt; clear 400 for others
+- [x] Logging: file name, size (approx), location, days, timing
 - [ ] Env: MAX_PAGES, MAX_JOBS, SCRAPER_HEADLESS documented
 - [ ] Scraper: dedupe, retries, timeouts, pagination caps
-- [ ] Heuristic: titles/skills extraction or fixed fallbacks
-- [ ] Query builder: `(title1 OR title2)` + location, days
+- [x] Heuristic: titles/skills extraction (first pass)
+- [x] Query builder: basic `(title OR group)` + location, days
 - [ ] Scoring flag: `SCORE_MODE=heuristic|random`
 - [ ] Ranking signals: title match, recency, seniority, remote, salary
 - [ ] Reason string explaining score
-- [ ] Web UI: upload form + results table
-- [ ] Tests: API happy-path + error-path; scraper parse fixtures
+- [x] Web UI: upload form + results table
+- [x] Web UI: Recent CVs picker (IndexedDB) with reuse/remove
+- [x] Web UI: Saved tab with reload and rating + feedback POST
+- [x] Tests: basic web App flow and DB endpoints (add more)
 - [ ] Fixtures: sample CVs and SERP HTML
 - [ ] README: quickstart; curl examples; troubleshooting
-- [ ] .env.example: template for local dev
+- [x] .env.example: template for local dev
 
 - [x] DB-1: per-job JSON snapshots after scrape (db/raw; stable filenames)
 - [x] DB-2: write scored JSON after scoring (db/scored; stable filenames; overwrite)
 - [x] DB-3: API list + feedback update in-place; UI displays and posts
-- [ ] DB-4: compaction script to jobs-latest.json (removed)
+- [x] DB-4: compaction script removed; aggregation happens on demand
 
 ## 3. Timeline (Suggestive)
 - Week 1: M1–M4 complete (API, scraper, heuristics, ranking)
@@ -115,7 +117,7 @@ Last updated: 2025-08-21
 - Ambiguous titles in CVs → Maintain curated fallback titles per role
 
 ## 5. Acceptance/Exit Criteria for MVP
-- User can upload a .docx/.txt CV and choose location/days
+- User can upload a .pdf/.docx/.txt CV and choose location/days
 - API responds <10s with at least 20 jobs (on default caps)
 - Results sorted by heuristic/flag with visible reasons
 - Web UI displays list and links work
