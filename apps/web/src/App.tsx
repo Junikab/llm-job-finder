@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { listCVs, getCVFile, saveCV, removeCV, type CVMeta } from './idb';
-
-// Use same-origin by default so Vite can proxy /api to 5174 in dev
-const API_BASE = (((import.meta as any).env?.VITE_API_BASE_URL) ?? '').trim();
+import { findJobs, listSavedJobs, sendFeedback } from './api';
 
 type RankedJob = {
   id: string; title: string; company?: string; location?: string; url: string;
@@ -107,9 +105,7 @@ export default function App() {
       form.append('location', location);
       form.append('days', String(days));
 
-      const res = await fetch(`${API_BASE}/api/jobs/find`, { method: 'POST', body: form });
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const json = await res.json();
+      const json = await findJobs(form);
       setAnalysis(json.analysis);
       setSearchUrls(json.searchUrls || []);
       setResults(json.results || []);
@@ -328,10 +324,8 @@ export default function App() {
               setSavedLoading(true);
               setSavedError(null);
               try {
-                const res = await fetch(`${API_BASE}/api/db/jobs`);
-                if (!res.ok) throw new Error(`Failed: ${res.status}`);
-                const json = await res.json();
-                setSaved(Array.isArray(json.results) ? json.results : []);
+                const results = await listSavedJobs();
+                setSaved(results);
               } catch (err: any) {
                 setSavedError(err?.message || 'Failed to load saved jobs');
               } finally {
@@ -347,22 +341,14 @@ export default function App() {
                 return prev.map(j => j.id === jobId ? { ...j, userScore: nextScore } : j);
               });
               try {
-                const res = await fetch(`${API_BASE}/api/db/feedback`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ jobId, userScore: nextScore })
-                });
-                if (!res.ok) throw new Error(`Failed: ${res.status}`);
+                await sendFeedback(jobId, nextScore);
                 setToast('Saved');
                 setTimeout(() => setToast(null), 1600);
                 // refetch latest aggregate
                 try {
                   setSavedLoading(true);
-                  const r2 = await fetch(`${API_BASE}/api/db/jobs`);
-                  if (r2.ok) {
-                    const j2 = await r2.json();
-                    setSaved(Array.isArray(j2.results) ? j2.results : []);
-                  }
+                  const updated = await listSavedJobs();
+                  setSaved(updated);
                 } finally {
                   setSavedLoading(false);
                 }
