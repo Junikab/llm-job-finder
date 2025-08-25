@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { listCVs, getCVFile, saveCV, removeCV, type CVMeta } from './idb';
 import { findJobs, listSavedJobs, sendFeedback } from './api';
 import type { RankedJob, SavedJob, CVAnalysis } from '../../server/src/types';
@@ -16,7 +16,7 @@ export default function App() {
   const [results, setResults] = useState<RankedJob[]>([]);
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [searchUrls, setSearchUrls] = useState<string[]>([]);
-  const [tab, setTab] = useState<'live' | 'saved'>('live');
+  const [tab, setTab] = useState<'live' | 'saved'>(() => (typeof window !== 'undefined' && localStorage.getItem('tab') === 'saved' ? 'saved' : 'live'));
   const [saved, setSaved] = useState<SavedJob[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
@@ -25,10 +25,23 @@ export default function App() {
   const [recent, setRecent] = useState<CVMeta[]>([]);
   const [recentSelectedId, setRecentSelectedId] = useState<string>('');
   const canSubmit = useMemo(() => !!file && !loading, [file, loading]);
+  const toastTimerRef = useRef<number | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  const refreshRecent = useCallback(async () => {
+    try {
+      setRecent(await listCVs());
+    } catch {}
+  }, []);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 1600);
+  }, []);
+
+  const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!file || loading) return;
     setLoading(true);
     setError(null);
     setResults([]);
@@ -48,7 +61,7 @@ export default function App() {
         const existing = await listCVs();
         const has = existing.some(m => m.name === file.name && m.size === file.size);
         if (!has) await saveCV(file);
-        setRecent(await listCVs());
+        await refreshRecent();
       } catch {}
     } catch (err: any) {
       console.error(err);
@@ -56,16 +69,19 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [file, location, days, loading, refreshRecent]);
 
   // Load recent CVs on mount
   useEffect(() => {
-    (async () => {
-      try { setRecent(await listCVs()); } catch {}
-    })();
-  }, []);
+    refreshRecent();
+  }, [refreshRecent]);
 
-  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Persist tab selection
+  useEffect(() => {
+    try { localStorage.setItem('tab', tab); } catch {}
+  }, [tab]);
+
+  const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
     setFile(f);
     if (f) {
@@ -73,29 +89,77 @@ export default function App() {
         const existing = await listCVs();
         const has = existing.some(m => m.name === f.name && m.size === f.size);
         if (!has) await saveCV(f);
-        setRecent(await listCVs());
+        await refreshRecent();
       } catch {}
     }
-  }
+  }, [refreshRecent]);
 
-  async function useSelectedRecent() {
+  const useSelectedRecent = useCallback(async () => {
     const id = parseInt(recentSelectedId, 10);
     if (!id) return;
     try {
       const f = await getCVFile(id);
       if (f) setFile(f);
     } catch {}
-  }
+  }, [recentSelectedId]);
 
-  async function removeSelectedRecent() {
+  const removeSelectedRecent = useCallback(async () => {
     const id = parseInt(recentSelectedId, 10);
     if (!id) return;
     try {
       await removeCV(id);
       setRecentSelectedId('');
-      setRecent(await listCVs());
+      await refreshRecent();
     } catch {}
-  }
+  }, [recentSelectedId, refreshRecent]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleRefreshSaved = useCallback(async () => {
+    setSavedLoading(true);
+    setSavedError(null);
+    try {
+      const results = await listSavedJobs();
+      setSaved(results);
+    } catch (err: any) {
+      setSavedError(err?.message || 'Failed to load saved jobs');
+    } finally {
+      setSavedLoading(false);
+    }
+  }, []);
+
+  const handleRate = useCallback(async (jobId: string, nextScore: number) => {
+    // optimistic update with revert capture
+    let prevScore: number | null = null;
+    setSaved(prev => {
+      const found = prev.find(j => j.id === jobId);
+      prevScore = found?.userScore ?? null;
+      return prev.map(j => j.id === jobId ? { ...j, userScore: nextScore } : j);
+    });
+    try {
+      await sendFeedback(jobId, nextScore);
+      showToast('Saved');
+      // refetch latest aggregate
+      try {
+        setSavedLoading(true);
+        const updated = await listSavedJobs();
+        setSaved(updated);
+      } finally {
+        setSavedLoading(false);
+      }
+    } catch (err: any) {
+      showToast('Save failed');
+      // revert
+      setSaved(prev => prev.map(j => j.id === jobId ? { ...j, userScore: prevScore } : j));
+    }
+  }, [showToast]);
 
   return (
     <div style={{ fontFamily: 'ui-sans-serif, system-ui', padding: 16, maxWidth: 980, margin: '0 auto' }}>
@@ -147,7 +211,7 @@ export default function App() {
               </select>
             </label>
             <div style={{ gridColumn: '1 / -1' }}>
-              <button disabled={!canSubmit} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: canSubmit ? '#111' : '#888', color: 'white' }}>
+              <button aria-busy={loading} disabled={!canSubmit} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: canSubmit ? '#111' : '#888', color: 'white' }}>
                 {loading ? 'Finding…' : 'Find Jobs'}
               </button>
             </div>
@@ -169,45 +233,8 @@ export default function App() {
             items={saved}
             loading={savedLoading}
             error={savedError}
-            onRefresh={async () => {
-              setSavedLoading(true);
-              setSavedError(null);
-              try {
-                const results = await listSavedJobs();
-                setSaved(results);
-              } catch (err: any) {
-                setSavedError(err?.message || 'Failed to load saved jobs');
-              } finally {
-                setSavedLoading(false);
-              }
-            }}
-            onRate={async (jobId, nextScore) => {
-              // optimistic update with revert capture
-              let prevScore: number | null = null;
-              setSaved(prev => {
-                const found = prev.find(j => j.id === jobId);
-                prevScore = found?.userScore ?? null;
-                return prev.map(j => j.id === jobId ? { ...j, userScore: nextScore } : j);
-              });
-              try {
-                await sendFeedback(jobId, nextScore);
-                setToast('Saved');
-                setTimeout(() => setToast(null), 1600);
-                // refetch latest aggregate
-                try {
-                  setSavedLoading(true);
-                  const updated = await listSavedJobs();
-                  setSaved(updated);
-                } finally {
-                  setSavedLoading(false);
-                }
-              } catch (err: any) {
-                setToast('Save failed');
-                setTimeout(() => setToast(null), 1600);
-                // revert
-                setSaved(prev => prev.map(j => j.id === jobId ? { ...j, userScore: prevScore } : j));
-              }
-            }}
+            onRefresh={handleRefreshSaved}
+            onRate={handleRate}
           />
         </div>
       )}
