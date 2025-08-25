@@ -1,4 +1,4 @@
-
+// Shared UI types for the web app. Keep in sync with server-side types where relevant.
 export type CVAnalysis = {
   summary: string;
   titles: string[];
@@ -7,22 +7,18 @@ export type CVAnalysis = {
   locationHints?: string[];
 };
 
-export type JobItem = {
+export type RankedJob = {
   id: string;
   title: string;
   company?: string;
   location?: string;
   url: string;
   listedAgo?: string; // e.g., "3 days ago"
-  description?: string; // filled after detail fetch
-};
-
-export type RankedJob = JobItem & {
+  description?: string;
   score: number; // 0-100
   reason: string;
 };
 
-// Aggregated job record returned by /api/db/jobs
 export type SavedJob = {
   id: string;
   key: string;
