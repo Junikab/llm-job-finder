@@ -24,26 +24,7 @@ export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]
   }));
 }
 
-export async function saveScoredJobs(reqId: string, dir: string, scored: Array<JobItem & { score?: number | null; reason?: string }>) {
-  const scoredDir = path.join(dir, 'scored');
-  await fs.mkdir(scoredDir, { recursive: true });
-  await Promise.all(scored.map(async (job, idx) => {
-    const stableKey = normalizeJobKey(((job as any).url || (job as any).id || '') as string);
-    const base = safeFileName(stableKey || job.title || `job-${idx}`);
-    const fname = `${base}_${shortHash(stableKey || base)}_scored.json`;
-    const record = {
-      id: stableKey || null,
-      source: 'jora',
-      scoredAt: new Date().toISOString(),
-      modelScore: typeof (job as any).score === 'number' ? (job as any).score : null,
-      userScore: null as number | null,
-      reqId,
-      reason: (job as any).reason,
-      data: job,
-    };
-    await fs.writeFile(path.join(scoredDir, fname), JSON.stringify(record, null, 2), 'utf8');
-  }));
-}
+export { saveScoredJobs } from './scoring.js';
 
 export async function listJobs(dir: string) {
   const all = [

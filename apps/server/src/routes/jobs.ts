@@ -6,6 +6,7 @@ import { bufferToText } from '../lib/cv.js';
 import { parseListedAgoToDays } from '../lib/utils.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
+import { scoreJob } from '../services/scoring.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);
@@ -94,13 +95,6 @@ function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string; days?
   if (skills.length > 0) urls.push(makeUrl(`${titlesQuoted[0]} ${skills[0]}`));
   if (titlesQuoted.length > 1) urls.push(makeUrl(skills.length > 0 ? `${titlesQuoted[1]} ${skills[0]}` : `${titlesQuoted[1]}`));
   return Array.from(new Set(urls));
-}
-
-async function scoreJob(_analysis: CVAnalysis, _job: JobItem): Promise<Pick<RankedJob,'score'|'reason'>> {
-  // check if already scored
-  // if not, score:
-  // after, save
-  return { score: Math.floor(Math.random() * 101), reason: 'Mock score' };
 }
 
 export default async function registerJobsRoutes(app: FastifyInstance) {
