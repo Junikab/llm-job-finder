@@ -147,7 +147,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const scrapeMs = Date.now() - t0;
       (req as any).log?.info?.({ scrapeMs, rawCount: rawJobs.length }, 'scrape finished');
 
-      if ((process.env.JOB_DB_WRITE || 'false') === 'true') {
+      if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
         const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
         try {
           await saveRawJobs((req as any).id, dir, rawJobs);
@@ -184,7 +184,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       );
       scored.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-      if ((process.env.JOB_DB_WRITE || 'false') === 'true') {
+      if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
         const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
         try {
           await saveScoredJobs((req as any).id, dir, scored as any);
