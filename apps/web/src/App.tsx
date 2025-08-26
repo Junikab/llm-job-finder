@@ -4,8 +4,8 @@ import type { RankedJob, CVAnalysis } from '../../server/src/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
-import RecentCVs from './components/RecentCVs';
-import SearchUrlPicker from './components/SearchUrlPicker';
+import TabsHeader from './components/TabsHeader';
+import LiveForm from './components/LiveForm';
 import { useRecentCVs } from './hooks/useRecentCVs';
 import { useSearchUrl } from './hooks/useSearchUrl';
 import { useSavedJobs } from './hooks/useSavedJobs';
@@ -106,55 +106,28 @@ export default function App() {
     <div style={{ fontFamily: 'ui-sans-serif, system-ui', padding: 16, maxWidth: 980, margin: '0 auto' }}>
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>LLM Job Finder</h1>
       <p style={{ color: '#555', marginBottom: 16 }}>Upload your CV, we’ll search Jora and rank roles using an LLM.</p>
-      <div style={{ display: 'flex', gap: 8, margin: '8px 0 16px' }}>
-        <button
-          type="button"
-          onClick={() => setTab('live')}
-          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: tab === 'live' ? '#111' : '#f7f7f7', color: tab === 'live' ? '#fff' : '#111' }}
-        >
-          Live
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('saved')}
-          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: tab === 'saved' ? '#111' : '#f7f7f7', color: tab === 'saved' ? '#fff' : '#111' }}
-        >
-          Saved
-        </button>
-      </div>
+      <TabsHeader tab={tab} onChange={setTab} />
 
       {tab === 'live' && (
         <>
-          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, alignItems: 'center', gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
-            <label style={{ gridColumn: '1 / -1' }}>
-              <div>CV (PDF/DOCX/TXT)</div>
-              <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} />
-            </label>
-            {/* Recent CVs picker */}
-            <RecentCVs
-              recent={recent}
-              recentSelectedId={recentSelectedId}
-              onChangeSelected={setRecentSelectedId}
-              onUseSelected={useSelectedRecent}
-              onRemoveSelected={removeSelectedRecent}
-            />
-            <SearchUrlPicker
-              selectValue={searchUrlSelectValue}
-              history={searchUrlHistory}
-              customMode={searchUrlCustomMode}
-              searchUrl={searchUrl}
-              onSelectChange={onSearchUrlSelectChange}
-              onChangeCustom={setSearchUrl}
-            />
-            <div style={{ gridColumn: '1 / -1' }}>
-              <button aria-busy={loading} disabled={!canSubmit} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: canSubmit ? '#111' : '#888', color: 'white' }}>
-                {loading ? 'Finding…' : 'Find Jobs'}
-              </button>
-            </div>
-            {!!error && (
-              <div style={{ gridColumn: '1 / -1', color: '#b00' }}>{error}</div>
-            )}
-          </form>
+          <LiveForm
+            onSubmit={onSubmit}
+            onFileChange={onFileChange}
+            recent={recent}
+            recentSelectedId={recentSelectedId}
+            onChangeRecentSelected={setRecentSelectedId}
+            onUseSelectedRecent={useSelectedRecent}
+            onRemoveSelectedRecent={removeSelectedRecent}
+            searchUrlSelectValue={searchUrlSelectValue}
+            searchUrlHistory={searchUrlHistory}
+            searchUrlCustomMode={searchUrlCustomMode}
+            searchUrl={searchUrl}
+            onSearchUrlSelectChange={onSearchUrlSelectChange}
+            onChangeSearchUrl={setSearchUrl}
+            canSubmit={canSubmit}
+            loading={loading}
+            error={error}
+          />
 
           <AnalysisHeader analysis={analysis} searchUrls={searchUrls} />
 
