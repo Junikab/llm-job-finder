@@ -18,6 +18,7 @@ export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]
       modelScore: null as number | null,
       userScore: null as number | null,
       reqId,
+      'job-description': (job as any).description ?? null,
       data: job,
     };
     await fs.writeFile(path.join(rawDir, fname), JSON.stringify(record, null, 2), 'utf8');

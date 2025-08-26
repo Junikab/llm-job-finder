@@ -29,6 +29,7 @@ export async function saveScoredJobs(
         scoredAt: new Date().toISOString(),
         modelScore: typeof (job as any).score === 'number' ? (job as any).score : null,
         userScore: null as number | null,
+        'job-description': (job as any).description ?? null,
         reqId,
         reason: (job as any).reason,
         data: job,

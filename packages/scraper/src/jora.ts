@@ -67,12 +67,16 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
           const company = $(el).find('[data-automation="job-company"], .job-company').text().trim();
           const location = $(el).find('[data-automation="job-location"], .job-location').text().trim();
           const listedAgo = $(el).find('[datetime], time').text().trim();
+          const snippet = $(el)
+            .find('[data-automation="job-snippet"], [data-automation="job-description"], .job-snippet, .job-card__body, .job-card__content')
+            .text()
+            .trim();
           if (!href || !title) return;
           // url is guaranteed truthy by the while guard; narrow for TS inside this callback
           const fullUrl = new URL(href, url!).toString();
           const u = new URL(fullUrl);
           const id = `${u.host}${u.pathname}`.toLowerCase().replace(/\/+$/, '');
-          if (!jobs.has(id)) jobs.set(id, { id, title, company, location, url: fullUrl, listedAgo });
+          if (!jobs.has(id)) jobs.set(id, { id, title, company, location, url: fullUrl, listedAgo, description: snippet || undefined });
         });
 
         // pagination: look for "Next" link
@@ -93,19 +97,39 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
       try {
         const gotoTimeout = deadline ? Math.max(1, Math.min(45_000, deadline - Date.now())) : 45_000;
         detailsVisited++;
-        await page.goto(j.url, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
+        const detailPage = await browser.newPage({
+          userAgent: randomUA(),
+          viewport: { width: 1366, height: 900 },
+        });
+        await detailPage.route('**/*', (route) => {
+          const r = route.request();
+          const type = r.resourceType();
+          if (['image', 'media', 'font', 'stylesheet'].includes(type)) {
+            return route.abort();
+          }
+          route.continue();
+        });
+        await detailPage.goto(j.url, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
         const sleepMs = 700 + Math.random()*400;
         if (deadline) {
           const left = deadline - Date.now();
-          if (left <= 0) { logTimeoutOnce(); return j; }
-          await page.waitForTimeout(Math.min(sleepMs, left));
+          if (left <= 0) { logTimeoutOnce(); await detailPage.close(); return j; }
+          await detailPage.waitForTimeout(Math.min(sleepMs, left));
         } else {
-          await page.waitForTimeout(sleepMs);
+          await detailPage.waitForTimeout(sleepMs);
         }
-        const html = await page.content();
+        // Try to wait for a likely description container to render
+        try {
+          const waitLeft = deadline ? Math.max(1, Math.min(4000, deadline - Date.now())) : 4000;
+          await detailPage.waitForSelector('[data-automation="jobAdDetails"], .jobdesc, [class*="job-description"], article', { timeout: waitLeft });
+        } catch {}
+        const html = await detailPage.content();
         const $ = cheerio.load(html);
-        const desc = $('[data-automation="jobAdDetails"], .jobdesc, [class*="job-description"], article').text().trim();
-        j.description = desc || '';
+        let desc = $('[data-automation="jobAdDetails"], .jobdesc, [class*="job-description"]').text().trim();
+        if (!desc) desc = $('article').text().trim();
+        if (!desc) desc = $('main').text().trim();
+        j.description = desc || j.description || '';
+        await detailPage.close();
       } catch {
         // ignore
       }
