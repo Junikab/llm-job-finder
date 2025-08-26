@@ -11,6 +11,16 @@ export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [location, setLocation] = useState('Sydney NSW');
   const [days, setDays] = useState(14);
+  const [searchUrl, setSearchUrl] = useState<string>(() => (typeof window !== 'undefined' ? (localStorage.getItem('searchUrl') || '') : ''));
+  const [searchUrlHistory, setSearchUrlHistory] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('searchUrlHistory');
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter((x: any) => typeof x === 'string').slice(0, 5) : [];
+    } catch { return []; }
+  });
+  const [searchUrlCustomMode, setSearchUrlCustomMode] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RankedJob[]>([]);
@@ -49,8 +59,21 @@ export default function App() {
     try {
       const form = new FormData();
       form.append('cv', file);
-      form.append('location', location);
-      form.append('days', String(days));
+      if (searchUrl) {
+        form.append('searchUrl', searchUrl);
+      } else {
+        form.append('location', location);
+        form.append('days', String(days));
+      }
+
+      // Update history if using a manual URL
+      const su = (searchUrl || '').trim();
+      if (su) {
+        setSearchUrlHistory(prev => {
+          const next = [su, ...prev.filter(u => u !== su)].slice(0, 5);
+          return next;
+        });
+      }
 
       const json = await findJobs(form);
       setAnalysis(json.analysis);
@@ -69,7 +92,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [file, location, days, loading, refreshRecent]);
+  }, [file, location, days, searchUrl, loading, refreshRecent]);
 
   // Load recent CVs on mount
   useEffect(() => {
@@ -80,6 +103,22 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem('tab', tab); } catch {}
   }, [tab]);
+
+  // Persist manual search URL
+  useEffect(() => {
+    try { localStorage.setItem('searchUrl', searchUrl); } catch {}
+  }, [searchUrl]);
+
+  // Persist history whenever updated
+  useEffect(() => {
+    try { localStorage.setItem('searchUrlHistory', JSON.stringify(searchUrlHistory.slice(0, 5))); } catch {}
+  }, [searchUrlHistory]);
+
+  // Sync custom mode based on whether current value is in history
+  useEffect(() => {
+    const inHistory = searchUrl && searchUrlHistory.includes(searchUrl);
+    setSearchUrlCustomMode(!!searchUrl && !inHistory);
+  }, [searchUrl, searchUrlHistory]);
 
   const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null;
@@ -199,17 +238,49 @@ export default function App() {
             />
             <label>
               <div>Location</div>
-              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Sydney NSW" />
+              <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Sydney NSW" disabled={!!searchUrl} title={searchUrl ? 'Ignored when a Jora search URL is set' : ''} />
             </label>
             <label>
               <div>Listed within</div>
-              <select value={days} onChange={e => setDays(Number(e.target.value))}>
+              <select value={days} onChange={e => setDays(Number(e.target.value))} disabled={!!searchUrl} title={searchUrl ? 'Ignored when a Jora search URL is set' : ''}>
                 <option value={1}>Last 24 hours</option>
                 <option value={7}>Last 7 days</option>
                 <option value={14}>Last 14 days</option>
                 <option value={30}>Last 30 days</option>
               </select>
             </label>
+            <label style={{ gridColumn: '1 / -1' }}>
+              <div>Jora search URL (recent; optional; overrides Location/Days)</div>
+              <select
+                value={searchUrlCustomMode ? '__custom__' : (searchUrl ? (searchUrlHistory.includes(searchUrl) ? searchUrl : '__custom__') : '')}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v === '__custom__') {
+                    setSearchUrlCustomMode(true);
+                    setSearchUrl('');
+                  } else {
+                    setSearchUrlCustomMode(false);
+                    setSearchUrl(v);
+                  }
+                }}
+              >
+                <option value="">— None (use Location/Days) —</option>
+                {searchUrlHistory.map((u, i) => (
+                  <option key={i} value={u}>{u}</option>
+                ))}
+                <option value="__custom__">Custom…</option>
+              </select>
+            </label>
+            {searchUrlCustomMode && (
+              <label style={{ gridColumn: '1 / -1' }}>
+                <div>Paste custom Jora URL</div>
+                <input
+                  value={searchUrl}
+                  onChange={e => setSearchUrl(e.target.value)}
+                  placeholder="https://au.jora.com/j?a=7d&disallow=true&l=NSW&q=Front+End+Developer&sp=facet_listed_date"
+                />
+              </label>
+            )}
             <div style={{ gridColumn: '1 / -1' }}>
               <button aria-busy={loading} disabled={!canSubmit} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: canSubmit ? '#111' : '#888', color: 'white' }}>
                 {loading ? 'Finding…' : 'Find Jobs'}

@@ -104,8 +104,16 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
     try {
       const data = await (req as any).file();
       const fields = (data as any)?.fields || (req as any).body || {};
-      const location = typeof fields.location === 'string' ? fields.location : undefined;
-      const days = fields.days ? Math.max(1, Math.min(60, Number(fields.days))) : undefined;
+      const getField = (obj: any, key: string) => {
+        const v = obj?.[key];
+        if (typeof v === 'string') return v;
+        if (v && typeof v === 'object' && typeof v.value === 'string') return v.value;
+        return undefined;
+      };
+      const location = getField(fields, 'location');
+      const daysRaw = getField(fields, 'days');
+      const days = daysRaw ? Math.max(1, Math.min(60, Number(daysRaw))) : undefined;
+      const manualSearchUrl = getField(fields, 'searchUrl');
       const maxJobs = Number(process.env.MAX_JOBS || 40);
 
       if (!data) return reply.code(400).send({ error: 'cv file required' });
@@ -118,7 +126,10 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const cvText = await bufferToText(data.filename, buf);
 
       const analysis = analyzeCV(cvText);
-      const searchUrls = toJoraSearchUrls(analysis, { location, days });
+      const manualUrls = (manualSearchUrl && manualSearchUrl.trim()) ? [manualSearchUrl.trim()] : [];
+      const searchUrls = manualUrls.length > 0
+        ? manualUrls
+        : toJoraSearchUrls(analysis, { location, days });
       const effectiveTitles = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
       const effectiveSkills = (analysis.topSkills && analysis.topSkills.length ? analysis.topSkills.slice(0, 4) : []);
       ;(req as any).log?.info?.({ titles: effectiveTitles, topSkills: effectiveSkills, urlCount: searchUrls.length, urls: searchUrls }, 'queries built');
