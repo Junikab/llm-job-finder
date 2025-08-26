@@ -97,6 +97,9 @@ function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string; days?
 }
 
 async function scoreJob(_analysis: CVAnalysis, _job: JobItem): Promise<Pick<RankedJob,'score'|'reason'>> {
+  // check if already scored
+  // if not, score:
+  // after, save
   return { score: Math.floor(Math.random() * 101), reason: 'Mock score' };
 }
 
