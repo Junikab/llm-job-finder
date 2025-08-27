@@ -53,7 +53,7 @@ Use the app at http://localhost:5173
 2) Server extracts text (`pdf-parse` for PDF, `mammoth` for DOCX, plain for TXT) and picks simple titles/skills.
 3) It builds Jora URLs (e.g., `https://au.jora.com/j?...`).
 4) Scraper visits those pages and collects jobs (bounded by env limits).
-5) Jobs are scored (mock random score for now) and returned to the web app.
+5) Jobs are scored based on SCORE_MODE (default random) and returned to the web app. Heuristic mode adds reason strings; LLM mode is planned and currently falls back to heuristic.
 6) Optional: server can save JSON snapshots of raw and scored jobs to disk (see Job DB below).
 
 
@@ -110,12 +110,23 @@ From `.env.example` (root):
 - `MAX_JOBS=40` — cap total jobs
 - `MAX_PAGES=3` — cap pages per search URL
 - `JORA_REGION=au` — Jora region prefix (domain)
+- `SCORE_MODE=random` — scoring mode: `random` | `heuristic` | `llm` (llm currently falls back to heuristic)
 - `OPENAI_API_KEY=` — reserved for future LLM mode (not used in mock mode)
 
 Additional (supported by server code):
 - `SCRAPE_TOTAL_TIMEOUT_MS` — max total scrape time (optional)
 - `JOB_DB_WRITE=false|true` — controls JSON snapshot writes; note: current code writes when the value is `'false'` (temporary dev inversion)
 - `JOB_DB_DIR` — base directory to write/read job JSON (default: `<cwd>/db`)
+
+## Scoring modes
+- **random** (default): returns a random 0–100 score with reason `random`.
+- **heuristic**: additive signals with reasons:
+  - title keyword match (up to +30, based on CV titles/skills)
+  - recency based on `listedAgo` (0–25)
+  - remote/hybrid indicator (+5)
+  - salary presence (+5)
+  Reason string lists components, e.g., `title +20, recency +15, remote +5, salary +5`.
+- **llm**: reserved for future integration; currently falls back to heuristic and appends `llm-disabled` to the reason.
 
 
 ## Job DB (JSON snapshots)
