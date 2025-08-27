@@ -164,6 +164,19 @@ LLM integration is planned but not wired yet. Today, scoring is mocked (random) 
 Privacy note: When LLM mode is enabled in the future, extracted CV text and job snippets may be sent to the provider for scoring.
 
 
+## Prompt builder (dev utility)
+- Code: `apps/server/src/services/prompt.ts`
+  - `formatJobForPrompt(job)`
+  - `buildJobRelevancePrompt(analysis, job)`
+  - `parseRelevanceScore(text)`
+- Demo:
+  ```bash
+  npm --workspace apps/server run prompt:demo
+  ```
+  Prints a sample prompt and demonstrates score parsing.
+- Tests: `apps/server/test/prompt.spec.ts`
+
+
 ## Testing
 - Web tests:
 ```

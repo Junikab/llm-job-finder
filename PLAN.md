@@ -1,6 +1,6 @@
 # Project Plan — Jora LLM Job Finder (Mock Mode)
 
-Last updated: 2025-08-25
+Last updated: 2025-08-26
 
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
@@ -32,9 +32,9 @@ Last updated: 2025-08-25
 
 ### M3 — Seed Titles/Skills Heuristic (Day 4–5)
 - Tasks
-    - Simple keyword extraction: From the CV text, pick obvious tech/role keywords (e.g., React, Node, “Frontend Developer”) using a small list or basic rules.
-    - Fixed fallbacks: If we can’t find keywords, use a preset list for the stack (e.g., frontend: React, JavaScript, TypeScript).
-    - Build the query: Combine keywords into a search like “(React Developer OR Frontend Developer)” and also apply the chosen location and days filters.
+    - Simple keyword extraction: From the CV text, pick obvious tech/role keywords (e.g., React, Node, “Frontend Developer”) using a small synonym map and frequency counts. [Done]
+    - Fixed fallbacks: If we can’t find keywords, use a preset list for the stack (e.g., frontend: React, JavaScript, TypeScript). [Done]
+    - Build the query: Combine keywords into a search like “(React Developer OR Frontend Developer)” with location and days filters. [Done]
 - Acceptance
   - Queries reflect at least one relevant title from CV or fallback
 
@@ -86,8 +86,8 @@ Last updated: 2025-08-25
 - [x] API: ensure req.file() + fields from data.fields fallback
 - [x] File types: .pdf/.docx/.txt; clear 400 for others
 - [x] Logging: file name, size (approx), location, days, timing
-- [ ] Env: MAX_PAGES, MAX_JOBS, SCRAPER_HEADLESS documented
-- [ ] Scraper: dedupe, retries, timeouts, pagination caps
+- [x] Env: MAX_PAGES, MAX_JOBS, SCRAPER_HEADLESS documented
+- [ ] Scraper: dedupe, retries, timeouts, pagination caps (retry once and caps wired in API; in-scraper dedupe TBD)
 - [x] Heuristic: titles/skills extraction (first pass)
 - [x] Query builder: basic `(title OR group)` + location, days
 - [ ] Scoring flag: `SCORE_MODE=heuristic|random`
@@ -98,8 +98,12 @@ Last updated: 2025-08-25
 - [x] Web UI: Saved tab with reload and rating + feedback POST
 - [x] Tests: basic web App flow and DB endpoints (add more)
 - [ ] Fixtures: sample CVs and SERP HTML
-- [ ] README: quickstart; curl examples; troubleshooting
+- [x] README: quickstart; curl examples; troubleshooting
 - [x] .env.example: template for local dev
+
+- [x] Prompt builder: `buildJobRelevancePrompt` + `parseRelevanceScore`
+- [x] Prompt demo script: `npm --workspace apps/server run prompt:demo`
+- [x] Tests: prompt unit tests (`apps/server/test/prompt.spec.ts`)
 
 - [x] DB-1: per-job JSON snapshots after scrape (db/raw; stable filenames)
 - [x] DB-2: write scored JSON after scoring (db/scored; stable filenames; overwrite)
@@ -125,7 +129,13 @@ Last updated: 2025-08-25
 
 ## 6. Follow-ups (Post-MVP)
 - PDF parsing is enabled; consider gating behind a feature flag if needed
-- Bring back LLM analysis (OpenAI or local) with schema validation
+- Add `SCORE_MODE` and implement heuristic ranking + reason strings
+- Bring in LLM rerank behind a flag using the new prompt builder; add schema/response validation
 - Better ranking using embeddings or learned weights
 - Job detail enrichment (salary range parse, benefits, remote policy)
 - Persist recent searches and add favorites
+
+## 7. Recommendation — sequence before enabling LLM
+- Start by implementing heuristic scoring with clear reasons and a toggle (`SCORE_MODE=random|heuristic|llm`).
+- Add tests and logging for the heuristic to establish a stable baseline and cost-free ranking.
+- Then integrate optional LLM reranking for top-N using `buildJobRelevancePrompt` and `parseRelevanceScore`, guarded by env flags and concurrency/timeouts.

@@ -1,6 +1,6 @@
 # Jora LLM Job Finder — Design Document
 
-Last updated: 2025-08-20
+Last updated: 2025-08-26
 
 ## 1. Purpose and Scope
 This document describes the architecture, design decisions, data flow, and operational details of the Jora LLM Job Finder monorepo. It is written for contributors and maintainers to quickly understand how the system works, how to run it locally, and where to extend it.
@@ -10,7 +10,7 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 ## 2. Goals and Non-Goals
 - Goals
   - Upload a CV and a search scope (location, days) via API.
-  - Extract text from supported CV formats (.docx, .txt; PDFs temporarily disabled).
+  - Extract text from supported CV formats (.pdf, .docx, .txt).
   - Analyze CV to produce a minimal summary (mocked) and fallback job titles.
   - Generate Jora search URLs and scrape job listings.
   - Score jobs and return ranked results (scoring mocked as random).
@@ -19,13 +19,12 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 - Non-Goals (for now)
   - Real LLM analysis and JSON validation (OpenAI disabled).
   - Advanced ranking logic and personalization.
-  - PDF extraction (temporarily disabled due to import/runtime issues).
   - Production hardening (rate limiting, full security hardening, etc.).
 
 ## 3. Repository Structure (Monorepo)
 - apps/
   - server/ — Fastify API (TypeScript)
-  - web/ — React/Vite web app (future integration)
+  - web/ — React/Vite web app
 - packages/
   - scraper/ — Playwright + Cheerio-based Jora scraper
 
@@ -38,10 +37,10 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 
 ## 5. Data Flow
 1) POST /api/jobs/find (multipart/form-data)
-   - Fields: file (required .docx or .txt), location (string), days (1–60)
+   - Fields: cv (required .pdf/.docx/.txt), location (string), days (1–60)
 2) Server
    - Reads the file via Fastify multipart (req.file). Note: attachFieldsToBody is disabled to ensure reliable req.file() in dev.
-   - Extracts text via Mammoth (.docx) or utf-8 (.txt). PDFs rejected.
+   - Extracts text via pdf-parse (.pdf), Mammoth (.docx), or utf-8 (.txt).
    - analyzeCV: returns a summary slice and empty arrays for titles/skills in mock mode.
    - Generates a search URL with fallback titles (e.g., "software developer OR frontend developer").
    - Invokes the scraper with limits (pages/jobs) to fetch job cards.
@@ -54,7 +53,7 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 
 - POST /api/jobs/find
   - Request (multipart):
-    - file: .docx or .txt (PDFs disabled)
+    - cv: .pdf, .docx, or .txt
     - location: string (e.g., "Sydney NSW")
     - days: integer (1–60)
   - Response (JSON):
@@ -66,16 +65,26 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 ## 7. Server Implementation (apps/server)
 - Framework: Fastify (TypeScript)
 - Plugins: @fastify/multipart, @fastify/cors, @fastify/formbody
-- Multipart config: attachFieldsToBody is disabled to ensure req.file() works reliably with curl during development. Fields are taken from data.fields (fallback to req.body).
+- Multipart config: attachFieldsToBody is disabled to ensure req.file() works reliably with curl; fields are taken from data.fields (fallback to req.body).
 - File limits: 5MB, max 1 file.
-- File types: .docx, .txt (PDF disabled; throws explicit error if uploaded).
+- File types: .pdf, .docx, .txt.
 - Text extraction:
+  - .pdf → pdf-parse to extract text from buffer.
   - .docx → Mammoth to extract paragraphs and join with newlines.
   - .txt → Buffer decoded as utf-8.
 - Analysis (mock):
   - Returns the first ~200 characters as summary; arrays are empty.
 - Scoring (mock):
   - Random integer [0..100]; reason "Mock score".
+
+### Prompt Builder Utility (LLM prep)
+- Location: `apps/server/src/services/prompt.ts`
+- Functions:
+  - `formatJobForPrompt(job)` — stable, readable block of job fields for prompts.
+  - `buildJobRelevancePrompt(analysis, job)` — numbered instructions, CV summary + job block; response must be a single number (0–100).
+  - `parseRelevanceScore(text)` — extracts, rounds, and clamps a numeric score from a model response.
+- Demo: `npm --workspace apps/server run prompt:demo` prints a sample prompt and parses a mocked response.
+- Tests: `apps/server/test/prompt.spec.ts` cover formatting, composition, and parsing.
 
 ## 8. Scraper (packages/scraper)
 - Tools: Playwright for page navigation; Cheerio for DOM parsing.
@@ -89,7 +98,13 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 - MAX_PAGES (default depends on scraper; recommend 1–2 for dev)
 - MAX_JOBS (default 40)
 - CORS_ORIGIN (production only; dev uses origin: true)
-- OPENAI_API_KEY / OPENAI_MODEL — Not used in mock mode.
+- OPENAI_API_KEY — reserved for future LLM usage (not used in mock mode)
+
+- Reserved for future LLM mode (not yet wired):
+  - LLM_MODE: off | rerank | replace
+  - LLM_TOP_N: e.g., 10
+  - LLM_CONCURRENCY: e.g., 2
+  - LLM_TIMEOUT_MS: e.g., 8000
 
 ## 10. Running Locally
 - Start API (watch mode):
@@ -99,11 +114,10 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
   curl http://localhost:5174/health
 
 - Test job search (single line):
-  curl -F "file=@/path/to/your.cv.docx" -F "location=Sydney NSW" -F "days=7" http://localhost:5174/api/jobs/find
+  curl -F "cv=@/path/to/your.cv.docx" -F "location=Sydney NSW" -F "days=7" http://localhost:5174/api/jobs/find
 
 - Notes:
-  - Ensure file exists and is .docx or .txt.
-  - PDFs are rejected with a clear error message.
+  - Ensure file exists and is .pdf, .docx, or .txt.
 
 ## 11. Observability & Error Handling
 - Fastify logger enabled (info-level) with request/response logs.
@@ -111,7 +125,7 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 - Try/catch around route handler; non-expected errors return 500 with message.
 
 ## 12. Security Considerations (Dev/MVP)
-- File size limited to 5MB; only .docx/.txt allowed.
+- File size limited to 5MB; allowed types: .pdf/.docx/.txt.
 - CORS open in dev; configure CORS_ORIGIN for production.
 - No rate limiting yet (consider @fastify/rate-limit for prod).
 - No persistent storage of CVs; processed in-memory.
@@ -122,7 +136,7 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 
 ## 14. Key Design Decisions
 - Mock mode to remove OpenAI dependency and speed up iteration.
-- Disabled PDF support due to import/runtime issues with pdf-parse in the current environment.
+- PDF support enabled using pdf-parse for improved UX and parity with DOCX/TXT.
 - Multipart attachFieldsToBody disabled to ensure req.file() reliability with curl; fields read from data.fields.
 - Random scoring to unblock UI/flow testing.
 
@@ -131,10 +145,9 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 - Retaining OpenAI integration behind a flag. Deferred to keep surface area small and builds fast.
 
 ## 16. Future Work
-- Re-enable OpenAI-based analysis and structured JSON responses.
-- Heuristic or embedding-based scoring to replace random scores.
-- PDF support re-introduction with a stable parser and typings.
-- Frontend integration (apps/web) with file upload UI and results display.
+- Add optional LLM rerank/replace using the prompt builder, behind env flags; include schema/response validation and timeouts/concurrency.
+- Heuristic or embedding-based scoring to replace random scores and provide human-readable reasons.
+- Improve PDF extraction robustness (edge PDFs, encoding) and add tests/fixtures.
 - Caching, deduplication, and job detail enrichment.
 - Production hardening: rate limiting, auth (if needed), observability (metrics, tracing), CI/CD.
 
