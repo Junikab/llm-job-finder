@@ -154,6 +154,47 @@ function scoreHeuristic(analysis: CVAnalysis, job: JobItem): Pick<RankedJob, 'sc
   return { score: final, reason: reasons.length ? reasons.join(', ') : 'heuristic: baseline' };
 }
 
+type LLMConfig = {
+  mode: 'off' | 'rerank' | 'replace';
+  topN: number;
+  concurrency: number;
+  timeoutMs: number;
+  apiKey?: string;
+};
+
+function getLLMConfig(): LLMConfig {
+  const modeRaw = (process.env.LLM_MODE || 'off').toLowerCase();
+  const mode: LLMConfig['mode'] = modeRaw === 'rerank' || modeRaw === 'replace' ? (modeRaw as any) : 'off';
+  const topN = Math.max(1, Math.min(50, Number(process.env.LLM_TOP_N || 10)));
+  const concurrency = Math.max(1, Math.min(5, Number(process.env.LLM_CONCURRENCY || 2)));
+  const timeoutMs = Math.max(1000, Math.min(60000, Number(process.env.LLM_TIMEOUT_MS || 8000)));
+  const apiKey = process.env.OPENAI_API_KEY || undefined;
+  return { mode, topN, concurrency, timeoutMs, apiKey };
+}
+
+/**
+ * Optionally rerank the already-scored results using LLM (scaffold).
+ * Currently a stub: only appends a note when rerank would apply; returns input unchanged.
+ */
+export async function maybeRerankWithLLM(
+  analysis: CVAnalysis,
+  scored: Array<JobItem & { score: number; reason: string }>
+): Promise<Array<JobItem & { score: number; reason: string }>> {
+  const scoreMode = getScoreMode();
+  const cfg = getLLMConfig();
+  if (scoreMode !== 'llm' || cfg.mode !== 'rerank' || !cfg.apiKey) {
+    return scored;
+  }
+
+  // Stub: In future, build prompts and call model for topN.
+  // For now, annotate and return unchanged ordering to keep behavior predictable in dev/tests.
+  const topN = Math.min(cfg.topN, scored.length);
+  const out = scored.map((j, idx) => (
+    idx < topN ? { ...j, reason: `${j.reason}; llm-rerank-stub` } : j
+  ));
+  return out;
+}
+
 /**
  * Score a single job given the CV analysis. Heuristic by default; random if specified; LLM stub.
  */

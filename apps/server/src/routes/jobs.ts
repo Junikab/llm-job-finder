@@ -6,7 +6,7 @@ import { bufferToText } from '../lib/cv.js';
 import { parseListedAgoToDays } from '../lib/utils.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
-import { scoreJob } from '../services/scoring.js';
+import { scoreJob, maybeRerankWithLLM } from '../services/scoring.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);
@@ -192,17 +192,20 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       );
       scored.sort((a, b) => (b.score || 0) - (a.score || 0));
 
+      // Optional LLM rerank (scaffold). Returns same list with annotations when enabled.
+      const reranked = await maybeRerankWithLLM(analysis, scored as any);
+
       if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
         const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
         try {
-          await saveScoredJobs((req as any).id, dir, scored as any);
-          (req as any).log?.info?.({ dir: path.join(dir, 'scored'), count: scored.length }, 'db scored write completed');
+          await saveScoredJobs((req as any).id, dir, reranked as any);
+          (req as any).log?.info?.({ dir: path.join(dir, 'scored'), count: reranked.length }, 'db scored write completed');
         } catch (err) {
           (req as any).log?.warn?.({ err }, 'db scored write failed');
         }
       }
 
-      return reply.send({ analysis, searchUrls, total: scored.length, results: scored });
+      return reply.send({ analysis, searchUrls, total: reranked.length, results: reranked });
     } catch (err: any) {
       (req as any).log?.error?.({ err }, 'jobs.find failed');
       return reply.code(500).send({ error: 'Failed to process request' });
