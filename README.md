@@ -53,7 +53,7 @@ Use the app at http://localhost:5173
 2) Server extracts text (`pdf-parse` for PDF, `mammoth` for DOCX, plain for TXT) and picks simple titles/skills.
 3) It builds Jora URLs (e.g., `https://au.jora.com/j?...`).
 4) Scraper visits those pages and collects jobs (bounded by env limits).
-5) Jobs are scored based on SCORE_MODE (default random) and returned to the web app. Heuristic mode adds reason strings; LLM mode is planned and currently falls back to heuristic.
+5) Jobs are scored based on SCORE_MODE and returned to the web app. Heuristic mode adds reason strings. When SCORE_MODE=llm and LLM_MODE=replace with a valid OPENAI_API_KEY, the server calls OpenAI per job using a detailed prompt, with concurrency and timeouts; failures gracefully fall back to heuristic.
 6) Optional: server can save JSON snapshots of raw and scored jobs to disk (see Job DB below).
 
 
@@ -110,8 +110,8 @@ From `.env.example` (root):
 - `MAX_JOBS=40` — cap total jobs
 - `MAX_PAGES=3` — cap pages per search URL
 - `JORA_REGION=au` — Jora region prefix (domain)
-- `SCORE_MODE=random` — scoring mode: `random` | `heuristic` | `llm` (llm currently falls back to heuristic)
-- `OPENAI_API_KEY=` — reserved for future LLM mode (not used in mock mode)
+- `SCORE_MODE=random` — scoring mode: `random` | `heuristic` | `llm`
+- `OPENAI_API_KEY=` — required when LLM is enabled (replace or rerank)
 
 Additional (supported by server code):
 - `SCRAPE_TOTAL_TIMEOUT_MS` — max total scrape time (optional)
@@ -126,7 +126,10 @@ Additional (supported by server code):
   - remote/hybrid indicator (+5)
   - salary presence (+5)
   Reason string lists components, e.g., `title +20, recency +15, remote +5, salary +5`.
-- **llm**: reserved for future integration; currently falls back to heuristic and appends `llm-disabled` to the reason.
+- **llm**: enable LLM features controlled by `LLM_MODE`:
+  - `replace`: per-job LLM scoring replaces heuristic. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to heuristic and annotates the reason (e.g., `llm-replace-error: timeout`).
+  - `rerank`: top-N rerank scaffold (keeps original scores, may append short LLM reason notes; currently a stub).
+  Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
 
 
 ## Job DB (JSON snapshots)
@@ -162,17 +165,30 @@ if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
 If you prefer the normal semantics (write when `JOB_DB_WRITE=true`), switch the check to `=== 'true'` in both raw and scored write blocks.
 
 
-## LLM mode (planned)
-LLM integration is planned but not wired yet. Today, scoring is mocked (random) for speed.
+## LLM mode
+LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and a single numeric score (0–100) is parsed. Rerank mode is scaffolded.
 
-- Planned envs (ignored until wired):
-  - `LLM_MODE`: `off` | `rerank` (top N) | `replace` (LLM only)
+- Relevant envs:
+  - `LLM_MODE`: `off` | `rerank` (top N) | `replace` (LLM per job)
   - `LLM_TOP_N`: e.g. `10`
-  - `LLM_CONCURRENCY`: e.g. `2`
-  - `LLM_TIMEOUT_MS`: e.g. `8000`
+  - `LLM_CONCURRENCY`: e.g. `2` (max parallel LLM calls)
+  - `LLM_TIMEOUT_MS`: e.g. `8000` (per-call timeout in ms)
   - `OPENAI_API_KEY`: required when LLM is enabled
+  - `OPENAI_MODEL`: e.g. `gpt-4o-mini`
+  - `LLM_GOOD_TRAITS` / `LLM_BAD_TRAITS`: optional compact guidance strings injected into the prompt
+  - `LLM_LOG=debug`: optional verbose logging of LLM requests/results
 
-Privacy note: When LLM mode is enabled in the future, extracted CV text and job snippets may be sent to the provider for scoring.
+Privacy note: When LLM mode is enabled, extracted CV text and job snippets are sent to the provider for scoring.
+
+### Compact prompt customization
+To guide the model without pasting long examples, set concise traits in `.env`:
+
+```
+LLM_GOOD_TRAITS=junior, React/TypeScript, mentorship, remote, Sydney/NSW
+LLM_BAD_TRAITS=senior-only, backend-only Java, no UI, on-site far away
+```
+
+These appear in the prompt after the CV summary and before the rubric, keeping token usage low.
 
 
 ## Prompt builder (dev utility)
@@ -214,6 +230,6 @@ npx playwright install chromium
 
 
 ## Notes
-- LLM scoring is currently mocked (random) for speed; reasons show "Mock score".
+- Default scoring is heuristic unless you enable LLM via env vars.
 - Recent CVs are stored locally in your browser (IndexedDB) to let you re-use or remove them.
 - This code is for educational/dev purposes. Be mindful of scraping limits and site terms.

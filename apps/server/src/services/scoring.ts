@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { normalizeJobKey, safeFileName, shortHash } from '../lib/job-keys.js';
+import { buildJobRelevancePrompt, parseRelevanceScore } from './prompt.js';
 
 /**
  * Scoring-related helpers and persistence for scored job snapshots.
@@ -174,6 +175,16 @@ function getLLMConfig(): LLMConfig {
   return { mode, topN, concurrency, timeoutMs, apiKey, model };
 }
 
+/**
+ * Expose an appropriate concurrency for scoring jobs end-to-end.
+ * If LLM replace-mode is enabled, use its configured concurrency; otherwise default to 3.
+ */
+export function scoringConcurrency(): number {
+  const mode = getScoreMode();
+  const cfg = getLLMConfig();
+  return mode === 'llm' && cfg.mode === 'replace' ? cfg.concurrency : 3;
+}
+
 function formatLLMError(err: any): string {
   try {
     if (err && typeof err === 'object' && (err as any).name === 'AbortError') return 'timeout';
@@ -320,6 +331,50 @@ async function callOpenAIChatJSON(
   }
 }
 
+// Chat call for plain text responses (no JSON response_format), suitable for single-number scoring.
+async function callOpenAIChatText(
+  cfg: LLMConfig,
+  system: string,
+  user: string
+): Promise<{ content: string }> {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
+  try {
+    const tStart = Date.now();
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${cfg.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        temperature: 0,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ]
+      }),
+      signal: controller.signal as any
+    } as any);
+    if (!res.ok) {
+      const txt = await (res as any).text?.();
+      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+        console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
+      }
+      throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
+    }
+    const data: any = await (res as any).json();
+    const content = data?.choices?.[0]?.message?.content || '';
+    if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+      console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
+    }
+    return { content };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 /**
  * Score a single job given the CV analysis. Heuristic by default; random if specified; LLM stub.
  */
@@ -334,7 +389,32 @@ export async function scoreJob(
   if (mode === 'heuristic') {
     return scoreHeuristic(_analysis, _job);
   }
-  // LLM: not yet implemented; fallback to heuristic for now
+  // LLM mode
+  const cfg = getLLMConfig();
+  if (cfg.mode === 'replace' && cfg.apiKey) {
+    const system = 'You score job relevance precisely. Output only a single integer 0-100, no extra text.';
+    const user = buildJobRelevancePrompt({ summary: _analysis.summary ?? '' }, _job);
+    try {
+      const { content } = await callOpenAIChatText(cfg, system, user);
+      const n = parseRelevanceScore(content || '');
+      if (n !== null) {
+        return { score: n, reason: `llm-replace ${cfg.model}` };
+      }
+      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+        console.warn('[llm] replace parse failed', { content: String(content || '').slice(0, 160) });
+      }
+      const h = scoreHeuristic(_analysis, _job);
+      return { score: h.score, reason: `${h.reason}; llm-replace-error: no-number` };
+    } catch (err: any) {
+      const errMsg = formatLLMError(err);
+      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+        console.warn('[llm] replace failed', { err: errMsg });
+      }
+      const h = scoreHeuristic(_analysis, _job);
+      return { score: h.score, reason: `${h.reason}; llm-replace-error: ${errMsg}` };
+    }
+  }
+  // If LLM not configured for replace, fallback to heuristic and annotate
   const h = scoreHeuristic(_analysis, _job);
   return { score: h.score, reason: `${h.reason}; llm-disabled` };
 }

@@ -23,11 +23,16 @@ export function formatJobForPrompt(job: JobItem): string {
 export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, job: JobItem): string {
   const summary = (analysis.summary ?? '').trim();
   const jobBlock = formatJobForPrompt(job);
+  const goodTraits = (process.env.LLM_GOOD_TRAITS || '').trim();
+  const badTraits = (process.env.LLM_BAD_TRAITS || '').trim();
   return [
     'You are an expert job relevance scorer. Output a single integer (0-100) only.',
     '',
     'Candidate profile (CV summary):',
     summary.length > 0 ? summary : '(empty)',
+    ...(goodTraits || badTraits ? ['','Compact prompt customization (optional):'] : []),
+    ...(goodTraits ? [`Good traits: ${goodTraits}`] : []),
+    ...(badTraits ? [`Bad traits: ${badTraits}`] : []),
     '',
     'Scoring rubric (apply cumulatively):',
     '- Role/seniority fit: prefer junior/entry/graduate roles; penalize mid/senior-only roles.',

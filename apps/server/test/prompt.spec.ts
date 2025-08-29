@@ -32,12 +32,13 @@ describe('prompt services', () => {
     const analysis = { summary: 'Senior frontend engineer skilled in React and TypeScript.' };
     const prompt = buildJobRelevancePrompt(analysis, job);
 
-    // Section markers
-    expect(prompt).toContain('1. Your task is to rank');
-    expect(prompt).toContain('2. This is the CV summary:');
-    expect(prompt).toContain('3. This is the job details:');
-    expect(prompt).toContain('4. Rank the relevance of this job for the CV from 0 to 100.');
-    expect(prompt).toContain('5. Provide the response as a single number only');
+    // Structure markers (updated rubric-based prompt)
+    expect(prompt).toContain('You are an expert job relevance scorer.');
+    expect(prompt).toContain('Candidate profile (CV summary):');
+    expect(prompt).toContain('Scoring rubric (apply cumulatively):');
+    expect(prompt).toContain('Calibration examples (concise):');
+    expect(prompt).toContain('Now score the job below');
+    expect(prompt).toContain('Answer with a single integer only');
 
     // Content presence
     expect(prompt).toContain(analysis.summary);

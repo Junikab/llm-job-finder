@@ -6,7 +6,7 @@ import { bufferToText } from '../lib/cv.js';
 import { parseListedAgoToDays } from '../lib/utils.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
-import { scoreJob, maybeRerankWithLLM } from '../services/scoring.js';
+import { scoreJob, maybeRerankWithLLM, scoringConcurrency } from '../services/scoring.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);
@@ -186,7 +186,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       });
       const toScore = heuristicSorted.slice(0, Math.min(filteredJobs.length, 30));
 
-      const limit = pLimit(3);
+      const limit = pLimit(scoringConcurrency());
       const scored = await Promise.all(
         toScore.map(job => limit(async () => ({ ...job, ...(await scoreJob(analysis, job)) })))
       );
