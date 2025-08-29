@@ -24,15 +24,33 @@ export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, j
   const summary = (analysis.summary ?? '').trim();
   const jobBlock = formatJobForPrompt(job);
   return [
-    '1. Your task is to rank how relevant the following job is for the provided CV summary in a job search application.',
-    '2. This is the CV summary:',
+    'You are an expert job relevance scorer. Output a single integer (0-100) only.',
+    '',
+    'Candidate profile (CV summary):',
     summary.length > 0 ? summary : '(empty)',
     '',
-    '3. This is the job details:',
+    'Scoring rubric (apply cumulatively):',
+    '- Role/seniority fit: prefer junior/entry/graduate roles; penalize mid/senior-only roles.',
+    '- Tech stack fit: JavaScript/TypeScript, React, CSS, HTML are strong matches; WordPress/Shopify acceptable; penalize roles centered on back-end Java/.NET/PHP without meaningful frontend.',
+    '- Frontend/UI emphasis: prefer roles building web UI; penalize backend/infra/devops-only positions.',
+    '- Learning/mentorship/training: bonus if the role offers growth, mentoring, or training.',
+    '- Location/arrangement: NSW or remote/hybrid-friendly is a bonus; penalize full-time on-site far from Western Sydney (Blacktown LGA).',
+    '- Experience demands: 0–3 years ideal; 3–4 acceptable; >5 years required should be penalized unless explicitly junior-friendly.',
+    '- Non-developer roles (sales/marketing/PM-only) score near 0.',
+    '',
+    'Calibration examples (concise):',
+    'Relevant (score 80–95): Junior Web Developer using HTML/CSS/JS with Tailwind/Vite; training & mentoring; Sydney.',
+    'Relevant (score 80–95): Web Frontend Engineer using React/TypeScript (some Cipress.io); junior-friendly; remote.',
+    'Less relevant (score 5–20): Senior Java backend microservices (7+ years); on-site; minimal UI.',
+    'Less relevant (score 5–20): DevOps/SRE Kubernetes-focused; little to no frontend work.',
+    'Irrelevant (score 0): Sales/Marketing or non-software-development roles.',
+    '',
+    'Now score the job below from 0 to 100. Return only the number with no text.',
+    '',
+    'Job details:',
     jobBlock,
     '',
-    '4. Rank the relevance of this job for the CV from 0 to 100.',
-    '5. Provide the response as a single number only (no text, no explanation).',
+    'Answer with a single integer only (no words, no units).',
   ].join('\n');
 }
 

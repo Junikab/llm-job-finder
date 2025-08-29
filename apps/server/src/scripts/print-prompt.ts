@@ -3,7 +3,7 @@ import type { JobItem } from '../types.js';
 
 // Mock CV analysis summary
 const analysis = {
-  summary: 'Senior frontend engineer with 7+ years experience in React, TypeScript, Node.js, and modern tooling. Strong focus on UI/UX and testing.',
+  summary: 'junior frontend engineer with 3+ years experience in React, TypeScript, Node.js, and modern tooling. Strong focus on UI/UX and testing.',
 };
 
 // Mock Job data
