@@ -1,44 +1,15 @@
-import path from 'path';
-import fs from 'fs/promises';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
-import { normalizeJobKey, safeFileName, shortHash } from '../lib/job-keys.js';
+import { normalizeJobKey } from '../lib/job-keys.js';
 import { buildJobRelevancePrompt, parseRelevanceScore } from './prompt.js';
+import { parseListedAgoToDays } from '../lib/utils.js';
 
 /**
- * Scoring-related helpers and persistence for scored job snapshots.
- * This module is intended to grow with heuristic/LLM logic.
+ * Scoring-related helpers (heuristic and LLM) for ranking jobs.
  */
 
-/**
- * Persist scored job snapshots to `<dir>/scored/`.
- */
-export async function saveScoredJobs(
-  reqId: string,
-  dir: string,
-  scored: Array<JobItem & { score?: number | null; reason?: string }>
-) {
-  const scoredDir = path.join(dir, 'scored');
-  await fs.mkdir(scoredDir, { recursive: true });
-  await Promise.all(
-    scored.map(async (job, idx) => {
-      const stableKey = normalizeJobKey(((job as any).url || (job as any).id || '') as string);
-      const base = safeFileName(stableKey || (job as any).title || `job-${idx}`);
-      const fname = `${base}_${shortHash(stableKey || base)}_scored.json`;
-      const record = {
-        id: stableKey || null,
-        source: 'jora',
-        scoredAt: new Date().toISOString(),
-        modelScore: typeof (job as any).score === 'number' ? (job as any).score : null,
-        userScore: null as number | null,
-        'job-description': (job as any).description ?? null,
-        reqId,
-        reason: (job as any).reason,
-        data: job,
-      };
-      await fs.writeFile(path.join(scoredDir, fname), JSON.stringify(record, null, 2), 'utf8');
-    })
-  );
-}
+const LLM_DEBUG = (process.env.LLM_LOG || '').toLowerCase() === 'debug';
+
+ 
 
 /**
  * Derive score mode from env.
@@ -53,21 +24,7 @@ function clampScore(n: number): number {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-function parseListedAgoDays(listedAgo?: string): number | null {
-  if (!listedAgo) return null;
-  const s = listedAgo.toLowerCase().trim();
-  if (s.includes('just') || s.includes('today') || s.includes('hour')) return 0;
-  const m = s.match(/(\d+)(\+)?\s*(day|days|d|week|weeks|w|month|months|m)/);
-  if (!m) return null;
-  const value = parseInt(m[1] || '0', 10);
-  const plus = !!m[2];
-  const unit = m[3];
-  let days = value;
-  if (unit.startsWith('week') || unit === 'w') days = value * 7;
-  else if (unit.startsWith('month') || unit === 'm') days = value * 30;
-  if (plus) days = Math.max(days, value); // e.g., 30+ days
-  return days;
-}
+ 
 
 function containsAny(text: string, terms: string[]): boolean {
   if (!text || terms.length === 0) return false;
@@ -121,7 +78,7 @@ function scoreHeuristic(analysis: CVAnalysis, job: JobItem): Pick<RankedJob, 'sc
   }
 
   // Recency
-  const d = parseListedAgoDays(job.listedAgo);
+  const d = parseListedAgoToDays(job.listedAgo);
   let recentPoints = 0;
   if (d !== null) {
     if (d <= 1) recentPoints = 25;
@@ -237,7 +194,7 @@ export async function maybeRerankWithLLM(
 
     if (!order.length) {
       // Annotate that rerank failed; keep original
-      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+      if (LLM_DEBUG) {
         console.warn('[llm] rerank returned no order');
       }
       return top
@@ -271,14 +228,14 @@ export async function maybeRerankWithLLM(
 
     // Append the rest of the list after the reranked top-N
     const out = orderedTop.concat(scored.slice(topN));
-    if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+    if (LLM_DEBUG) {
       console.log('[llm] rerank applied', { topN, ordered: orderedTop.length });
     }
     return out;
   } catch (err: any) {
     // On error, keep original but annotate top-N
     const errMsg = formatLLMError(err);
-    if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+    if (LLM_DEBUG) {
       console.warn('[llm] rerank failed', { err: errMsg });
     }
     return scored.map((j, idx) => (
@@ -315,14 +272,14 @@ async function callOpenAIChatJSON(
     } as any);
     if (!res.ok) {
       const txt = await (res as any).text?.();
-      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+      if (LLM_DEBUG) {
         console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
       }
       throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
     }
     const data: any = await (res as any).json();
     const content = data?.choices?.[0]?.message?.content || '';
-    if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+    if (LLM_DEBUG) {
       console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
     }
     return { content };
@@ -359,14 +316,14 @@ async function callOpenAIChatText(
     } as any);
     if (!res.ok) {
       const txt = await (res as any).text?.();
-      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+      if (LLM_DEBUG) {
         console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
       }
       throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
     }
     const data: any = await (res as any).json();
     const content = data?.choices?.[0]?.message?.content || '';
-    if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+    if (LLM_DEBUG) {
       console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
     }
     return { content };
@@ -376,7 +333,8 @@ async function callOpenAIChatText(
 }
 
 /**
- * Score a single job given the CV analysis. Heuristic by default; random if specified; LLM stub.
+ * Score a single job given the CV analysis.
+ * Modes: random | heuristic | llm (replace-mode implemented with heuristic fallback).
  */
 export async function scoreJob(
   _analysis: CVAnalysis,
@@ -400,14 +358,14 @@ export async function scoreJob(
       if (n !== null) {
         return { score: n, reason: `llm-replace ${cfg.model}` };
       }
-      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+      if (LLM_DEBUG) {
         console.warn('[llm] replace parse failed', { content: String(content || '').slice(0, 160) });
       }
       const h = scoreHeuristic(_analysis, _job);
       return { score: h.score, reason: `${h.reason}; llm-replace-error: no-number` };
     } catch (err: any) {
       const errMsg = formatLLMError(err);
-      if ((process.env.LLM_LOG || '').toLowerCase() === 'debug') {
+      if (LLM_DEBUG) {
         console.warn('[llm] replace failed', { err: errMsg });
       }
       const h = scoreHeuristic(_analysis, _job);

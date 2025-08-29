@@ -25,7 +25,31 @@ export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]
   }));
 }
 
-export { saveScoredJobs } from './scoring.js';
+export async function saveScoredJobs(
+  reqId: string,
+  dir: string,
+  scoredJobs: Array<JobItem & { score?: number; reason?: string }>
+) {
+  const scoredDir = path.join(dir, 'scored');
+  await fs.mkdir(scoredDir, { recursive: true });
+  await Promise.all(scoredJobs.map(async (job, idx) => {
+    const stableKey = normalizeJobKey(job.url || (job as any).id || '');
+    const base = safeFileName(stableKey || job.title || `job-${idx}`);
+    const fname = `${base}_${shortHash(stableKey || base)}_scored.json`;
+    const record = {
+      id: stableKey || null,
+      source: 'jora',
+      scoredAt: new Date().toISOString(),
+      modelScore: (job as any).score ?? null,
+      userScore: null as number | null,
+      reqId,
+      'job-description': (job as any).description ?? null,
+      reason: (job as any).reason ?? null,
+      data: job,
+    };
+    await fs.writeFile(path.join(scoredDir, fname), JSON.stringify(record, null, 2), 'utf8');
+  }));
+}
 
 export async function listJobs(dir: string) {
   const all = [
