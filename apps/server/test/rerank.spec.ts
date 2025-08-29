@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { maybeRerankWithLLM } from '../src/services/scoring.js';
+import { maybeRerankWithLLM } from '../src/services/rerank.js';
 import type { CVAnalysis, JobItem } from '../src/types.js';
 
 const analysis: CVAnalysis = {

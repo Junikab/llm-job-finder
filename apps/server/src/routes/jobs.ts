@@ -6,7 +6,8 @@ import { bufferToText } from '../lib/cv.js';
 import { parseListedAgoToDays } from '../lib/utils.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
-import { scoreJob, maybeRerankWithLLM, scoringConcurrency } from '../services/scoring.js';
+import { scoreJob, scoringConcurrency } from '../services/scoring.js';
+import { maybeRerankWithLLM } from '../services/rerank.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);

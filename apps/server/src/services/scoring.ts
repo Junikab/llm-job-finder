@@ -1,13 +1,15 @@
+import { createHash } from 'crypto';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
 import { buildJobRelevancePrompt, parseRelevanceScore } from './prompt.js';
-import { parseListedAgoToDays } from '../lib/utils.js';
+import { LLM_DEBUG, getLLMConfig, formatLLMError, callOpenAIChatText } from './llm.js';
+import { scoreHeuristic } from './heuristic.js';
 
 /**
  * Scoring-related helpers (heuristic and LLM) for ranking jobs.
  */
 
-const LLM_DEBUG = (process.env.LLM_LOG || '').toLowerCase() === 'debug';
+ 
 
  
 
@@ -20,117 +22,43 @@ function getScoreMode(): 'random' | 'heuristic' | 'llm' {
   return 'random';
 }
 
-function clampScore(n: number): number {
-  return Math.max(0, Math.min(100, Math.round(n)));
+ 
+
+// Simple in-memory TTL + LRU cache for LLM replace-mode scores
+const LLM_CACHE_TTL_MS = Math.max(1, Number(process.env.LLM_CACHE_TTL_MS || 15 * 60 * 1000));
+const LLM_CACHE_MAX = Math.max(1, Number(process.env.LLM_CACHE_MAX || 200));
+type CacheEntry = { score: number; reason: string; t: number };
+const SCORE_CACHE = new Map<string, CacheEntry>();
+
+function hash16(s: string): string {
+  return createHash('sha1').update(s).digest('hex').slice(0, 16);
+}
+
+function cacheGet(key: string): CacheEntry | null {
+  const e = SCORE_CACHE.get(key);
+  if (!e) return null;
+  if (Date.now() - e.t > LLM_CACHE_TTL_MS) {
+    SCORE_CACHE.delete(key);
+    return null;
+  }
+  // refresh LRU
+  SCORE_CACHE.delete(key);
+  SCORE_CACHE.set(key, { ...e, t: Date.now() });
+  return e;
+}
+
+function cacheSet(key: string, entry: CacheEntry) {
+  SCORE_CACHE.set(key, entry);
+  while (SCORE_CACHE.size > LLM_CACHE_MAX) {
+    const firstKey = SCORE_CACHE.keys().next().value as string | undefined;
+    if (!firstKey) break;
+    SCORE_CACHE.delete(firstKey);
+  }
 }
 
  
 
-function containsAny(text: string, terms: string[]): boolean {
-  if (!text || terms.length === 0) return false;
-  const t = text.toLowerCase();
-  return terms.some((w) => t.includes(w));
-}
-
-function extractKeywords(analysis: CVAnalysis, limit = 6): string[] {
-  const out: string[] = [];
-  for (const arr of [analysis.titles || [], analysis.topSkills || []]) {
-    for (const a of arr) {
-      const w = (a || '').toLowerCase().trim();
-      if (w && !out.includes(w)) out.push(w);
-    }
-  }
-  if (out.length < limit) {
-    const summary = (analysis.summary || '').toLowerCase();
-    const words = summary
-      .split(/[^a-z0-9+.#/-]+/i)
-      .map((w) => w.trim())
-      .filter((w) => w.length >= 3 && w.length <= 30);
-    const stop = new Set([
-      'the','and','for','with','you','are','that','from','into','your','this','have','has','was','our','their','his','her','she','him','they','them','will','can','but','not','who','how','what','when','where','why','able','over','more','less','very','use','used','using','work','role','team','experience'
-    ]);
-    for (const w of words) {
-      if (!stop.has(w) && !out.includes(w)) out.push(w);
-      if (out.length >= limit) break;
-    }
-  }
-  return out.slice(0, limit);
-}
-
-function scoreHeuristic(analysis: CVAnalysis, job: JobItem): Pick<RankedJob, 'score' | 'reason'> {
-  let score = 0;
-  const reasons: string[] = [];
-  const title = job.title || '';
-  const desc = job.description || '';
-  const textAll = `${title}\n${desc}`.toLowerCase();
-
-  // Title/keyword match
-  const keywords = extractKeywords(analysis);
-  let titlePoints = 0;
-  if (keywords.length) {
-    const matched = keywords.filter((k) => title.toLowerCase().includes(k));
-    if (matched.length > 0) {
-      // Up to +30 points depending on matches
-      titlePoints = Math.min(30, 10 + matched.length * 5);
-      score += titlePoints;
-      reasons.push(`title +${titlePoints}`);
-    }
-  }
-
-  // Recency
-  const d = parseListedAgoToDays(job.listedAgo);
-  let recentPoints = 0;
-  if (d !== null) {
-    if (d <= 1) recentPoints = 25;
-    else if (d <= 3) recentPoints = 20;
-    else if (d <= 7) recentPoints = 15;
-    else if (d <= 14) recentPoints = 10;
-    else if (d <= 30) recentPoints = 5;
-    if (recentPoints > 0) {
-      score += recentPoints;
-      reasons.push(`recency +${recentPoints}`);
-    }
-  }
-
-  // Remote/hybrid signal
-  let remotePoints = 0;
-  if (containsAny(textAll, ['remote', 'hybrid', 'work from home'])) {
-    remotePoints = 5;
-    score += remotePoints;
-    reasons.push(`remote +${remotePoints}`);
-  }
-
-  // Salary presence
-  let salaryPoints = 0;
-  if (/\$\s?\d|\d+\s?k\b|salary/i.test(desc)) {
-    salaryPoints = 5;
-    score += salaryPoints;
-    reasons.push(`salary +${salaryPoints}`);
-  }
-
-  const final = clampScore(score);
-  return { score: final, reason: reasons.length ? reasons.join(', ') : 'heuristic: baseline' };
-}
-
-type LLMConfig = {
-  mode: 'off' | 'rerank' | 'replace';
-  topN: number;
-  concurrency: number;
-  timeoutMs: number;
-  apiKey?: string;
-  model: string;
-};
-
-function getLLMConfig(): LLMConfig {
-  const modeRaw = (process.env.LLM_MODE || 'off').toLowerCase();
-  const mode: LLMConfig['mode'] = modeRaw === 'rerank' || modeRaw === 'replace' ? (modeRaw as any) : 'off';
-  const topN = Math.max(1, Math.min(50, Number(process.env.LLM_TOP_N || 10)));
-  const concurrency = Math.max(1, Math.min(5, Number(process.env.LLM_CONCURRENCY || 2)));
-  const timeoutMs = Math.max(1000, Math.min(60000, Number(process.env.LLM_TIMEOUT_MS || 8000)));
-  const apiKey = process.env.OPENAI_API_KEY || undefined;
-  const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
-  return { mode, topN, concurrency, timeoutMs, apiKey, model };
-}
+// LLM config moved to ./llm.ts
 
 /**
  * Expose an appropriate concurrency for scoring jobs end-to-end.
@@ -142,195 +70,11 @@ export function scoringConcurrency(): number {
   return mode === 'llm' && cfg.mode === 'replace' ? cfg.concurrency : 3;
 }
 
-function formatLLMError(err: any): string {
-  try {
-    if (err && typeof err === 'object' && (err as any).name === 'AbortError') return 'timeout';
-    const msg = (err && (err as any).message) ? (err as any).message : String(err);
-    return String(msg).replace(/\s+/g, ' ').slice(0, 140);
-  } catch {
-    return 'unknown-error';
-  }
-}
+// formatLLMError moved to ./llm.ts
 
-/**
- * Optionally rerank the already-scored results using LLM (scaffold).
- * Currently a stub: only appends a note when rerank would apply; returns input unchanged.
- */
-export async function maybeRerankWithLLM(
-  analysis: CVAnalysis,
-  scored: Array<JobItem & { score: number; reason: string }>
-): Promise<Array<JobItem & { score: number; reason: string }>> {
-  const scoreMode = getScoreMode();
-  const cfg = getLLMConfig();
-  if (scoreMode !== 'llm' || cfg.mode !== 'rerank' || !cfg.apiKey) {
-    return scored;
-  }
+ 
 
-  const topN = Math.min(cfg.topN, scored.length);
-  const top = scored.slice(0, topN);
-
-  // Build compact items for prompt
-  const topItems = top.map((j, idx) => {
-    const key = normalizeJobKey(((j as any).url || (j as any).id || (j as any).title || `job-${idx}`) as string) || `job-${idx}`;
-    const desc = (j.description || '').replace(/\s+/g, ' ').slice(0, 400);
-    return { id: key, title: j.title || '', listedAgo: j.listedAgo || '', location: (j as any).location || '', description: desc };
-  });
-
-  const profile = {
-    titles: analysis.titles || [],
-    topSkills: analysis.topSkills || [],
-    summary: analysis.summary?.slice(0, 500) || ''
-  };
-
-  const system = 'You are an expert job-ranker. Given a job seeker profile and a list of jobs, return strictly valid JSON with best-to-worst order and a very short reason per job. Keep reasons concise (<=15 words). Do not include any text outside of JSON.';
-  const user = `Profile: ${JSON.stringify(profile)}\nJobs: ${JSON.stringify(topItems)}\nRespond with JSON: {"order": [jobId...], "reasons": {jobId: reason}}`;
-
-  try {
-    const { content } = await callOpenAIChatJSON(cfg, system, user);
-    let parsed: any = null;
-    try { parsed = JSON.parse(content || '{}'); } catch {}
-    const order: string[] = Array.isArray(parsed?.order) ? parsed.order : [];
-    const reasonsMap: Record<string, string> = parsed?.reasons && typeof parsed.reasons === 'object' ? parsed.reasons : {};
-
-    if (!order.length) {
-      // Annotate that rerank failed; keep original
-      if (LLM_DEBUG) {
-        console.warn('[llm] rerank returned no order');
-      }
-      return top
-        .map((j) => ({ ...j, reason: `${j.reason}; llm-rerank-error: no-order` }))
-        .concat(scored.slice(topN));
-    }
-
-    const idToJob = new Map<string, (JobItem & { score: number; reason: string })>();
-    for (let i = 0; i < top.length; i++) {
-      const j = top[i];
-      const key = normalizeJobKey(((j as any).url || (j as any).id || (j as any).title || `job-${i}`) as string) || `job-${i}`;
-      idToJob.set(key, j);
-    }
-
-    const used = new Set<string>();
-    const orderedTop: Array<JobItem & { score: number; reason: string }> = [];
-    for (let i = 0; i < order.length; i++) {
-      const id = String(order[i]);
-      const j = idToJob.get(id);
-      if (!j) continue;
-      used.add(id);
-      const reasonExtra = reasonsMap[id] ? `; llm: ${String(reasonsMap[id]).slice(0, 120)}` : '';
-      orderedTop.push({ ...j, reason: `${j.reason}; llm-rerank pos ${i + 1}${reasonExtra}` });
-    }
-    // Append any not mentioned jobs from the top slice, preserving their relative order
-    for (let i = 0; i < top.length; i++) {
-      const j = top[i];
-      const id = normalizeJobKey(((j as any).url || (j as any).id || (j as any).title || `job-${i}`) as string) || `job-${i}`;
-      if (!used.has(id)) orderedTop.push({ ...j, reason: `${j.reason}; llm-rerank` });
-    }
-
-    // Append the rest of the list after the reranked top-N
-    const out = orderedTop.concat(scored.slice(topN));
-    if (LLM_DEBUG) {
-      console.log('[llm] rerank applied', { topN, ordered: orderedTop.length });
-    }
-    return out;
-  } catch (err: any) {
-    // On error, keep original but annotate top-N
-    const errMsg = formatLLMError(err);
-    if (LLM_DEBUG) {
-      console.warn('[llm] rerank failed', { err: errMsg });
-    }
-    return scored.map((j, idx) => (
-      idx < topN ? { ...j, reason: `${j.reason}; llm-rerank-error: ${errMsg}` } : j
-    ));
-  }
-}
-
-async function callOpenAIChatJSON(
-  cfg: LLMConfig,
-  system: string,
-  user: string
-): Promise<{ content: string }> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
-  try {
-    const tStart = Date.now();
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${cfg.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: cfg.model,
-        temperature: 0,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user }
-        ]
-      }),
-      signal: controller.signal as any
-    } as any);
-    if (!res.ok) {
-      const txt = await (res as any).text?.();
-      if (LLM_DEBUG) {
-        console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
-      }
-      throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
-    }
-    const data: any = await (res as any).json();
-    const content = data?.choices?.[0]?.message?.content || '';
-    if (LLM_DEBUG) {
-      console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
-    }
-    return { content };
-  } finally {
-    clearTimeout(t);
-  }
-}
-
-// Chat call for plain text responses (no JSON response_format), suitable for single-number scoring.
-async function callOpenAIChatText(
-  cfg: LLMConfig,
-  system: string,
-  user: string
-): Promise<{ content: string }> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
-  try {
-    const tStart = Date.now();
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${cfg.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: cfg.model,
-        temperature: 0,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user }
-        ]
-      }),
-      signal: controller.signal as any
-    } as any);
-    if (!res.ok) {
-      const txt = await (res as any).text?.();
-      if (LLM_DEBUG) {
-        console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
-      }
-      throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
-    }
-    const data: any = await (res as any).json();
-    const content = data?.choices?.[0]?.message?.content || '';
-    if (LLM_DEBUG) {
-      console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
-    }
-    return { content };
-  } finally {
-    clearTimeout(t);
-  }
-}
+ 
 
 /**
  * Score a single job given the CV analysis.
@@ -350,13 +94,33 @@ export async function scoreJob(
   // LLM mode
   const cfg = getLLMConfig();
   if (cfg.mode === 'replace' && cfg.apiKey) {
+    // Cache key based on model, stable job identity, job/summary content and traits
+    const goodTraits = (process.env.LLM_GOOD_TRAITS || '').trim();
+    const badTraits = (process.env.LLM_BAD_TRAITS || '').trim();
+    const jobKey = normalizeJobKey(((_job as any).url || ( _job as any).id || (_job as any).title || '') as string) || '';
+    const cacheKey = [
+      cfg.model,
+      jobKey,
+      hash16(_job.description || ''),
+      hash16(_analysis.summary || ''),
+      hash16(`${goodTraits}|${badTraits}`)
+    ].join('|');
+    const hit = cacheGet(cacheKey);
+    if (hit) {
+      if (LLM_DEBUG) {
+        console.log('[llm] cache hit', { jobKey, model: cfg.model });
+      }
+      return { score: hit.score, reason: `${hit.reason} cache-hit` };
+    }
     const system = 'You score job relevance precisely. Output only a single integer 0-100, no extra text.';
     const user = buildJobRelevancePrompt({ summary: _analysis.summary ?? '' }, _job);
     try {
       const { content } = await callOpenAIChatText(cfg, system, user);
       const n = parseRelevanceScore(content || '');
       if (n !== null) {
-        return { score: n, reason: `llm-replace ${cfg.model}` };
+        const reason = `llm-replace ${cfg.model}`;
+        cacheSet(cacheKey, { score: n, reason, t: Date.now() });
+        return { score: n, reason };
       }
       if (LLM_DEBUG) {
         console.warn('[llm] replace parse failed', { content: String(content || '').slice(0, 160) });

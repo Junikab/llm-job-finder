@@ -173,6 +173,8 @@ LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and 
   - `LLM_TOP_N`: e.g. `10`
   - `LLM_CONCURRENCY`: e.g. `2` (max parallel LLM calls)
   - `LLM_TIMEOUT_MS`: e.g. `8000` (per-call timeout in ms)
+  - `LLM_CACHE_TTL_MS`: e.g. `900000` (TTL for in-memory replace-mode score cache)
+  - `LLM_CACHE_MAX`: e.g. `200` (max entries in the in-memory cache; LRU eviction)
   - `OPENAI_API_KEY`: required when LLM is enabled
   - `OPENAI_MODEL`: e.g. `gpt-4o-mini`
   - `LLM_GOOD_TRAITS` / `LLM_BAD_TRAITS`: optional compact guidance strings injected into the prompt
