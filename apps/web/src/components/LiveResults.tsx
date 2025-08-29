@@ -51,21 +51,21 @@ export default function LiveResults({ results, loading }: { results: RankedJob[]
     <>
       {/* Live filters */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-        <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ color: '#333' }}>Min score</span>
           <input type="number" min={0} max={100} value={minScore}
             onChange={e => setMinScore(Math.max(0, Math.min(100, Number(e.target.value))))}
             style={{ width: 72 }} />
-        </label>
-        <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        </label> */}
+        {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ color: '#333' }}>Company</span>
           <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Atlassian" />
-        </label>
-        <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        </label> */}
+        {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ color: '#333' }}>Location</span>
           <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Sydney" />
-        </label>
-        <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        </label> */}
+        {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <span style={{ color: '#333' }}>Days</span>
           <input type="number" min={0} max={60}
             value={maxDays}
@@ -74,9 +74,9 @@ export default function LiveResults({ results, loading }: { results: RankedJob[]
               setMaxDays(v === '' ? '' : Math.max(0, Math.min(60, Number(v))));
             }}
             style={{ width: 72 }} />
-        </label>
-        <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
-          style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
+        </label> */}
+        {/* <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
+          style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button> */}
         <label style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 8 }}>
           <span style={{ color: '#333' }}>Sort by</span>
           <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
