@@ -7,10 +7,26 @@ export function useRecentCVs() {
   const [recent, setRecent] = useState<CVMeta[]>([]);
   const [recentSelectedId, setRecentSelectedId] = useState<string>('');
 
+  // Best-effort: request persistent storage so browsers are less likely to clear data
+  useEffect(() => {
+    (async () => {
+      try {
+        if (typeof navigator !== 'undefined' && (navigator as any).storage?.persist) {
+          await (navigator as any).storage.persist();
+        }
+      } catch (e) {
+        console.warn('recentCVs: storage.persist() failed', e);
+      }
+    })();
+  }, []);
+
   const refreshRecent = useCallback(async () => {
     try {
       setRecent(await listCVs());
-    } catch {}
+    } catch (e) {
+      console.warn('recentCVs: list failed', e);
+      setRecent([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -26,7 +42,15 @@ export function useRecentCVs() {
         const has = existing.some(m => m.name === f.name && m.size === f.size);
         if (!has) await saveCV(f);
         await refreshRecent();
-      } catch {}
+      } catch (e1) {
+        console.warn('recentCVs: save/list failed, attempting direct save', e1);
+        try {
+          await saveCV(f);
+          await refreshRecent();
+        } catch (e2) {
+          console.warn('recentCVs: direct save failed', e2);
+        }
+      }
     }
   }, [refreshRecent]);
 
@@ -36,7 +60,9 @@ export function useRecentCVs() {
     try {
       const f = await getCVFile(id);
       if (f) setFile(f);
-    } catch {}
+    } catch (e) {
+      console.warn('recentCVs: get selected failed', e);
+    }
   }, [recentSelectedId]);
 
   const removeSelectedRecent = useCallback(async () => {
@@ -46,7 +72,9 @@ export function useRecentCVs() {
       await removeCV(id);
       setRecentSelectedId('');
       await refreshRecent();
-    } catch {}
+    } catch (e) {
+      console.warn('recentCVs: remove failed', e);
+    }
   }, [recentSelectedId, refreshRecent]);
 
   return {
