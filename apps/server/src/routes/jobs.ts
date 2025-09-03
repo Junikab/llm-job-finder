@@ -77,7 +77,7 @@ function analyzeCV(cvText: string): CVAnalysis {
   return { summary, titles, topSkills, niceToHave: [] };
 }
 
-function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string; days?: number; }): string[] {
+function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string }): string[] {
   const region = process.env.JORA_REGION || 'au';
   const base = `https://${region}.jora.com/j`;
   const titlesRaw = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
@@ -97,6 +97,47 @@ function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string; days?
   if (skills.length > 0) urls.push(makeUrl(`${titlesQuoted[0]} ${skills[0]}`));
   if (titlesQuoted.length > 1) urls.push(makeUrl(skills.length > 0 ? `${titlesQuoted[1]} ${skills[0]}` : `${titlesQuoted[1]}`));
   return Array.from(new Set(urls));
+}
+
+function dedupeJobs(rawJobs: JobItem[]): JobItem[] {
+  const uniq = new Map<string, JobItem>();
+  for (const j of rawJobs) {
+    const key = normalizeJobKey((j as any).url || (j as any).id || '');
+    if (key && !uniq.has(key)) uniq.set(key, j);
+  }
+  return Array.from(uniq.values());
+}
+
+function filterByDays(jobs: JobItem[], days?: number): JobItem[] {
+  if (typeof days !== 'number') return jobs;
+  return jobs.filter(j => {
+    const d = parseListedAgoToDays(j.listedAgo);
+    return d === null || d <= days;
+  });
+}
+
+function heuristicOrder(jobs: JobItem[], analysis: CVAnalysis): JobItem[] {
+  const skills = new Set((analysis.topSkills || []).map(s => s.toLowerCase()));
+  const titleTokens = new Set((analysis.titles || []).map(t => t.toLowerCase()));
+  const scores = new Map<JobItem, number>();
+  for (const j of jobs) {
+    const t = (j.title || '').toLowerCase();
+    const desc = (j.description || '').toLowerCase();
+    let s = 0;
+    for (const tok of titleTokens) if (t.includes(tok)) s += 2;
+    for (const sk of skills) if (desc.includes(sk)) s += 1;
+    scores.set(j, s);
+  }
+  return [...jobs].sort((a, b) => (scores.get(b)! - scores.get(a)!));
+}
+
+async function scoreJobs(analysis: CVAnalysis, jobsToScore: JobItem[]): Promise<RankedJob[]> {
+  const limit = pLimit(scoringConcurrency());
+  const scored = await Promise.all(
+    jobsToScore.map(job => limit(async () => ({ ...job, ...(await scoreJob(analysis, job)) })))
+  );
+  scored.sort((a, b) => (b.score || 0) - (a.score || 0));
+  return scored as RankedJob[];
 }
 
 export default async function registerJobsRoutes(app: FastifyInstance) {
@@ -131,7 +172,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const manualUrls = (manualSearchUrl && manualSearchUrl.trim()) ? [manualSearchUrl.trim()] : [];
       const searchUrls = manualUrls.length > 0
         ? manualUrls
-        : toJoraSearchUrls(analysis, { location, days });
+        : toJoraSearchUrls(analysis, { location });
       const effectiveTitles = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
       const effectiveSkills = (analysis.topSkills && analysis.topSkills.length ? analysis.topSkills.slice(0, 4) : []);
       ;(req as any).log?.info?.({ titles: effectiveTitles, topSkills: effectiveSkills, urlCount: searchUrls.length, urls: searchUrls }, 'queries built');
@@ -157,12 +198,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const scrapeMs = Date.now() - t0;
 
       // Defensive de-dupe by canonical key (host + pathname, lowercase, no trailing slash)
-      const uniq = new Map<string, JobItem>();
-      for (const j of rawJobs) {
-        const key = normalizeJobKey((j as any).url || (j as any).id || '');
-        if (key && !uniq.has(key)) uniq.set(key, j);
-      }
-      const rawJobsUnique = Array.from(uniq.values());
+      const rawJobsUnique = dedupeJobs(rawJobs);
 
       (req as any).log?.info?.({ scrapeMs, rawCount: rawJobs.length, uniqueCount: rawJobsUnique.length, deduped: rawJobs.length - rawJobsUnique.length }, 'scrape finished');
 
@@ -176,32 +212,10 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         }
       }
 
-      const filteredJobs = typeof days === 'number'
-        ? rawJobsUnique.filter(j => {
-            const d = parseListedAgoToDays(j.listedAgo);
-            return d === null || d <= days;
-          })
-        : rawJobsUnique;
-
-      const skills = new Set(analysis.topSkills.map(s => s.toLowerCase()));
-      const titleTokens = new Set(analysis.titles.map(t => t.toLowerCase()));
-      const heuristicSorted = [...filteredJobs].sort((a, b) => {
-        const score = (j: JobItem) => {
-          const t = (j.title || '').toLowerCase();
-          let s = 0;
-          for (const tok of titleTokens) if (t.includes(tok)) s += 2;
-          for (const sk of skills) if ((j.description || '').toLowerCase().includes(sk)) s += 1;
-          return s;
-        };
-        return score(b) - score(a);
-      });
+      const filteredJobs = filterByDays(rawJobsUnique, days);
+      const heuristicSorted = heuristicOrder(filteredJobs, analysis);
       const toScore = heuristicSorted.slice(0, Math.min(filteredJobs.length, 30));
-
-      const limit = pLimit(scoringConcurrency());
-      const scored = await Promise.all(
-        toScore.map(job => limit(async () => ({ ...job, ...(await scoreJob(analysis, job)) })))
-      );
-      scored.sort((a, b) => (b.score || 0) - (a.score || 0));
+      const scored = await scoreJobs(analysis, toScore);
 
       // Optional LLM rerank (scaffold). Returns same list with annotations when enabled.
       const reranked = await maybeRerankWithLLM(analysis, scored as any);
