@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --open",
     "build": "tsc -p tsconfig.json && vite build",
-    "preview": "vite preview --port 5173",
+    "preview": "vite preview --port 5173 --open",
     "test": "vitest run --reporter=dot",
     "test:watch": "vitest"
   },
