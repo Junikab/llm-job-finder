@@ -90,7 +90,6 @@ function openDB(): Promise<IDBDatabase> {
         const db = req.result;
         if (!db.objectStoreNames.contains(STORE)) {
           const os = db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
-          os.createIndex('addedAt', 'addedAt');
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -115,7 +114,7 @@ async function put(db: IDBDatabase, rec: Omit<CVRecord, 'id'> & Partial<Pick<CVR
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
     const os = tx.objectStore(STORE);
-    const req = os.put(rec as any);
+    const req = os.put(rec);
     let id: number | null = null;
     req.onsuccess = () => { id = req.result as number; };
     req.onerror = () => reject(req.error);
@@ -187,13 +186,8 @@ export async function getCVFile(id: number): Promise<File | null> {
     const db = await openDB();
     const rec = await getById(db, id);
     if (!rec) return null;
-    try {
-      // Construct a File from the stored Blob
-      return new File([rec.blob], rec.name, { type: rec.type, lastModified: rec.addedAt });
-    } catch {
-      // Fallback if File constructor options unsupported
-      return new File([rec.blob], rec.name);
-    }
+    // Construct a File from the stored Blob (modern browsers)
+    return new File([rec.blob], rec.name, { type: rec.type, lastModified: rec.addedAt });
   } catch {
     return await getCVFileFallback(id);
   }
