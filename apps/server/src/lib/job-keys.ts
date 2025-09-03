@@ -12,7 +12,8 @@ export function normalizeJobKey(value: string): string {
   const raw = String(value).trim();
   try {
     const u = raw.startsWith('http') ? new URL(raw) : new URL('https://' + raw.replace(/^\/+/, ''));
-    return `${u.host}${u.pathname}`.toLowerCase();
+    const pathname = u.pathname.replace(/\/+$/, '');
+    return `${u.host}${pathname}`.toLowerCase();
   } catch {
     const noQuery = raw.split('?')[0];
     return noQuery.replace(/^https?:\/\//, '').replace(/\/+$/, '').toLowerCase();

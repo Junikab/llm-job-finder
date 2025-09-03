@@ -8,6 +8,7 @@ import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { scoreJob, scoringConcurrency } from '../services/scoring.js';
 import { maybeRerankWithLLM } from '../services/rerank.js';
+import { normalizeJobKey } from '../lib/job-keys.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);
@@ -154,24 +155,33 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         });
       }
       const scrapeMs = Date.now() - t0;
-      (req as any).log?.info?.({ scrapeMs, rawCount: rawJobs.length }, 'scrape finished');
+
+      // Defensive de-dupe by canonical key (host + pathname, lowercase, no trailing slash)
+      const uniq = new Map<string, JobItem>();
+      for (const j of rawJobs) {
+        const key = normalizeJobKey((j as any).url || (j as any).id || '');
+        if (key && !uniq.has(key)) uniq.set(key, j);
+      }
+      const rawJobsUnique = Array.from(uniq.values());
+
+      (req as any).log?.info?.({ scrapeMs, rawCount: rawJobs.length, uniqueCount: rawJobsUnique.length, deduped: rawJobs.length - rawJobsUnique.length }, 'scrape finished');
 
       if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
         const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
         try {
-          await saveRawJobs((req as any).id, dir, rawJobs);
-          (req as any).log?.info?.({ dir: path.join(dir, 'raw'), count: rawJobs.length }, 'db write completed');
+          await saveRawJobs((req as any).id, dir, rawJobsUnique);
+          (req as any).log?.info?.({ dir: path.join(dir, 'raw'), count: rawJobsUnique.length }, 'db write completed');
         } catch (err) {
           (req as any).log?.warn?.({ err }, 'db write failed');
         }
       }
 
       const filteredJobs = typeof days === 'number'
-        ? rawJobs.filter(j => {
+        ? rawJobsUnique.filter(j => {
             const d = parseListedAgoToDays(j.listedAgo);
             return d === null || d <= days;
           })
-        : rawJobs;
+        : rawJobsUnique;
 
       const skills = new Set(analysis.topSkills.map(s => s.toLowerCase()));
       const titleTokens = new Set(analysis.titles.map(t => t.toLowerCase()));
