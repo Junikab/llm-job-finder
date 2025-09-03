@@ -1,11 +1,11 @@
 # Jora LLM Job Finder — Design Document
 
-Last updated: 2025-08-26
+Last updated: 2025-09-03
 
 ## 1. Purpose and Scope
 This document describes the architecture, design decisions, data flow, and operational details of the Jora LLM Job Finder monorepo. It is written for contributors and maintainers to quickly understand how the system works, how to run it locally, and where to extend it.
 
-Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iteration on scraping, API, and UI integration.
+Current mode: Mock/heuristic by default (fast local iteration). Optional LLM replace-mode is available via env flags.
 
 ## 2. Goals and Non-Goals
 - Goals
@@ -34,6 +34,7 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 - Scraper fetches Jora SERP pages and job details.
 - Server applies mocked scoring to produce ranked results.
 - Server returns JSON to the client.
+ - Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
 
 ## 5. Data Flow
 1) POST /api/jobs/find (multipart/form-data)
@@ -128,7 +129,7 @@ Current mode: Mock mode (no OpenAI calls). The system is optimized for fast iter
 - File size limited to 5MB; allowed types: .pdf/.docx/.txt.
 - CORS open in dev; configure CORS_ORIGIN for production.
 - No rate limiting yet (consider @fastify/rate-limit for prod).
-- No persistent storage of CVs; processed in-memory.
+- No server-side persistence of CVs; processed in-memory on the server. The web client may persist recent CVs locally in the browser (IndexedDB, up to 5; sessionStorage fallback). Use `navigator.storage.persist()` best-effort to reduce eviction.
 
 ## 13. Performance
 - Concurrency limited via p-limit within scraping/scoring loops.

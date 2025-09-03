@@ -1,6 +1,6 @@
 # Project Plan — Jora LLM Job Finder (Mock Mode)
 
-Last updated: 2025-08-26
+Last updated: 2025-09-03
 
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
@@ -54,6 +54,7 @@ Last updated: 2025-08-26
   - Loading and error states; show reason and score columns
 - Acceptance
   - E2E flow: select file → see ranked list → click opens job URL
+  - Recent CVs persist across refresh using IndexedDB (db "cv-store" v2, store "files"), capped at 5 and pruned; falls back to sessionStorage when IndexedDB is unavailable; best-effort `navigator.storage.persist()` requested.
 
 ### M6 — Testing & DX (Week 2)
 - Tasks
@@ -95,6 +96,7 @@ Last updated: 2025-08-26
 - [ ] Reason string explaining score
 - [x] Web UI: upload form + results table
 - [x] Web UI: Recent CVs picker (IndexedDB) with reuse/remove
+- [x] Web UI: Recent CVs persist across refresh; sessionStorage fallback; capped at 5; persistent storage requested
 - [x] Web UI: Saved tab with reload and rating + feedback POST
 - [x] Tests: basic web App flow and DB endpoints (add more)
 - [ ] Fixtures: sample CVs and SERP HTML

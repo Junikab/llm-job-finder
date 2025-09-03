@@ -233,5 +233,6 @@ npx playwright install chromium
 
 ## Notes
 - Default scoring is heuristic unless you enable LLM via env vars.
-- Recent CVs are stored locally in your browser (IndexedDB) to let you re-use or remove them.
+- Recent CVs are stored locally in your browser (IndexedDB). Up to 5 items are kept and older ones are pruned. If IndexedDB is unavailable (e.g., private mode), a sessionStorage fallback stores a base64 Data URL.
+- On load, the web app best-effort requests persistent storage via `navigator.storage.persist()` so browsers are less likely to evict local data.
 - This code is for educational/dev purposes. Be mindful of scraping limits and site terms.
