@@ -4,8 +4,6 @@ import type { RankedJob, CVAnalysis } from '../../server/src/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
-import TabsHeader from './components/TabsHeader';
-import LiveForm from './components/LiveForm';
 import RecentCVs from './components/RecentCVs';
 import SearchUrlPicker from './components/SearchUrlPicker';
 import { useRecentCVs } from './hooks/useRecentCVs';
@@ -20,6 +18,7 @@ export default function App() {
   const [results, setResults] = useState<RankedJob[]>([]);
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [searchUrls, setSearchUrls] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
   // Hero inputs now reuse RecentCVs + File and SearchUrlPicker
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
@@ -170,40 +169,38 @@ export default function App() {
               {loading ? 'Finding…' : 'Find Jobs'}
             </button>
           </form>
-          <div style={{ marginTop: 14, fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
-            {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent Jora URL.'}
+          {/* Hero controls: Sort by */}
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
+              {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent Jora URL.'}
+            </div>
+            <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ color: 'rgba(255,255,255,0.95)' }}>Sort by</span>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'model' | 'recency')}
+                style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.95)', color: '#111' }}
+              >
+                <option value="model">Model score</option>
+                <option value="recency">Recency</option>
+              </select>
+            </label>
           </div>
+          {!!error && (
+            <div style={{ marginTop: 10, background: 'rgba(239, 68, 68, 0.15)', color: '#fee', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '8px 12px', borderRadius: 8, textAlign: 'left' }}>
+              {error}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Main content container */}
       <div style={{ padding: 16, maxWidth: 980, margin: '0 auto' }}>
-        <TabsHeader tab={tab} onChange={setTab} />
-
       {tab === 'live' && (
         <>
-          <LiveForm
-            onSubmit={onSubmit}
-            onFileChange={onFileChange}
-            recent={recent}
-            recentSelectedId={recentSelectedId}
-            onChangeRecentSelected={setRecentSelectedId}
-            onUseSelectedRecent={useSelectedRecent}
-            onRemoveSelectedRecent={removeSelectedRecent}
-            searchUrlSelectValue={searchUrlSelectValue}
-            searchUrlHistory={searchUrlHistory}
-            searchUrlCustomMode={searchUrlCustomMode}
-            searchUrl={searchUrl}
-            onSearchUrlSelectChange={onSearchUrlSelectChange}
-            onChangeSearchUrl={setSearchUrl}
-            canSubmit={canSubmit}
-            loading={loading}
-            error={error}
-          />
-
           <AnalysisHeader analysis={analysis} searchUrls={searchUrls} />
 
-          <LiveResults results={results} loading={loading} />
+          <LiveResults results={results} loading={loading} sortBy={sortBy} />
         </>
       )}
 
