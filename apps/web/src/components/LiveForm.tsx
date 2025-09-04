@@ -9,7 +9,6 @@ export default function LiveForm(props: {
   recent: CVMeta[];
   recentSelectedId: string;
   onChangeRecentSelected: (id: string) => void;
-  onUseSelectedRecent: () => void | Promise<void>;
   searchUrlSelectValue: string;
   searchUrlHistory: string[];
   searchUrlCustomMode: boolean;
@@ -26,7 +25,6 @@ export default function LiveForm(props: {
     recent,
     recentSelectedId,
     onChangeRecentSelected,
-    onUseSelectedRecent,
     searchUrlSelectValue,
     searchUrlHistory,
     searchUrlCustomMode,
@@ -49,7 +47,6 @@ export default function LiveForm(props: {
         recent={recent}
         recentSelectedId={recentSelectedId}
         onChangeSelected={onChangeRecentSelected}
-        onUseSelected={onUseSelectedRecent}
       />
 
       <SearchUrlPicker

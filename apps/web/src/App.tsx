@@ -35,7 +35,6 @@ export default function App() {
     recentSelectedId,
     setRecentSelectedId,
     onFileChange,
-    useSelectedRecent,
   } = useRecentCVs();
 
   // Search URL selection/history via hook
@@ -59,7 +58,11 @@ export default function App() {
 
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || loading) return;
+    if (!file) {
+      showToast('Please upload CV or choose from recent CVs');
+      return;
+    }
+    if (loading) return;
     setLoading(true);
     setError(null);
     setResults([]);
@@ -135,15 +138,22 @@ export default function App() {
             {/* Column 1: Recent CVs (if any) + Choose File */}
             <div style={{ display: 'grid', gap: 8, alignItems: 'center' }}>
               <label style={{ color: '#334155', fontWeight: 600 }}>
-                <div>CV (PDF/DOCX/TXT)</div>
-                <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }} />
+                <div>
+                  <div>Upload CV</div>
+                  <div style={{ fontSize: '0.6em', color: '#334155', fontWeight: 600 }}>(PDF/DOCX/TXT)</div>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  onChange={onFileChange}
+                  style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }}
+                />
               </label>
               {recent.length > 0 && (
                 <RecentCVs
                   recent={recent}
                   recentSelectedId={recentSelectedId}
                   onChangeSelected={setRecentSelectedId}
-                  onUseSelected={useSelectedRecent}
                   fullWidth={false}
                 />
               )}
