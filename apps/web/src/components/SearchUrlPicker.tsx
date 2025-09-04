@@ -12,8 +12,12 @@ export default function SearchUrlPicker(props: {
   const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom, fullWidth = true } = props;
   return (
     <>
-      <label style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined }}>
-        <div>URL picker (optional)</div>
+    <div style={{ display: 'grid', gap: 8, alignItems: 'center' }}>
+      <label style={{ color: '#334155', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+          <span>URL picker </span>
+          <span style={{ fontSize: '0.6em', color: '#334155', fontWeight: 600 }}>(optional)</span>
+        </span>
         <select
           value={selectValue}
           onChange={e => onSelectChange(e.target.value)}
@@ -26,9 +30,10 @@ export default function SearchUrlPicker(props: {
           <option value="__custom__">Custom…</option>
         </select>
       </label>
+    </div>
       {customMode && (
-        <label style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined }}>
-          <div>Paste custom URL</div>
+        <label style={{ color: '#334155', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>Paste custom URL</span>
           <input
             value={searchUrl}
             onChange={e => onChangeCustom(e.target.value)}
