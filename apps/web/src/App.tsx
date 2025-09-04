@@ -27,6 +27,7 @@ export default function App() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = window.setTimeout(() => setToast(null), 1600);
   }, []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Recent CVs (IndexedDB) via hook
   const {
@@ -95,6 +96,12 @@ export default function App() {
   }, [tab]);
 
   // File change, recent CVs handlers are provided by useRecentCVs
+  // Ensure mutually exclusive selection: selecting a recent CV clears the uploaded file input UI
+  useEffect(() => {
+    if (recentSelectedId && fileInputRef.current) {
+      try { fileInputRef.current.value = ''; } catch {}
+    }
+  }, [recentSelectedId]);
 
   useEffect(() => {
     return () => {
@@ -146,6 +153,7 @@ export default function App() {
                   type="file"
                   accept=".pdf,.docx,.txt"
                   onChange={onFileChange}
+                  ref={fileInputRef}
                   style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }}
                 />
               </label>
