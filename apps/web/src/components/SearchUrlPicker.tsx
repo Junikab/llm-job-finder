@@ -9,19 +9,16 @@ export default function SearchUrlPicker(props: {
   onChangeCustom: (value: string) => void;
   fullWidth?: boolean;
 }) {
-  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom, fullWidth = true } = props;
+  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom } = props;
   return (
     <>
-    <div style={{ display: 'grid', gap: 8, alignItems: 'center' }}>
-      <label style={{ color: '#334155', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-          <span>URL picker </span>
-          <span style={{ fontSize: '0.6em', color: '#334155', fontWeight: 600 }}>(optional)</span>
-        </span>
+      <div className="lf-field">
+        <label className="lf-label" htmlFor="lf-url-picker">URL picker (optional)</label>
         <select
+          id="lf-url-picker"
+          className="lf-select"
           value={selectValue}
           onChange={e => onSelectChange(e.target.value)}
-          style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', minWidth: 280 }}
         >
           <option value="">— None (auto-generate from CV) —</option>
           {history.map((u, i) => (
@@ -29,18 +26,18 @@ export default function SearchUrlPicker(props: {
           ))}
           <option value="__custom__">Custom…</option>
         </select>
-      </label>
-    </div>
+      </div>
       {customMode && (
-        <label style={{ color: '#334155', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>Paste custom URL</span>
+        <div className="lf-field">
+          <label className="lf-label" htmlFor="lf-custom-url">Paste custom URL</label>
           <input
+            id="lf-custom-url"
+            className="lf-input"
             value={searchUrl}
             onChange={e => onChangeCustom(e.target.value)}
             placeholder="the recent URL"
-            style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', width: '100%' }}
           />
-        </label>
+        </div>
       )}
     </>
   );
