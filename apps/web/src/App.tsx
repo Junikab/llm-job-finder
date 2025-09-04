@@ -4,8 +4,7 @@ import type { RankedJob, CVAnalysis } from '../../server/src/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
-import RecentCVs from './components/RecentCVs';
-import SearchUrlPicker from './components/SearchUrlPicker';
+import LiveForm from './components/LiveForm';
 import { useRecentCVs } from './hooks/useRecentCVs';
 import { useSearchUrl } from './hooks/useSearchUrl';
 import { useSavedJobs } from './hooks/useSavedJobs';
@@ -141,48 +140,24 @@ export default function App() {
       >
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
           <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0 18px' }}>Lets make it personal</h1>
-          <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
-            {/* Column 1: Recent CVs (if any) + Choose File */}
-            <div style={{ display: 'grid', gap: 8, alignItems: 'center' }}>
-              <label style={{ color: '#334155', fontWeight: 600 }}>
-                <div>
-                  <div>Upload CV</div>
-                  <div style={{ fontSize: '0.6em', color: '#334155', fontWeight: 600 }}>(PDF/DOCX/TXT)</div>
-                </div>
-                <input
-                  type="file"
-                  accept=".pdf,.docx,.txt"
-                  onChange={onFileChange}
-                  ref={fileInputRef}
-                  style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }}
-                />
-              </label>
-              {recent.length > 0 && (
-                <RecentCVs
-                  recent={recent}
-                  recentSelectedId={recentSelectedId}
-                  onChangeSelected={setRecentSelectedId}
-                  fullWidth={false}
-                />
-              )}
-            </div>
-
-            {/* Column 2: URL picker + Submit */}
-            <div style={{ display: 'grid', gap: 10 }}>
-              <SearchUrlPicker
-                selectValue={searchUrlSelectValue}
-                history={searchUrlHistory}
-                customMode={searchUrlCustomMode}
-                searchUrl={searchUrl}
-                onSelectChange={onSearchUrlSelectChange}
-                onChangeCustom={setSearchUrl}
-                fullWidth={false}
-              />
-              <button type="submit" disabled={!canSubmit} aria-busy={loading} style={{ padding: '14px 18px', borderRadius: 8, background: canSubmit ? '#2a62ff' : '#a3b3ff', color: 'white', border: 'none', fontWeight: 600 }}>
-                {loading ? 'Finding…' : 'Find Jobs'}
-              </button>
-            </div>
-          </form>
+          <LiveForm
+            onSubmit={onSubmit}
+            onFileChange={onFileChange}
+            recent={recent}
+            recentSelectedId={recentSelectedId}
+            onChangeRecentSelected={setRecentSelectedId}
+            searchUrlSelectValue={searchUrlSelectValue}
+            searchUrlHistory={searchUrlHistory}
+            searchUrlCustomMode={searchUrlCustomMode}
+            searchUrl={searchUrl}
+            onSearchUrlSelectChange={onSearchUrlSelectChange}
+            onChangeSearchUrl={setSearchUrl}
+            canSubmit={canSubmit}
+            loading={loading}
+            error={error}
+            fileInputRef={fileInputRef}
+            showInlineError={false}
+          />
           <div style={{ marginTop: 10, fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
             {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent URL.'}
           </div>
