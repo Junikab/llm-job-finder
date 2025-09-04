@@ -112,10 +112,9 @@ export default function App() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #eee' }}>
         <div style={{ fontWeight: 800, fontSize: 20, color: '#2a62ff' }}>LLM Job Finder</div>
         <div style={{ display: 'flex', gap: 18, color: '#455', fontSize: 14 }}>
-          <span>Home</span>
-          <span>For Candidates</span>
-          <span>For Employers</span>
-          <span>Contact</span>
+          <button type="button" onClick={() => setTab('live')} style={{ background: 'transparent', border: 'none', color: tab === 'live' ? '#2a62ff' : '#455', fontWeight: tab === 'live' ? 700 : 500, cursor: 'pointer' }}>Live</button>
+          <button type="button" onClick={() => setTab('saved')} style={{ background: 'transparent', border: 'none', color: tab === 'saved' ? '#2a62ff' : '#455', fontWeight: tab === 'saved' ? 700 : 500, cursor: 'pointer' }}>Saved</button>
+          <span style={{ color: '#455' }}>About</span>
         </div>
       </div>
 
@@ -147,9 +146,9 @@ export default function App() {
                   fullWidth={false}
                 />
               )}
-              <label>
+              <label style={{ color: '#334155', fontWeight: 600 }}>
                 <div>CV (PDF/DOCX/TXT)</div>
-                <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} />
+                <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }} />
               </label>
             </div>
 
@@ -168,7 +167,7 @@ export default function App() {
 
             {/* Column 3: Submit */}
             <button type="submit" disabled={!canSubmit} aria-busy={loading} style={{ padding: '14px 18px', borderRadius: 8, background: '#2a62ff', color: 'white', border: 'none', fontWeight: 600 }}>
-              {loading ? 'Searching…' : 'Search'}
+              {loading ? 'Finding…' : 'Find Jobs'}
             </button>
           </form>
           <div style={{ marginTop: 14, fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>

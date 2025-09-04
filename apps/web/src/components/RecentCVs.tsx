@@ -11,10 +11,14 @@ export default function RecentCVs(props: {
 }) {
   const { recent, recentSelectedId, onChangeSelected, onUseSelected, onRemoveSelected, fullWidth = true } = props;
   return (
-    <div style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined, display: 'flex', gap: 8, alignItems: 'center' }}>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+    <div style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#334155', fontWeight: 600 }}>
         <span>Recent CVs</span>
-        <select value={recentSelectedId} onChange={e => onChangeSelected(e.target.value)}>
+        <select
+          value={recentSelectedId}
+          onChange={e => onChangeSelected(e.target.value)}
+          style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', minWidth: 240 }}
+        >
           <option value="">Choose…</option>
           {recent.map(m => (
             <option key={m.id} value={String(m.id)}>
@@ -23,12 +27,20 @@ export default function RecentCVs(props: {
           ))}
         </select>
       </label>
-      <button type="button" onClick={onUseSelected} disabled={!recentSelectedId}
-        style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: recentSelectedId ? '#111' : '#ccc', color: '#fff' }}>
+      <button
+        type="button"
+        onClick={onUseSelected}
+        disabled={!recentSelectedId}
+        style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: recentSelectedId ? '#2a62ff' : '#a3b3ff', color: '#fff', fontWeight: 600 }}
+      >
         Use selected
       </button>
-      <button type="button" onClick={onRemoveSelected} disabled={!recentSelectedId}
-        style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>
+      <button
+        type="button"
+        onClick={onRemoveSelected}
+        disabled={!recentSelectedId}
+        style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f3f4f6', color: '#111', fontWeight: 500 }}
+      >
         Remove
       </button>
     </div>

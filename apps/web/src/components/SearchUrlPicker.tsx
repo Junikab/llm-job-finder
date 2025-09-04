@@ -17,6 +17,7 @@ export default function SearchUrlPicker(props: {
         <select
           value={selectValue}
           onChange={e => onSelectChange(e.target.value)}
+          style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', minWidth: 280 }}
         >
           <option value="">— None (auto-generate from CV) —</option>
           {history.map((u, i) => (
@@ -32,6 +33,7 @@ export default function SearchUrlPicker(props: {
             value={searchUrl}
             onChange={e => onChangeCustom(e.target.value)}
             placeholder="https://au.jora.com/j?a=7d&disallow=true&l=NSW&q=Front+End+Developer&sp=facet_listed_date"
+            style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', width: '100%' }}
           />
         </label>
       )}

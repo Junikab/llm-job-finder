@@ -41,10 +41,10 @@ export default function LiveForm(props: {
   } = props;
 
   return (
-    <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, alignItems: 'center', gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
-      <label style={{ gridColumn: '1 / -1' }}>
-        <div>CV (PDF/DOCX/TXT)</div>
-        <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} />
+    <form onSubmit={onSubmit} style={{ display: 'grid', gap: 14, alignItems: 'start', gridTemplateColumns: '1fr 1fr', marginBottom: 24 }}>
+      <label style={{ gridColumn: '1 / -1', color: '#334155', fontWeight: 600 }}>
+        <div style={{ marginBottom: 6 }}>CV (PDF/DOCX/TXT)</div>
+        <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} style={{ padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }} />
       </label>
 
       <RecentCVs
@@ -65,13 +65,13 @@ export default function LiveForm(props: {
       />
 
       <div style={{ gridColumn: '1 / -1' }}>
-        <button aria-busy={loading} disabled={!canSubmit} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: canSubmit ? '#111' : '#888', color: 'white' }}>
+        <button aria-busy={loading} disabled={!canSubmit} style={{ padding: '12px 16px', borderRadius: 8, border: 'none', background: canSubmit ? '#2a62ff' : '#a3b3ff', color: 'white', fontWeight: 600 }}>
           {loading ? 'Finding…' : 'Find Jobs'}
         </button>
       </div>
 
       {!!error && (
-        <div style={{ gridColumn: '1 / -1', color: '#b00' }}>{error}</div>
+        <div style={{ gridColumn: '1 / -1', color: '#b91c1c', background: '#fee2e2', padding: '8px 10px', borderRadius: 8 }}>{error}</div>
       )}
     </form>
   );
