@@ -13,7 +13,7 @@ export default function SearchUrlPicker(props: {
   return (
     <>
       <label style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined }}>
-        <div>Jora search URL (recent; optional)</div>
+        <div>URL picker (optional)</div>
         <select
           value={selectValue}
           onChange={e => onSelectChange(e.target.value)}
@@ -28,11 +28,11 @@ export default function SearchUrlPicker(props: {
       </label>
       {customMode && (
         <label style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined }}>
-          <div>Paste custom Jora URL</div>
+          <div>Paste custom URL</div>
           <input
             value={searchUrl}
             onChange={e => onChangeCustom(e.target.value)}
-            placeholder="https://au.jora.com/j?a=7d&disallow=true&l=NSW&q=Front+End+Developer&sp=facet_listed_date"
+            placeholder="the recent URL"
             style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', width: '100%' }}
           />
         </label>

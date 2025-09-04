@@ -36,7 +36,6 @@ export default function App() {
     setRecentSelectedId,
     onFileChange,
     useSelectedRecent,
-    removeSelectedRecent,
   } = useRecentCVs();
 
   // Search URL selection/history via hook
@@ -131,28 +130,27 @@ export default function App() {
         }}
       >
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0 18px' }}>Your Career Starts Now</h1>
-          <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'start' }}>
+          <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0 18px' }}>Lets make it personal</h1>
+          <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
             {/* Column 1: Recent CVs (if any) + Choose File */}
             <div style={{ display: 'grid', gap: 8, alignItems: 'center' }}>
+              <label style={{ color: '#334155', fontWeight: 600 }}>
+                <div>CV (PDF/DOCX/TXT)</div>
+                <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }} />
+              </label>
               {recent.length > 0 && (
                 <RecentCVs
                   recent={recent}
                   recentSelectedId={recentSelectedId}
                   onChangeSelected={setRecentSelectedId}
                   onUseSelected={useSelectedRecent}
-                  onRemoveSelected={removeSelectedRecent}
                   fullWidth={false}
                 />
               )}
-              <label style={{ color: '#334155', fontWeight: 600 }}>
-                <div>CV (PDF/DOCX/TXT)</div>
-                <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} style={{ marginTop: 6, padding: 8, borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }} />
-              </label>
             </div>
 
-            {/* Column 2: Jora search URL (recent; optional) */}
-            <div>
+            {/* Column 2: URL picker + Submit */}
+            <div style={{ display: 'grid', gap: 10 }}>
               <SearchUrlPicker
                 selectValue={searchUrlSelectValue}
                 history={searchUrlHistory}
@@ -162,29 +160,13 @@ export default function App() {
                 onChangeCustom={setSearchUrl}
                 fullWidth={false}
               />
+              <button type="submit" disabled={!canSubmit} aria-busy={loading} style={{ padding: '14px 18px', borderRadius: 8, background: canSubmit ? '#2a62ff' : '#a3b3ff', color: 'white', border: 'none', fontWeight: 600 }}>
+                {loading ? 'Finding…' : 'Find Jobs'}
+              </button>
             </div>
-
-            {/* Column 3: Submit */}
-            <button type="submit" disabled={!canSubmit} aria-busy={loading} style={{ padding: '14px 18px', borderRadius: 8, background: '#2a62ff', color: 'white', border: 'none', fontWeight: 600 }}>
-              {loading ? 'Finding…' : 'Find Jobs'}
-            </button>
           </form>
-          {/* Hero controls: Sort by */}
-          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
-              {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent Jora URL.'}
-            </div>
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ color: 'rgba(255,255,255,0.95)' }}>Sort by</span>
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as 'model' | 'recency')}
-                style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.95)', color: '#111' }}
-              >
-                <option value="model">Model score</option>
-                <option value="recency">Recency</option>
-              </select>
-            </label>
+          <div style={{ marginTop: 10, fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
+            {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent URL.'}
           </div>
           {!!error && (
             <div style={{ marginTop: 10, background: 'rgba(239, 68, 68, 0.15)', color: '#fee', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '8px 12px', borderRadius: 8, textAlign: 'left' }}>
@@ -199,6 +181,19 @@ export default function App() {
       {tab === 'live' && (
         <>
           <AnalysisHeader analysis={analysis} searchUrls={searchUrls} />
+
+          {/* Sort By between CV summary and job cards */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 12px' }}>
+            <span style={{ color: '#334155' }}>Sort by</span>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as 'model' | 'recency')}
+              style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff' }}
+            >
+              <option value="model">Model score</option>
+              <option value="recency">Recency</option>
+            </select>
+          </div>
 
           <LiveResults results={results} loading={loading} sortBy={sortBy} />
         </>

@@ -6,10 +6,9 @@ export default function RecentCVs(props: {
   recentSelectedId: string;
   onChangeSelected: (id: string) => void;
   onUseSelected: () => void | Promise<void>;
-  onRemoveSelected: () => void | Promise<void>;
   fullWidth?: boolean;
 }) {
-  const { recent, recentSelectedId, onChangeSelected, onUseSelected, onRemoveSelected, fullWidth = true } = props;
+  const { recent, recentSelectedId, onChangeSelected, onUseSelected, fullWidth = true } = props;
   return (
     <div style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
       <label style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#334155', fontWeight: 600 }}>
@@ -34,14 +33,6 @@ export default function RecentCVs(props: {
         style={{ padding: '10px 12px', borderRadius: 8, border: 'none', background: recentSelectedId ? '#2a62ff' : '#a3b3ff', color: '#fff', fontWeight: 600 }}
       >
         Use selected
-      </button>
-      <button
-        type="button"
-        onClick={onRemoveSelected}
-        disabled={!recentSelectedId}
-        style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#f3f4f6', color: '#111', fontWeight: 500 }}
-      >
-        Remove
       </button>
     </div>
   );
