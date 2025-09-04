@@ -13,6 +13,16 @@ export default function SearchUrlPicker(props: {
   return (
     <>
       <div className="lf-field">
+        <label className="lf-label" htmlFor="lf-custom-url">Paste custom URL</label>
+        <input
+          id="lf-custom-url"
+          className="lf-input"
+          value={searchUrl}
+          onChange={e => onChangeCustom(e.target.value)}
+          placeholder="the recent URL"
+        />
+      </div>
+      <div className="lf-field">
         <label className="lf-label" htmlFor="lf-url-picker">URL picker (optional)</label>
         <select
           id="lf-url-picker"
@@ -27,18 +37,6 @@ export default function SearchUrlPicker(props: {
           <option value="__custom__">Custom…</option>
         </select>
       </div>
-      {customMode && (
-        <div className="lf-field">
-          <label className="lf-label" htmlFor="lf-custom-url">Paste custom URL</label>
-          <input
-            id="lf-custom-url"
-            className="lf-input"
-            value={searchUrl}
-            onChange={e => onChangeCustom(e.target.value)}
-            placeholder="the recent URL"
-          />
-        </div>
-      )}
     </>
   );
 }
