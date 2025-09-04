@@ -7,11 +7,12 @@ export default function SearchUrlPicker(props: {
   searchUrl: string;
   onSelectChange: (value: string) => void;
   onChangeCustom: (value: string) => void;
+  fullWidth?: boolean;
 }) {
-  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom } = props;
+  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom, fullWidth = true } = props;
   return (
     <>
-      <label style={{ gridColumn: '1 / -1' }}>
+      <label style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined }}>
         <div>Jora search URL (recent; optional)</div>
         <select
           value={selectValue}
@@ -25,7 +26,7 @@ export default function SearchUrlPicker(props: {
         </select>
       </label>
       {customMode && (
-        <label style={{ gridColumn: '1 / -1' }}>
+        <label style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined }}>
           <div>Paste custom Jora URL</div>
           <input
             value={searchUrl}

@@ -6,6 +6,8 @@ import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
 import TabsHeader from './components/TabsHeader';
 import LiveForm from './components/LiveForm';
+import RecentCVs from './components/RecentCVs';
+import SearchUrlPicker from './components/SearchUrlPicker';
 import { useRecentCVs } from './hooks/useRecentCVs';
 import { useSearchUrl } from './hooks/useSearchUrl';
 import { useSavedJobs } from './hooks/useSavedJobs';
@@ -18,6 +20,7 @@ export default function App() {
   const [results, setResults] = useState<RankedJob[]>([]);
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [searchUrls, setSearchUrls] = useState<string[]>([]);
+  // Hero inputs now reuse RecentCVs + File and SearchUrlPicker
   const [toast, setToast] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
   const showToast = useCallback((msg: string) => {
@@ -66,6 +69,7 @@ export default function App() {
     try {
       const form = new FormData();
       form.append('cv', file);
+      // Optional manual search URL
       const su = (searchUrl || '').trim();
       if (su) form.append('searchUrl', su);
 
@@ -103,10 +107,79 @@ export default function App() {
   // Saved jobs handlers come from useSavedJobs
 
   return (
-    <div style={{ fontFamily: 'ui-sans-serif, system-ui', padding: 16, maxWidth: 980, margin: '0 auto' }}>
-      <h1 style={{ fontSize: 28, marginBottom: 8 }}>LLM Job Finder</h1>
-      <p style={{ color: '#555', marginBottom: 16 }}>Upload your CV, we’ll search Jora and rank roles using an LLM.</p>
-      <TabsHeader tab={tab} onChange={setTab} />
+    <div style={{ fontFamily: 'ui-sans-serif, system-ui' }}>
+      {/* Simple navbar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #eee' }}>
+        <div style={{ fontWeight: 800, fontSize: 20, color: '#2a62ff' }}>LLM Job Finder</div>
+        <div style={{ display: 'flex', gap: 18, color: '#455', fontSize: 14 }}>
+          <span>Home</span>
+          <span>For Candidates</span>
+          <span>For Employers</span>
+          <span>Contact</span>
+        </div>
+      </div>
+
+      {/* Hero section */}
+      <div
+        style={{
+          position: 'relative',
+          backgroundImage:
+            'linear-gradient( to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.45) ), url(https://images.unsplash.com/photo-1522120692533-91be08007f30?q=80&w=1800&auto=format&fit=crop)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          color: 'white',
+          padding: '72px 16px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0 18px' }}>Your Career Starts Now</h1>
+          <form onSubmit={onSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'start' }}>
+            {/* Column 1: Recent CVs (if any) + Choose File */}
+            <div style={{ display: 'grid', gap: 8, alignItems: 'center' }}>
+              {recent.length > 0 && (
+                <RecentCVs
+                  recent={recent}
+                  recentSelectedId={recentSelectedId}
+                  onChangeSelected={setRecentSelectedId}
+                  onUseSelected={useSelectedRecent}
+                  onRemoveSelected={removeSelectedRecent}
+                  fullWidth={false}
+                />
+              )}
+              <label>
+                <div>CV (PDF/DOCX/TXT)</div>
+                <input type="file" accept=".pdf,.docx,.txt" onChange={onFileChange} />
+              </label>
+            </div>
+
+            {/* Column 2: Jora search URL (recent; optional) */}
+            <div>
+              <SearchUrlPicker
+                selectValue={searchUrlSelectValue}
+                history={searchUrlHistory}
+                customMode={searchUrlCustomMode}
+                searchUrl={searchUrl}
+                onSelectChange={onSearchUrlSelectChange}
+                onChangeCustom={setSearchUrl}
+                fullWidth={false}
+              />
+            </div>
+
+            {/* Column 3: Submit */}
+            <button type="submit" disabled={!canSubmit} aria-busy={loading} style={{ padding: '14px 18px', borderRadius: 8, background: '#2a62ff', color: 'white', border: 'none', fontWeight: 600 }}>
+              {loading ? 'Searching…' : 'Search'}
+            </button>
+          </form>
+          <div style={{ marginTop: 14, fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
+            {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent Jora URL.'}
+          </div>
+        </div>
+      </div>
+
+      {/* Main content container */}
+      <div style={{ padding: 16, maxWidth: 980, margin: '0 auto' }}>
+        <TabsHeader tab={tab} onChange={setTab} />
 
       {tab === 'live' && (
         <>
@@ -147,6 +220,7 @@ export default function App() {
           />
         </div>
       )}
+      </div>
       {!!toast && (
         <div style={{ position: 'fixed', bottom: 16, right: 16, background: '#111', color: '#fff', padding: '8px 12px', borderRadius: 8 }}>{toast}</div>
       )}

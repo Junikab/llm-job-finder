@@ -7,10 +7,11 @@ export default function RecentCVs(props: {
   onChangeSelected: (id: string) => void;
   onUseSelected: () => void | Promise<void>;
   onRemoveSelected: () => void | Promise<void>;
+  fullWidth?: boolean;
 }) {
-  const { recent, recentSelectedId, onChangeSelected, onUseSelected, onRemoveSelected } = props;
+  const { recent, recentSelectedId, onChangeSelected, onUseSelected, onRemoveSelected, fullWidth = true } = props;
   return (
-    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div style={{ gridColumn: fullWidth ? '1 / -1' as any : undefined, display: 'flex', gap: 8, alignItems: 'center' }}>
       <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
         <span>Recent CVs</span>
         <select value={recentSelectedId} onChange={e => onChangeSelected(e.target.value)}>
