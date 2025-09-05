@@ -121,11 +121,13 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
         // Try to wait for a likely description container to render
         try {
           const waitLeft = deadline ? Math.max(1, Math.min(4000, deadline - Date.now())) : 4000;
-          await detailPage.waitForSelector('[data-automation="jobAdDetails"], .jobdesc, [class*="job-description"], article', { timeout: waitLeft });
+          await detailPage.waitForSelector('#job-description-container, [id*="job-description"], [data-automation="jobAdDetails"], .jobdesc, [class*="job-description"], article', { timeout: waitLeft });
         } catch {}
         const html = await detailPage.content();
         const $ = cheerio.load(html);
-        let desc = $('[data-automation="jobAdDetails"], .jobdesc, [class*="job-description"]').text().trim();
+        // Prefer the explicit description container when present
+        const descEl = $('#job-description-container, [id*="job-description"], [data-automation="jobAdDetails"], .jobdesc, [class*="job-description"]').first();
+        let desc = descEl.text().trim();
         if (!desc) desc = $('article').text().trim();
         if (!desc) desc = $('main').text().trim();
         j.description = desc || j.description || '';
