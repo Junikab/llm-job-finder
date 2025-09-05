@@ -1,4 +1,4 @@
-import type { CVAnalysis, JobItem } from '../types.js';
+// (removed unused imports)
 
 // Shared LLM debug flag
 export const LLM_DEBUG = (process.env.LLM_LOG || '').toLowerCase() === 'debug';
@@ -43,12 +43,13 @@ export async function callOpenAIChatJSON(
   const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
   try {
     const tStart = Date.now();
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    const url = `${baseUrl}/chat/completions`;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+    const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${cfg.apiKey}`,
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
         model: cfg.model,
         temperature: 0,
@@ -88,12 +89,13 @@ export async function callOpenAIChatText(
   const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
   try {
     const tStart = Date.now();
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+    const url = `${baseUrl}/chat/completions`;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+    const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${cfg.apiKey}`,
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
         model: cfg.model,
         temperature: 0,

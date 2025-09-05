@@ -113,6 +113,10 @@ From `.env.example` (root):
 - `SCORE_MODE=random` — scoring mode: `random` | `heuristic` | `llm`
 - `OPENAI_API_KEY=` — required when LLM is enabled (replace or rerank)
 
+- `OPENAI_MODEL=gpt-4o-mini` — model used for LLM calls (default shown)
+- `OPENAI_BASE_URL=` — optional API base override (e.g., Azure/OpenRouter/proxy). Defaults to `https://api.openai.com/v1`.
+- `LLM_LOG=debug` — enable verbose LLM logs (prints constructed prompt and a truncated body for review)
+
 Additional (supported by server code):
 - `SCRAPE_TOTAL_TIMEOUT_MS` — max total scrape time (optional)
 - `JOB_DB_WRITE=false|true` — controls JSON snapshot writes; note: current code writes when the value is `'false'` (temporary dev inversion)
@@ -130,6 +134,10 @@ Additional (supported by server code):
   - `replace`: per-job LLM scoring replaces heuristic. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to heuristic and annotates the reason (e.g., `llm-replace-error: timeout`).
   - `rerank`: top-N rerank scaffold (keeps original scores, may append short LLM reason notes; currently a stub).
   Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
+
+Note on interplay between `SCORE_MODE` and `LLM_MODE`:
+- To use LLM scoring, set `SCORE_MODE=llm` AND `LLM_MODE=replace` (plus a valid `OPENAI_API_KEY`).
+- `LLM_MODE=rerank` can be combined with any `SCORE_MODE` and operates on the already-scored list.
 
 
 ## Job DB (JSON snapshots)
@@ -177,8 +185,9 @@ LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and 
   - `LLM_CACHE_MAX`: e.g. `200` (max entries in the in-memory cache; LRU eviction)
   - `OPENAI_API_KEY`: required when LLM is enabled
   - `OPENAI_MODEL`: e.g. `gpt-4o-mini`
+  - `OPENAI_BASE_URL`: override API base (defaults to `https://api.openai.com/v1`)
   - `LLM_GOOD_TRAITS` / `LLM_BAD_TRAITS`: optional compact guidance strings injected into the prompt
-  - `LLM_LOG=debug`: optional verbose logging of LLM requests/results
+  - `LLM_LOG=debug`: optional verbose logging of LLM requests/results (includes constructed prompt and truncated body for inspection)
 
 Privacy note: When LLM mode is enabled, extracted CV text and job snippets are sent to the provider for scoring.
 

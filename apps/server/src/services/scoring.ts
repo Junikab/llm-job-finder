@@ -114,6 +114,12 @@ export async function scoreJob(
     }
     const system = 'You score job relevance precisely. Output only a single integer 0-100, no extra text.';
     const user = buildJobRelevancePrompt({ summary: _analysis.summary ?? '' }, _job);
+    if (LLM_DEBUG) {
+      const jobKeyDbg = normalizeJobKey(((_job as any).url || (_job as any).id || (_job as any).title || '') as string) || '';
+      // Print a concise header and a truncated user prompt body to avoid overwhelming logs
+      console.log('[llm] replace prompt', { jobKey: jobKeyDbg, model: cfg.model, system, userLen: user.length });
+      console.log('[llm] replace prompt user', user.slice(0, 2000));
+    }
     try {
       const { content } = await callOpenAIChatText(cfg, system, user);
       const n = parseRelevanceScore(content || '');
