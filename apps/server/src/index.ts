@@ -3,10 +3,13 @@ import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
 import formbody from '@fastify/formbody';
 import dotenv from 'dotenv';
-import registerJobsRoutes from './routes/jobs.js';
-import registerDbRoutes from './routes/db.js';
 
 dotenv.config();
+
+// Import routes AFTER dotenv so any env-derived constants in their modules
+// (e.g. LLM_DEBUG) are computed with the correct values from .env
+const { default: registerJobsRoutes } = await import('./routes/jobs.js');
+const { default: registerDbRoutes } = await import('./routes/db.js');
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : true });
