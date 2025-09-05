@@ -214,7 +214,8 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
 
       const filteredJobs = filterByDays(rawJobsUnique, days);
       const heuristicSorted = heuristicOrder(filteredJobs, analysis);
-      const toScore = heuristicSorted.slice(0, Math.min(filteredJobs.length, 30));
+      const maxScoreJobs = Math.max(0, Math.min(100, Number(process.env.LLM_MAX_SCORE_JOBS || 30)));
+      const toScore = heuristicSorted.slice(0, Math.min(filteredJobs.length, maxScoreJobs));
       const scored = await scoreJobs(analysis, toScore);
 
       // Optional LLM rerank (scaffold). Returns same list with annotations when enabled.

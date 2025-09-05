@@ -33,50 +33,75 @@ export function formatLLMError(err: any): string {
   }
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // Chat call for JSON-only responses
 export async function callOpenAIChatJSON(
   cfg: LLMConfig,
   system: string,
   user: string
 ): Promise<{ content: string }> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
-  try {
-    const tStart = Date.now();
-    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
-    const url = `${baseUrl}/chat/completions`;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: cfg.model,
-        temperature: 0,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user }
-        ]
-      }),
-      signal: controller.signal as any
-    } as any);
-    if (!res.ok) {
-      const txt = await (res as any).text?.();
-      if (LLM_DEBUG) {
-        console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
+  const attempts = Math.max(1, Math.min(5, Number(process.env.LLM_RETRIES || 2)));
+  const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const url = `${baseUrl}/chat/completions`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+  let lastErr: any = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
+    try {
+      const tStart = Date.now();
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: cfg.model,
+          temperature: 0,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user }
+          ]
+        }),
+        signal: controller.signal as any
+      } as any);
+      if (!res.ok) {
+        const status = (res as any).status;
+        const txt = await (res as any).text?.();
+        const bodyShort = String(txt || '').slice(0, 200);
+        if (LLM_DEBUG) {
+          console.warn('[llm] openai http error', { status, attempt, body: bodyShort });
+        }
+        const retriable = status === 429 || (status >= 500 && status <= 599);
+        if (!retriable || attempt === attempts) {
+          throw new Error(`openai http ${status}: ${txt || ''}`.trim());
+        }
+        const backoff = Math.min(4000, 250 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 150);
+        await sleep(backoff);
+        continue;
       }
-      throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
+      const data: any = await (res as any).json();
+      const content = data?.choices?.[0]?.message?.content || '';
+      if (LLM_DEBUG) {
+        console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length, attempt });
+      }
+      return { content };
+    } catch (err: any) {
+      lastErr = err;
+      const isAbort = err && typeof err === 'object' && (err as any).name === 'AbortError';
+      if (LLM_DEBUG) console.warn('[llm] fetch error', { attempt, err: formatLLMError(err) });
+      if (attempt === attempts) throw err;
+      const backoff = Math.min(4000, 250 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 150);
+      await sleep(backoff);
+      continue;
+    } finally {
+      clearTimeout(t);
     }
-    const data: any = await (res as any).json();
-    const content = data?.choices?.[0]?.message?.content || '';
-    if (LLM_DEBUG) {
-      console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
-    }
-    return { content };
-  } finally {
-    clearTimeout(t);
   }
+  throw lastErr || new Error('openai error');
 }
 
 // Chat call for plain text responses (no JSON response_format), suitable for single-number scoring.
@@ -85,41 +110,62 @@ export async function callOpenAIChatText(
   system: string,
   user: string
 ): Promise<{ content: string }> {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
-  try {
-    const tStart = Date.now();
-    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
-    const url = `${baseUrl}/chat/completions`;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: cfg.model,
-        temperature: 0,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user }
-        ]
-      }),
-      signal: controller.signal as any
-    } as any);
-    if (!res.ok) {
-      const txt = await (res as any).text?.();
-      if (LLM_DEBUG) {
-        console.warn('[llm] openai http error', { status: (res as any).status, body: String(txt || '').slice(0, 200) });
+  const attempts = Math.max(1, Math.min(5, Number(process.env.LLM_RETRIES || 2)));
+  const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const url = `${baseUrl}/chat/completions`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
+  let lastErr: any = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), cfg.timeoutMs);
+    try {
+      const tStart = Date.now();
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: cfg.model,
+          temperature: 0,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user }
+          ]
+        }),
+        signal: controller.signal as any
+      } as any);
+      if (!res.ok) {
+        const status = (res as any).status;
+        const txt = await (res as any).text?.();
+        const bodyShort = String(txt || '').slice(0, 200);
+        if (LLM_DEBUG) {
+          console.warn('[llm] openai http error', { status, attempt, body: bodyShort });
+        }
+        const retriable = status === 429 || (status >= 500 && status <= 599);
+        if (!retriable || attempt === attempts) {
+          throw new Error(`openai http ${status}: ${txt || ''}`.trim());
+        }
+        const backoff = Math.min(4000, 250 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 150);
+        await sleep(backoff);
+        continue;
       }
-      throw new Error(`openai http ${res.status}: ${txt || ''}`.trim());
+      const data: any = await (res as any).json();
+      const content = data?.choices?.[0]?.message?.content || '';
+      if (LLM_DEBUG) {
+        console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length, attempt });
+      }
+      return { content };
+    } catch (err: any) {
+      lastErr = err;
+      const isAbort = err && typeof err === 'object' && (err as any).name === 'AbortError';
+      if (LLM_DEBUG) console.warn('[llm] fetch error', { attempt, err: formatLLMError(err) });
+      if (attempt === attempts) throw err;
+      const backoff = Math.min(4000, 250 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 150);
+      await sleep(backoff);
+      continue;
+    } finally {
+      clearTimeout(t);
     }
-    const data: any = await (res as any).json();
-    const content = data?.choices?.[0]?.message?.content || '';
-    if (LLM_DEBUG) {
-      console.log('[llm] openai ok', { ms: Date.now() - tStart, contentLen: content.length });
-    }
-    return { content };
-  } finally {
-    clearTimeout(t);
   }
+  throw lastErr || new Error('openai error');
 }
