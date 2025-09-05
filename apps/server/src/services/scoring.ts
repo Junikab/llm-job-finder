@@ -118,7 +118,7 @@ export async function scoreJob(
       const jobKeyDbg = normalizeJobKey(((_job as any).url || (_job as any).id || (_job as any).title || '') as string) || '';
       // Print a concise header and a truncated user prompt body to avoid overwhelming logs
       console.log('[llm] replace prompt', { jobKey: jobKeyDbg, model: cfg.model, system, userLen: user.length });
-      console.log('[llm] replace prompt user', user.slice(0, 2000));
+      console.log('[llm] replace prompt user', user.slice(0, 8000));
     }
     try {
       const { content } = await callOpenAIChatText(cfg, system, user);
