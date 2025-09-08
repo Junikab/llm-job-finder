@@ -135,12 +135,12 @@ export default function App() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           color: 'white',
-          padding: '72px 16px',
+          padding: '50px 15px',
           textAlign: 'center',
         }}
       >
-        <div style={{ maxWidth: 980, margin: '0 auto' }}>
-          <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0 18px' }}>Lets make it personal</h1>
+        <div style={{ maxWidth: 980, margin: '0 auto', padding:'0 20px' }}>
+          <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0' }}>Lets make it personal</h1>
           <LiveForm
             onSubmit={onSubmit}
             onFileChange={onFileChange}
