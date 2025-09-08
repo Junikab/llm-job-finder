@@ -160,7 +160,7 @@ export default function App() {
             fileInputRef={fileInputRef}
             showInlineError={false}
           />
-          <div style={{ marginTop: 10, fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>
+          <div style={{ marginTop: 10, fontSize: 15, color: 'rgba(255,255,255,0.9)' }}>
             {results.length > 0 ? `We have ${results.length} job offers for you!` : 'Upload your CV and optionally pick a recent URL.'}
           </div>
           {!!error && (

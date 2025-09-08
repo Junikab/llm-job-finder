@@ -38,13 +38,13 @@ export function useRecentCVs() {
     const f = e.target.files?.[0] || null;
     setFile(f);
     setFileSource(f ? 'upload' : null);
+    // Clear any recent selection immediately to avoid race conditions
+    if (f) setRecentSelectedId('');
     if (f) {
       try {
         const existing = await listCVs();
         const has = existing.some(m => m.name === f.name && m.size === f.size);
         if (!has) await saveCV(f);
-        // Clear any recent selection if the user uploaded a new file
-        setRecentSelectedId('');
         await refreshRecent();
       } catch (e1) {
         console.warn('recentCVs: save/list failed, attempting direct save', e1);
@@ -86,6 +86,8 @@ export function useRecentCVs() {
     (async () => {
       const id = parseInt(recentSelectedId, 10);
       if (id) {
+        // Do not override a freshly uploaded file
+        if (fileSource === 'upload') return;
         try {
           const f = await getCVFile(id);
           setFile(f || null);

@@ -17,7 +17,7 @@ export default function SearchUrlPicker(props: {
         <label className="lf-label" htmlFor="lf-custom-url">Paste custom URL</label>
         <input
           id="lf-custom-url"
-          className="lf-input"
+          className="lf-input lf-control"
           value={customMode ? searchUrl : ''}
           onFocus={() => {
             // Enter custom mode and clear existing value to show placeholder
@@ -35,7 +35,7 @@ export default function SearchUrlPicker(props: {
         <label className="lf-label" htmlFor="lf-url-picker">URL picker (optional)</label>
         <select
           id="lf-url-picker"
-          className="lf-select"
+          className="lf-select lf-control"
           value={selectValue}
           onChange={e => onSelectChange(e.target.value)}
         >

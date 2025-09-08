@@ -57,8 +57,11 @@ export default function LiveForm(props: {
       .lf-input, .lf-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; box-sizing: border-box; }
       .lf-filebar { display: flex; align-items: center; gap: 10px; }
       .lf-file-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+      /* Normalize select look and add chevron */
+      .lf-select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px 16px; padding-right: 40px; }
+      select.lf-select::-ms-expand { display: none; }
       .lf-control { height: 44px; display: inline-flex; align-items: center; }
-      .lf-btn-primary { height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #2a62ff; color: #fff; font-weight: 600; cursor: pointer; }
+      .lf-btn-primary { height: 44px; padding: 0 30px; border-radius: 8px; border: none; background: #2a62ff; color: #fff; font-weight: 500; cursor: pointer; }
       .lf-button-row { grid-column: 1 / -1; display: flex; justify-content: center; }
       .lf-error { grid-column: 1 / -1; color: #b91c1c; background: #fee2e2; padding: 8px 10px; border-radius: 8px; }
     `;

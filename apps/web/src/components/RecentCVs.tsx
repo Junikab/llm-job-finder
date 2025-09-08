@@ -14,7 +14,7 @@ export default function RecentCVs(props: {
       <label className="lf-label" htmlFor="lf-recent-cv">Recent CVs</label>
       <select
         id="lf-recent-cv"
-        className="lf-select"
+        className="lf-select lf-control"
         value={recentSelectedId}
         onChange={e => onChangeSelected(e.target.value)}
         disabled={isEmpty}
