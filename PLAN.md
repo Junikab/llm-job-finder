@@ -1,6 +1,6 @@
 # Project Plan — Jora LLM Job Finder (Mock Mode)
 
-Last updated: 2025-09-03
+Last updated: 2025-09-05
 
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
@@ -111,6 +111,9 @@ Last updated: 2025-09-03
 - [x] DB-2: write scored JSON after scoring (db/scored; stable filenames; overwrite)
 - [x] DB-3: API list + feedback update in-place; UI displays and posts
 - [x] DB-4: compaction script removed; aggregation happens on demand
+
+- [x] LLM protective measures: capped retries/backoff for OpenAI (LLM_RETRIES) and per-request LLM job cap (LLM_MAX_SCORE_JOBS)
+- [x] Docs: LLM logging & debugging steps (envs, prompt visibility, troubleshooting)
 
 ## 3. Timeline (Suggestive)
 - Week 1: M1–M4 complete (API, scraper, heuristics, ranking)

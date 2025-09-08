@@ -110,12 +110,14 @@ From `.env.example` (root):
 - `MAX_JOBS=40` — cap total jobs
 - `MAX_PAGES=3` — cap pages per search URL
 - `JORA_REGION=au` — Jora region prefix (domain)
-- `SCORE_MODE=random` — scoring mode: `random` | `heuristic` | `llm`
+- `SCORE_MODE=heuristic` — scoring mode: `random` | `heuristic` | `llm`
 - `OPENAI_API_KEY=` — required when LLM is enabled (replace or rerank)
 
 - `OPENAI_MODEL=gpt-4o-mini` — model used for LLM calls (default shown)
 - `OPENAI_BASE_URL=` — optional API base override (e.g., Azure/OpenRouter/proxy). Defaults to `https://api.openai.com/v1`.
 - `LLM_LOG=debug` — enable verbose LLM logs (prints constructed prompt and a truncated body for review)
+- `LLM_RETRIES=2` — retry attempts for OpenAI calls (applies to 429, 5xx, and timeouts). Reasonable range: 1–5.
+- `LLM_MAX_SCORE_JOBS=30` — per-request cap on how many jobs are scored by the LLM (limits cost).
 
 Additional (supported by server code):
 - `SCRAPE_TOTAL_TIMEOUT_MS` — max total scrape time (optional)
@@ -123,7 +125,9 @@ Additional (supported by server code):
 - `JOB_DB_DIR` — base directory to write/read job JSON (default: `<cwd>/db`)
 
 ## Scoring modes
-- **random** (default): returns a random 0–100 score with reason `random`.
+Default: heuristic (see `.env.example`).
+
+- **random**: returns a random 0–100 score with reason `random`.
 - **heuristic**: additive signals with reasons:
   - title keyword match (up to +30, based on CV titles/skills)
   - recency based on `listedAgo` (0–25)
@@ -188,6 +192,8 @@ LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and 
   - `OPENAI_BASE_URL`: override API base (defaults to `https://api.openai.com/v1`)
   - `LLM_GOOD_TRAITS` / `LLM_BAD_TRAITS`: optional compact guidance strings injected into the prompt
   - `LLM_LOG=debug`: optional verbose logging of LLM requests/results (includes constructed prompt and truncated body for inspection)
+  - `LLM_RETRIES`: retry attempts for OpenAI calls (applies to 429, 5xx, and timeouts; default 2)
+  - `LLM_MAX_SCORE_JOBS`: per-request cap on how many jobs are scored by the LLM (default 30)
 
 Privacy note: When LLM mode is enabled, extracted CV text and job snippets are sent to the provider for scoring.
 
@@ -201,6 +207,34 @@ LLM_BAD_TRAITS=senior-only, backend-only Java, no UI, on-site far away
 
 These appear in the prompt after the CV summary and before the rubric, keeping token usage low.
 
+
+## LLM logging & debugging
+
+Follow these steps to see the actual prompts and responses used by the LLM in replace mode:
+
+1) Enable LLM replace scoring in `.env` (root):
+```
+SCORE_MODE=llm
+LLM_MODE=replace
+LLM_LOG=debug
+OPENAI_API_KEY=sk-...   # ensure this has no stray quotes or parentheses
+```
+
+Optional controls:
+- `LLM_RETRIES=2` — capped retries with exponential backoff for 429/5xx/timeouts
+- `LLM_MAX_SCORE_JOBS=30` — limits how many jobs are scored per request
+
+2) Fully restart the API server after changing `.env` so variables are reloaded.
+
+3) Run a job search (via the web app or cURL). In the API terminal you should see log entries like:
+```
+[llm] replace prompt { jobKey: '...', model: 'gpt-4o-mini', userLen: 12345 }
+[llm] replace prompt user <first 8000 characters of the user prompt>
+[llm] openai ok { ms: 1234, contentLen: 42, attempt: 1 }
+```
+If a call fails, logs include detailed HTTP errors and retry attempts.
+
+Privacy reminder: Prompt logs include slices of CV text and job snippets; use them only for local debugging.
 
 ## Prompt builder (dev utility)
 - Code: `apps/server/src/services/prompt.ts`
@@ -231,6 +265,17 @@ npm run build
 
 
 ## Troubleshooting
+- No LLM logs appear:
+  - Ensure `.env` has:
+    - `SCORE_MODE=llm`
+    - `LLM_MODE=replace`
+    - `LLM_LOG=debug`
+    - `OPENAI_API_KEY=...` (no stray quotes or parentheses)
+  - Fully restart the API server after changing `.env` so values are reloaded.
+  - Run a search. Check the API terminal for lines starting with `[llm] replace prompt` and `[llm] openai`.
+  - If you recently edited server entrypoints, ensure env is loaded before routes (this repo already does that in `apps/server/src/index.ts`).
+  - To preview a sample prompt without calling the LLM, run: `npm --workspace apps/server run prompt:demo`.
+
 - Playwright asks to install browsers:
 ```
 npx playwright install chromium

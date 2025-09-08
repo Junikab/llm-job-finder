@@ -1,11 +1,11 @@
 # Jora LLM Job Finder — Design Document
 
-Last updated: 2025-09-03
+Last updated: 2025-09-05
 
 ## 1. Purpose and Scope
 This document describes the architecture, design decisions, data flow, and operational details of the Jora LLM Job Finder monorepo. It is written for contributors and maintainers to quickly understand how the system works, how to run it locally, and where to extend it.
 
-Current mode: Mock/heuristic by default (fast local iteration). Optional LLM replace-mode is available via env flags.
+Current mode: Heuristic by default (fast local iteration). Optional LLM replace-mode is available via env flags.
 
 ## 2. Goals and Non-Goals
 - Goals
@@ -13,11 +13,11 @@ Current mode: Mock/heuristic by default (fast local iteration). Optional LLM rep
   - Extract text from supported CV formats (.pdf, .docx, .txt).
   - Analyze CV to produce a minimal summary (mocked) and fallback job titles.
   - Generate Jora search URLs and scrape job listings.
-  - Score jobs and return ranked results (scoring mocked as random).
+  - Score jobs and return ranked results (heuristic by default, optional LLM replace-mode behind flags).
   - Keep the development loop fast and simple.
 
 - Non-Goals (for now)
-  - Real LLM analysis and JSON validation (OpenAI disabled).
+  - Strict JSON schema validation of LLM responses (best-effort parsing only).
   - Advanced ranking logic and personalization.
   - Production hardening (rate limiting, full security hardening, etc.).
 
@@ -32,7 +32,7 @@ Current mode: Mock/heuristic by default (fast local iteration). Optional LLM rep
 - Client (web or curl) uploads a CV and form fields to the server.
 - Server extracts text, runs mocked analysis, builds Jora search URLs.
 - Scraper fetches Jora SERP pages and job details.
-- Server applies mocked scoring to produce ranked results.
+- Server applies heuristic scoring to produce ranked results (optional LLM replace-mode can score per job when enabled).
 - Server returns JSON to the client.
  - Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
 
@@ -75,8 +75,9 @@ Current mode: Mock/heuristic by default (fast local iteration). Optional LLM rep
   - .txt → Buffer decoded as utf-8.
 - Analysis (mock):
   - Returns the first ~200 characters as summary; arrays are empty.
-- Scoring (mock):
-  - Random integer [0..100]; reason "Mock score".
+- Scoring:
+  - Heuristic: additive signals (e.g., title match, recency, remote flag, salary presence) with a reason string.
+  - LLM replace-mode (optional): per-job prompt to LLM; parsed numeric score [0..100]; on failure, falls back to heuristic and annotates reason.
 
 ### Prompt Builder Utility (LLM prep)
 - Location: `apps/server/src/services/prompt.ts`
@@ -99,13 +100,22 @@ Current mode: Mock/heuristic by default (fast local iteration). Optional LLM rep
 - MAX_PAGES (default depends on scraper; recommend 1–2 for dev)
 - MAX_JOBS (default 40)
 - CORS_ORIGIN (production only; dev uses origin: true)
-- OPENAI_API_KEY — reserved for future LLM usage (not used in mock mode)
+- SCORE_MODE: `random` | `heuristic` | `llm` (default heuristic)
+- OPENAI_API_KEY — required when LLM is enabled
 
-- Reserved for future LLM mode (not yet wired):
-  - LLM_MODE: off | rerank | replace
-  - LLM_TOP_N: e.g., 10
+- LLM envs (when SCORE_MODE=llm):
+  - LLM_MODE: `off` | `rerank` | `replace`
+  - LLM_TOP_N: e.g., 10 (for rerank)
   - LLM_CONCURRENCY: e.g., 2
   - LLM_TIMEOUT_MS: e.g., 8000
+  - LLM_CACHE_TTL_MS: e.g., 900000
+  - LLM_CACHE_MAX: e.g., 200
+  - OPENAI_MODEL: e.g., gpt-4o-mini
+  - OPENAI_BASE_URL: override API base (defaults to https://api.openai.com/v1)
+  - LLM_GOOD_TRAITS / LLM_BAD_TRAITS: optional compact guidance strings in the prompt
+  - LLM_LOG=debug: verbose LLM logs including constructed prompt (truncated)
+  - LLM_RETRIES: capped retries with exponential backoff on 429/5xx/timeouts (default 2)
+  - LLM_MAX_SCORE_JOBS: per-request cap on number of jobs scored by LLM (default 30)
 
 ## 10. Running Locally
 - Start API (watch mode):
@@ -124,29 +134,34 @@ Current mode: Mock/heuristic by default (fast local iteration). Optional LLM rep
 - Fastify logger enabled (info-level) with request/response logs.
 - Clear 400 errors for missing file or unsupported type.
 - Try/catch around route handler; non-expected errors return 500 with message.
+ - When `LLM_LOG=debug` and replace-mode is enabled, the server logs:
+   - A header with job key, model, and user prompt length.
+   - The first ~8000 characters of the user prompt for inspection.
+   - Success/failure of OpenAI calls including latency, attempt number, and HTTP errors on retries.
 
 ## 12. Security Considerations (Dev/MVP)
 - File size limited to 5MB; allowed types: .pdf/.docx/.txt.
 - CORS open in dev; configure CORS_ORIGIN for production.
 - No rate limiting yet (consider @fastify/rate-limit for prod).
 - No server-side persistence of CVs; processed in-memory on the server. The web client may persist recent CVs locally in the browser (IndexedDB, up to 5; sessionStorage fallback). Use `navigator.storage.persist()` best-effort to reduce eviction.
+ - Privacy: When LLM mode is enabled, extracted CV text and job snippets are sent to the LLM provider for scoring. Logs may include truncated portions of these prompts when `LLM_LOG=debug`.
 
 ## 13. Performance
 - Concurrency limited via p-limit within scraping/scoring loops.
 - MAX_PAGES / MAX_JOBS env vars allow quick dev iterations.
 
 ## 14. Key Design Decisions
-- Mock mode to remove OpenAI dependency and speed up iteration.
+- Heuristic-by-default to remove OpenAI dependency and speed up iteration.
 - PDF support enabled using pdf-parse for improved UX and parity with DOCX/TXT.
 - Multipart attachFieldsToBody disabled to ensure req.file() reliability with curl; fields read from data.fields.
-- Random scoring to unblock UI/flow testing.
+- Optional LLM replace-mode behind flags with protective measures (capped retries and per-request job cap). Falls back to heuristic on failures.
 
 ## 15. Alternatives Considered
 - Keeping attachFieldsToBody and reading file from req.body.file. Rejected for dev due to inconsistent behavior with curl; easier to rely on req.file().
-- Retaining OpenAI integration behind a flag. Deferred to keep surface area small and builds fast.
+- Deferring OpenAI integration entirely. Partially accepted: we run heuristic by default but provide LLM replace-mode behind flags for targeted debugging and evaluation.
 
 ## 16. Future Work
-- Add optional LLM rerank/replace using the prompt builder, behind env flags; include schema/response validation and timeouts/concurrency.
+- Extend LLM support with rerank mode and stricter schema/response validation.
 - Heuristic or embedding-based scoring to replace random scores and provide human-readable reasons.
 - Improve PDF extraction robustness (edge PDFs, encoding) and add tests/fixtures.
 - Caching, deduplication, and job detail enrichment.
