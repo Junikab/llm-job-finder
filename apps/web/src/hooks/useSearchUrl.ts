@@ -20,11 +20,6 @@ export function useSearchUrl() {
     try { localStorage.setItem('searchUrlHistory', JSON.stringify(history.slice(0, 5))); } catch {}
   }, [history]);
 
-  useEffect(() => {
-    const inHistory = searchUrl && history.includes(searchUrl);
-    setCustomMode(!!searchUrl && !inHistory);
-  }, [searchUrl, history]);
-
   const updateHistory = useCallback((url: string) => {
     const su = (url || '').trim();
     if (!su) return;
@@ -40,6 +35,8 @@ export function useSearchUrl() {
   const onSelectChange = useCallback((value: string) => {
     if (value === '__custom__') {
       setCustomMode(true);
+      // Start with an empty field to prompt user input rather than pre-filling with a previous URL
+      setSearchUrl('');
     } else {
       setCustomMode(false);
       setSearchUrl(value);

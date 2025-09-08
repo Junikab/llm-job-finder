@@ -43,6 +43,7 @@ export default function App() {
     setSearchUrl,
     history: searchUrlHistory,
     customMode: searchUrlCustomMode,
+    setCustomMode: setSearchUrlCustomMode,
     selectValue: searchUrlSelectValue,
     onSelectChange: onSearchUrlSelectChange,
     updateHistory: updateSearchUrlHistory,
@@ -149,6 +150,7 @@ export default function App() {
             searchUrlSelectValue={searchUrlSelectValue}
             searchUrlHistory={searchUrlHistory}
             searchUrlCustomMode={searchUrlCustomMode}
+            setSearchUrlCustomMode={setSearchUrlCustomMode}
             searchUrl={searchUrl}
             onSearchUrlSelectChange={onSearchUrlSelectChange}
             onChangeSearchUrl={setSearchUrl}

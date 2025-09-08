@@ -8,6 +8,7 @@ export default function RecentCVs(props: {
   fullWidth?: boolean;
 }) {
   const { recent, recentSelectedId, onChangeSelected } = props;
+  const isEmpty = recent.length === 0;
   return (
     <div className="lf-field">
       <label className="lf-label" htmlFor="lf-recent-cv">Recent CVs</label>
@@ -16,13 +17,20 @@ export default function RecentCVs(props: {
         className="lf-select"
         value={recentSelectedId}
         onChange={e => onChangeSelected(e.target.value)}
+        disabled={isEmpty}
       >
-        <option value="">Choose…</option>
-        {recent.map(m => (
-          <option key={m.id} value={String(m.id)}>
-            {m.name} • {(m.size/1024).toFixed(0)} KB • {new Date(m.addedAt).toLocaleString()}
-          </option>
-        ))}
+        {isEmpty ? (
+          <option value="">No recent CVs yet</option>
+        ) : (
+          <>
+            <option value="">Choose…</option>
+            {recent.map(m => (
+              <option key={m.id} value={String(m.id)}>
+                {m.name} • {(m.size/1024).toFixed(0)} KB • {new Date(m.addedAt).toLocaleString()}
+              </option>
+            ))}
+          </>
+        )}
       </select>
     </div>
   );

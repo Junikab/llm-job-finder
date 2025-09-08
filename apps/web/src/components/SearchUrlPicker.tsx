@@ -8,8 +8,9 @@ export default function SearchUrlPicker(props: {
   onSelectChange: (value: string) => void;
   onChangeCustom: (value: string) => void;
   fullWidth?: boolean;
+  setCustomMode?: (v: boolean) => void;
 }) {
-  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom } = props;
+  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom, setCustomMode } = props;
   return (
     <>
       <div className="lf-field">
@@ -17,9 +18,17 @@ export default function SearchUrlPicker(props: {
         <input
           id="lf-custom-url"
           className="lf-input"
-          value={searchUrl}
+          value={customMode ? searchUrl : ''}
+          onFocus={() => {
+            // Enter custom mode and clear existing value to show placeholder
+            if (!customMode) {
+              setCustomMode?.(true);
+              if (searchUrl) onChangeCustom('');
+            }
+          }}
+          onInput={() => setCustomMode?.(true)}
           onChange={e => onChangeCustom(e.target.value)}
-          placeholder="the recent URL"
+          placeholder="https://au.jora.com/"
         />
       </div>
       <div className="lf-field">
