@@ -109,6 +109,7 @@ export async function scoreJob(
     if (hit) {
       if (LLM_DEBUG) {
         console.log('[llm] cache hit', { jobKey, model: cfg.model });
+        console.log('[llm] replace score', { jobKey, score: hit.score, source: 'cache' });
       }
       return { score: hit.score, reason: `${hit.reason} cache-hit` };
     }
@@ -126,6 +127,9 @@ export async function scoreJob(
       if (n !== null) {
         const reason = `llm-replace ${cfg.model}`;
         cacheSet(cacheKey, { score: n, reason, t: Date.now() });
+        if (LLM_DEBUG) {
+          console.log('[llm] replace score', { jobKey, score: n, model: cfg.model });
+        }
         return { score: n, reason };
       }
       if (LLM_DEBUG) {
