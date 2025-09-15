@@ -240,7 +240,14 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         }
       }
 
-      return reply.send({ analysis, searchUrls, total: reranked.length, results: reranked });
+      return reply.send({
+        analysis,
+        searchUrls,
+        llmGoodTraits: (process.env.LLM_GOOD_TRAITS || '').trim(),
+        llmBadTraits: (process.env.LLM_BAD_TRAITS || '').trim(),
+        total: reranked.length,
+        results: reranked,
+      });
     } catch (err: any) {
       (req as any).log?.error?.({ err }, 'jobs.find failed');
       return reply.code(500).send({ error: 'Failed to process request' });

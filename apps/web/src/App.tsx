@@ -17,6 +17,8 @@ export default function App() {
   const [results, setResults] = useState<RankedJob[]>([]);
   const [analysis, setAnalysis] = useState<CVAnalysis | null>(null);
   const [searchUrls, setSearchUrls] = useState<string[]>([]);
+  const [llmGoodTraits, setLlmGoodTraits] = useState<string>('');
+  const [llmBadTraits, setLlmBadTraits] = useState<string>('');
   const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
   // Hero inputs now reuse RecentCVs + File and SearchUrlPicker
   const [toast, setToast] = useState<string | null>(null);
@@ -81,6 +83,8 @@ export default function App() {
       const json = await findJobs(form);
       setAnalysis(json.analysis);
       setSearchUrls(json.searchUrls || []);
+      setLlmGoodTraits(json.llmGoodTraits || '');
+      setLlmBadTraits(json.llmBadTraits || '');
       setResults(json.results || []);
     } catch (err: any) {
       console.error(err);
@@ -175,7 +179,7 @@ export default function App() {
       <div style={{ padding: 16, maxWidth: 980, margin: '0 auto' }}>
       {tab === 'live' && (
         <>
-          <AnalysisHeader analysis={analysis} searchUrls={searchUrls} />
+          <AnalysisHeader analysis={analysis} searchUrls={searchUrls} llmGoodTraits={llmGoodTraits} llmBadTraits={llmBadTraits} />
 
           {/* Sort By between CV summary and job cards */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, margin: '8px 0 12px' }}>
