@@ -81,16 +81,25 @@ function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string }): st
   const region = process.env.JORA_REGION || 'au';
   const base = `https://${region}.jora.com/j`;
   const titlesRaw = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
-  const titlesQuoted = titlesRaw.map(t => `"${t}"`);
-  const titleOr = titlesQuoted.length > 1 ? `(${titlesQuoted.join(' OR ')})` : titlesQuoted[0];
+  const queryMode = (process.env.SEARCH_QUERY_MODE || 'rich').toLowerCase(); // 'rich' | 'simple'
 
-  const skills = (analysis.topSkills && analysis.topSkills.length ? analysis.topSkills.slice(0, 4) : []);
   const l = encodeURIComponent(opts.location || (analysis.locationHints?.[0] || 'Sydney NSW'));
 
   const makeUrl = (query: string) => {
     const q = encodeURIComponent(query.trim());
     return `${base}?q=${q}&l=${l}`;
   };
+
+  if (queryMode === 'simple') {
+    // Only use the top detected title, no quotes, no skills
+    const simpleTitle = (titlesRaw[0] || 'frontend developer');
+    return [makeUrl(simpleTitle)];
+  }
+
+  // Default: rich query using exact-phrase titles and top skills
+  const titlesQuoted = titlesRaw.map(t => `"${t}"`);
+  const titleOr = titlesQuoted.length > 1 ? `(${titlesQuoted.join(' OR ')})` : titlesQuoted[0];
+  const skills = (analysis.topSkills && analysis.topSkills.length ? analysis.topSkills.slice(0, 4) : []);
 
   const urls: string[] = [];
   urls.push(makeUrl([titleOr, ...skills].join(' ')));

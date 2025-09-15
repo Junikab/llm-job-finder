@@ -5,6 +5,8 @@ import pLimit from 'p-limit';
 export type ScrapeOpts = { headless?: boolean; maxPages?: number; maxJobs?: number; totalTimeoutMs?: number };
 
 export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
+  const DEBUG = (process.env.SCRAPER_LOG || '').toLowerCase() === 'debug';
+  const dbg = (msg: string, data?: any) => { if (DEBUG) console.log(JSON.stringify({ level: 'debug', scope: 'scraper', msg, ...data })); };
   const headless = opts.headless !== false;
   const browser = await chromium.launch({ headless });
   try {
@@ -18,7 +20,9 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
     await page.route('**/*', (route) => {
       const r = route.request();
       const type = r.resourceType();
-      if (['image', 'media', 'font', 'stylesheet'].includes(type)) {
+      // Allow stylesheets (some sites rely on CSS for DOM layout/visibility);
+      // still block heavy assets to speed up.
+      if (['image', 'media', 'font'].includes(type)) {
         return route.abort();
       }
       route.continue();
@@ -48,6 +52,11 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
         if (deadline && Date.now() >= deadline) { logTimeoutOnce(); url = null; break; }
         const gotoTimeout = deadline ? Math.max(1, Math.min(45_000, deadline - Date.now())) : 45_000;
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: gotoTimeout });
+        dbg('list-page-visit', { url, pageCount, jobsSoFar: jobs.size });
+        // Wait for job content to render
+        try {
+          await page.waitForSelector('[data-automation="job-card"], .job-card, article, a[href*="/job/"], a[data-automation="job-title"]', { timeout: Math.min(6000, gotoTimeout) });
+        } catch {}
         const sleepMs = 800 + Math.random()*400;
         if (deadline) {
           const left = deadline - Date.now();
@@ -56,11 +65,26 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
         } else {
           await page.waitForTimeout(sleepMs);
         }
+        // Gentle auto-scroll to trigger any lazy loading before reading HTML
+        try {
+          await page.evaluate(() => new Promise<void>((resolve) => {
+            let steps = 0;
+            const tick = () => {
+              window.scrollBy(0, Math.ceil(window.innerHeight * 0.9));
+              steps++;
+              if (steps < 4) setTimeout(tick, 200); else resolve();
+            };
+            tick();
+          }));
+        } catch {}
         const html = await page.content();
         const $ = cheerio.load(html);
 
         // Adjust selectors if Jora changes structure
-        $('[data-automation="job-card"], .job-card, article').each((_, el) => {
+        const before = jobs.size;
+        const cardSel = '[data-automation="job-card"], .job-card, article';
+        const cardCount = $(cardSel).length;
+        $(cardSel).each((_, el) => {
           const titleEl = $(el).find('a[href*="/job/"], a[data-automation="job-title"]');
           const href = titleEl.attr('href');
           const title = titleEl.text().trim();
@@ -78,13 +102,44 @@ export async function scrapeJora(urls: string[], opts: ScrapeOpts) {
           const id = `${u.host}${u.pathname}`.toLowerCase().replace(/\/+$/, '');
           if (!jobs.has(id)) jobs.set(id, { id, title, company, location, url: fullUrl, listedAgo, description: snippet || undefined });
         });
+        const added = jobs.size - before;
+        dbg('list-page-parse', { url, cardCount, added, totalJobs: jobs.size });
+
+        // Fallback: if structured card scan found nothing, try scanning all job-like anchors
+        if (added === 0) {
+          const linkSel = 'a[href*="/job/"], a[data-automation="job-title"], a[aria-label*="job"]';
+          const linkCount = $(linkSel).length;
+          const beforeLinks = jobs.size;
+          $(linkSel).each((_, a) => {
+            const href = $(a).attr('href');
+            if (!href) return;
+            const title = ($(a).text().trim() || $(a).attr('aria-label')?.trim() || '');
+            const fullUrl = new URL(href, url!).toString();
+            const u = new URL(fullUrl);
+            const id = `${u.host}${u.pathname}`.toLowerCase().replace(/\/+$/, '');
+            if (!title) return; // require some visible text to reduce noise
+            if (!jobs.has(id)) jobs.set(id, { id, title, url: fullUrl });
+          });
+          const addedLinks = jobs.size - beforeLinks;
+          dbg('fallback-anchor-scan', { url, linkCount, added: addedLinks, totalJobs: jobs.size });
+        }
 
         // pagination: look for "Next" link
-        const nextHref = $('a[aria-label="Next"], a[rel="next"], a:contains("Next")').attr('href');
-        url = nextHref ? new URL(nextHref, url).toString() : null;
+        // More robust next-page detection (includes <link rel="next"> in <head>)
+        const nextHref = (
+          $('a[aria-label="Next"], a[aria-label*="Next"], a[rel="next"], a:contains("Next"), a:contains("next")').attr('href')
+          || $('link[rel="next"]').attr('href')
+          || ''
+        );
+        const resolvedNext: string | null = nextHref && !/^javascript:|^#/.test(nextHref)
+          ? new URL(nextHref, url!).toString()
+          : null;
+        dbg('pagination', { current: url, nextHref, resolvedNext });
+        url = resolvedNext;
         pageCount++;
         pagesVisited++;
       }
+      dbg('source-url-finished', { startUrl, pagesVisited: pageCount, totalJobs: jobs.size });
     }
 
     // Fetch descriptions (detail pages), light throttle
