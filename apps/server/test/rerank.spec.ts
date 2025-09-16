@@ -41,7 +41,8 @@ afterEach(() => {
   Object.assign(process.env, originalEnv);
 });
 
-describe('maybeRerankWithLLM', () => {
+// Rerank feature has been removed for now; keeping this suite skipped as a placeholder.
+describe.skip('maybeRerankWithLLM (removed)', () => {
   it('annotates error details when OpenAI returns non-OK', async () => {
     (globalThis as any).fetch = async () => ({ ok: false, status: 401, text: async () => 'unauthorized' });
     const scored = [job('job-1', 'A'), job('job-2', 'B'), job('job-3', 'C')];

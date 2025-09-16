@@ -7,7 +7,6 @@ import { parseListedAgoToDays } from '../lib/utils.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { scoreJob, scoringConcurrency } from '../services/scoring.js';
-import { maybeRerankWithLLM } from '../services/rerank.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
@@ -229,14 +228,11 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const toScore = preSorted.slice(0, Math.min(filteredJobs.length, maxScoreJobs));
       const scored = await scoreJobs(analysis, toScore);
 
-      // Optional LLM rerank (scaffold). Returns same list with annotations when enabled.
-      const reranked = await maybeRerankWithLLM(analysis, scored as any);
-
       if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
         const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
         try {
-          await saveScoredJobs((req as any).id, dir, reranked as any);
-          (req as any).log?.info?.({ dir: path.join(dir, 'scored'), count: reranked.length }, 'db scored write completed');
+          await saveScoredJobs((req as any).id, dir, scored as any);
+          (req as any).log?.info?.({ dir: path.join(dir, 'scored'), count: scored.length }, 'db scored write completed');
         } catch (err) {
           (req as any).log?.warn?.({ err }, 'db scored write failed');
         }
@@ -247,8 +243,8 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         searchUrls,
         llmGoodTraits: (process.env.LLM_GOOD_TRAITS || '').trim(),
         llmBadTraits: (process.env.LLM_BAD_TRAITS || '').trim(),
-        total: reranked.length,
-        results: reranked,
+        total: scored.length,
+        results: scored,
       });
     } catch (err: any) {
       (req as any).log?.error?.({ err }, 'jobs.find failed');
