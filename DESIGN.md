@@ -5,7 +5,7 @@ Last updated: 2025-09-05
 ## 1. Purpose and Scope
 This document describes the architecture, design decisions, data flow, and operational details of the Jora LLM Job Finder monorepo. It is written for contributors and maintainers to quickly understand how the system works, how to run it locally, and where to extend it.
 
-Current mode: Heuristic by default (fast local iteration). Optional LLM replace-mode is available via env flags.
+Current mode: Random by default (fast local iteration). Optional LLM replace-mode is available via env flags.
 
 ## 2. Goals and Non-Goals
 - Goals
@@ -13,7 +13,7 @@ Current mode: Heuristic by default (fast local iteration). Optional LLM replace-
   - Extract text from supported CV formats (.pdf, .docx, .txt).
   - Analyze CV to produce a minimal summary (mocked) and fallback job titles.
   - Generate Jora search URLs and scrape job listings.
-  - Score jobs and return ranked results (heuristic by default, optional LLM replace-mode behind flags).
+  - Score jobs and return ranked results (random by default; optional LLM replace-mode behind flags).
   - Keep the development loop fast and simple.
 
 - Non-Goals (for now)
@@ -32,7 +32,7 @@ Current mode: Heuristic by default (fast local iteration). Optional LLM replace-
 - Client (web or curl) uploads a CV and form fields to the server.
 - Server extracts text, runs mocked analysis, builds Jora search URLs.
 - Scraper fetches Jora SERP pages and job details.
-- Server applies heuristic scoring to produce ranked results (optional LLM replace-mode can score per job when enabled).
+- Server scores jobs randomly by default to produce results (optional LLM replace-mode can score per job when enabled).
 - Server returns JSON to the client.
  - Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
 
@@ -76,8 +76,8 @@ Current mode: Heuristic by default (fast local iteration). Optional LLM replace-
 - Analysis (mock):
   - Returns the first ~200 characters as summary; arrays are empty.
 - Scoring:
-  - Heuristic: additive signals (e.g., title match, recency, remote flag, salary presence) with a reason string.
-  - LLM replace-mode (optional): per-job prompt to LLM; parsed numeric score [0..100]; on failure, falls back to heuristic and annotates reason.
+  - Random: returns a numeric score [0..100] with reason `random`.
+  - LLM replace-mode (optional): per-job prompt to LLM; parsed numeric score [0..100]; on failure, falls back to random and annotates reason.
 
 ### Prompt Builder Utility (LLM prep)
 - Location: `apps/server/src/services/prompt.ts`
@@ -100,7 +100,7 @@ Current mode: Heuristic by default (fast local iteration). Optional LLM replace-
 - MAX_PAGES (default depends on scraper; recommend 1–2 for dev)
 - MAX_JOBS (default 40)
 - CORS_ORIGIN (production only; dev uses origin: true)
-- SCORE_MODE: `random` | `heuristic` | `llm` (default heuristic)
+- SCORE_MODE: `random` | `llm` (default random)
 - OPENAI_API_KEY — required when LLM is enabled
 
 - LLM envs (when SCORE_MODE=llm):
@@ -151,10 +151,10 @@ Current mode: Heuristic by default (fast local iteration). Optional LLM replace-
 - MAX_PAGES / MAX_JOBS env vars allow quick dev iterations.
 
 ## 14. Key Design Decisions
-- Heuristic-by-default to remove OpenAI dependency and speed up iteration.
+- Random-by-default to remove OpenAI dependency and speed up iteration.
 - PDF support enabled using pdf-parse for improved UX and parity with DOCX/TXT.
 - Multipart attachFieldsToBody disabled to ensure req.file() reliability with curl; fields read from data.fields.
-- Optional LLM replace-mode behind flags with protective measures (capped retries and per-request job cap). Falls back to heuristic on failures.
+- Optional LLM replace-mode behind flags with protective measures (capped retries and per-request job cap). Falls back to random on failures.
 
 ## 15. Alternatives Considered
 - Keeping attachFieldsToBody and reading file from req.body.file. Rejected for dev due to inconsistent behavior with curl; easier to rely on req.file().
@@ -162,7 +162,7 @@ Current mode: Heuristic by default (fast local iteration). Optional LLM replace-
 
 ## 16. Future Work
 - Extend LLM support with rerank mode and stricter schema/response validation.
-- Heuristic or embedding-based scoring to replace random scores and provide human-readable reasons.
+- Consider heuristic or embedding-based scoring in the future to replace random scores and provide human-readable reasons.
 - Improve PDF extraction robustness (edge PDFs, encoding) and add tests/fixtures.
 - Caching, deduplication, and job detail enrichment.
 - Production hardening: rate limiting, auth (if needed), observability (metrics, tracing), CI/CD.

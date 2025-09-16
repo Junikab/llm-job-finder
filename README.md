@@ -53,7 +53,7 @@ Use the app at http://localhost:5173
 2) Server extracts text (`pdf-parse` for PDF, `mammoth` for DOCX, plain for TXT) and picks simple titles/skills.
 3) It builds Jora URLs (e.g., `https://au.jora.com/j?...`).
 4) Scraper visits those pages and collects jobs (bounded by env limits).
-5) Jobs are scored based on SCORE_MODE and returned to the web app. Heuristic mode adds reason strings. When SCORE_MODE=llm and LLM_MODE=replace with a valid OPENAI_API_KEY, the server calls OpenAI per job using a detailed prompt, with concurrency and timeouts; failures gracefully fall back to heuristic.
+5) Jobs are scored based on SCORE_MODE and returned to the web app. Default is random (reason: `random`). When SCORE_MODE=llm and LLM_MODE=replace with a valid OPENAI_API_KEY, the server calls OpenAI per job using a detailed prompt; on failures it gracefully falls back to random and annotates the reason.
 6) Optional: server can save JSON snapshots of raw and scored jobs to disk (see Job DB below).
 
 
@@ -110,7 +110,8 @@ From `.env.example` (root):
 - `MAX_JOBS=40` — cap total jobs
 - `MAX_PAGES=3` — cap pages per search URL
 - `JORA_REGION=au` — Jora region prefix (domain)
-- `SCORE_MODE=heuristic` — scoring mode: `random` | `heuristic` | `llm`
+- `SCORE_MODE=random` — scoring mode: `random` | `llm`
+- `SEARCH_QUERY_MODE=rich|simple` — query builder mode; `rich` uses quoted titles + top skills; `simple` uses only the top detected title (no quotes/skills)
 - `OPENAI_API_KEY=` — required when LLM is enabled (replace or rerank)
 
 - `OPENAI_MODEL=gpt-4o-mini` — model used for LLM calls (default shown)
@@ -125,19 +126,15 @@ Additional (supported by server code):
 - `JOB_DB_DIR` — base directory to write/read job JSON (default: `<cwd>/db`)
 
 ## Scoring modes
-Default: heuristic (see `.env.example`).
+Default: random (see `.env.example`).
 
 - **random**: returns a random 0–100 score with reason `random`.
-- **heuristic**: additive signals with reasons:
-  - title keyword match (up to +30, based on CV titles/skills)
-  - recency based on `listedAgo` (0–25)
-  - remote/hybrid indicator (+5)
-  - salary presence (+5)
-  Reason string lists components, e.g., `title +20, recency +15, remote +5, salary +5`.
 - **llm**: enable LLM features controlled by `LLM_MODE`:
-  - `replace`: per-job LLM scoring replaces heuristic. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to heuristic and annotates the reason (e.g., `llm-replace-error: timeout`).
-  - `rerank`: top-N rerank scaffold (keeps original scores, may append short LLM reason notes; currently a stub).
+  - `replace`: per-job LLM scoring. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to random and annotates the reason (e.g., `random; llm-replace-error: timeout`).
+  - `rerank`: top-N rerank scaffold (keeps original scores; currently a stub).
   Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
+
+Note: The server uses a lightweight pre-sort (`preSortByKeywordSignals`) based on simple title/skill keyword matches before scoring. This pre-sort is not a scoring mode; it only helps choose which jobs to score first.
 
 Note on interplay between `SCORE_MODE` and `LLM_MODE`:
 - To use LLM scoring, set `SCORE_MODE=llm` AND `LLM_MODE=replace` (plus a valid `OPENAI_API_KEY`).
@@ -178,7 +175,7 @@ If you prefer the normal semantics (write when `JOB_DB_WRITE=true`), switch the 
 
 
 ## LLM mode
-LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and a single numeric score (0–100) is parsed. Rerank mode is scaffolded.
+LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and a single numeric score (0–100) is parsed. Rerank mode is scaffolded. If an LLM call fails or is disabled, the server falls back to random and annotates the reason.
 
 - Relevant envs:
   - `LLM_MODE`: `off` | `rerank` (top N) | `replace` (LLM per job)
@@ -286,7 +283,7 @@ npx playwright install chromium
 
 
 ## Notes
-- Default scoring is heuristic unless you enable LLM via env vars.
+- Default scoring is random unless you enable LLM via env vars.
 - Recent CVs are stored locally in your browser (IndexedDB). Up to 5 items are kept and older ones are pruned. If IndexedDB is unavailable (e.g., private mode), a sessionStorage fallback stores a base64 Data URL.
 - On load, the web app best-effort requests persistent storage via `navigator.storage.persist()` so browsers are less likely to evict local data.
 - This code is for educational/dev purposes. Be mindful of scraping limits and site terms.

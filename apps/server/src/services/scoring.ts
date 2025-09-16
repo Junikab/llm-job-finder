@@ -3,10 +3,9 @@ import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
 import { buildJobRelevancePrompt, parseRelevanceScore } from './prompt.js';
 import { LLM_DEBUG, getLLMConfig, formatLLMError, callOpenAIChatText } from './llm.js';
-import { scoreHeuristic } from './heuristic.js';
 
 /**
- * Scoring-related helpers (heuristic and LLM) for ranking jobs.
+ * Scoring-related helpers (random and LLM) for ranking jobs.
  */
 
  
@@ -14,11 +13,12 @@ import { scoreHeuristic } from './heuristic.js';
  
 
 /**
- * Derive score mode from env.
+ * Derive score mode (only 'random' or 'llm').
+ * Any unknown value falls back to 'random'.
  */
-function getScoreMode(): 'random' | 'heuristic' | 'llm' {
+function getScoreMode(): 'random' | 'llm' {
   const mode = (process.env.SCORE_MODE || 'random').toLowerCase();
-  if (mode === 'heuristic' || mode === 'llm') return mode as any;
+  if (mode === 'llm') return 'llm';
   return 'random';
 }
 
@@ -78,7 +78,7 @@ export function scoringConcurrency(): number {
 
 /**
  * Score a single job given the CV analysis.
- * Modes: random | heuristic | llm (replace-mode implemented with heuristic fallback).
+ * Modes: random | llm (replace-mode implemented with random fallback).
  */
 export async function scoreJob(
   _analysis: CVAnalysis,
@@ -87,9 +87,6 @@ export async function scoreJob(
   const mode = getScoreMode();
   if (mode === 'random') {
     return { score: Math.floor(Math.random() * 101), reason: 'random' };
-  }
-  if (mode === 'heuristic') {
-    return scoreHeuristic(_analysis, _job);
   }
   // LLM mode
   const cfg = getLLMConfig();
@@ -135,18 +132,18 @@ export async function scoreJob(
       if (LLM_DEBUG) {
         console.warn('[llm] replace parse failed', { content: String(content || '').slice(0, 160) });
       }
-      const h = scoreHeuristic(_analysis, _job);
-      return { score: h.score, reason: `${h.reason}; llm-replace-error: no-number` };
+      const r = Math.floor(Math.random() * 101);
+      return { score: r, reason: `random; llm-replace-error: no-number` };
     } catch (err: any) {
       const errMsg = formatLLMError(err);
       if (LLM_DEBUG) {
         console.warn('[llm] replace failed', { err: errMsg });
       }
-      const h = scoreHeuristic(_analysis, _job);
-      return { score: h.score, reason: `${h.reason}; llm-replace-error: ${errMsg}` };
+      const r = Math.floor(Math.random() * 101);
+      return { score: r, reason: `random; llm-replace-error: ${errMsg}` };
     }
   }
-  // If LLM not configured for replace, fallback to heuristic and annotate
-  const h = scoreHeuristic(_analysis, _job);
-  return { score: h.score, reason: `${h.reason}; llm-disabled` };
+  // If LLM not configured for replace, fallback to random and annotate
+  const r = Math.floor(Math.random() * 101);
+  return { score: r, reason: `random; llm-disabled` };
 }

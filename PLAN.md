@@ -5,7 +5,7 @@ Last updated: 2025-09-05
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
 - Web UI can upload a CV, set location/days, and show ranked jobs
-- Use simple, non-AI starter keywords from the CV (or a small preset) and sort results with easy rules (title match, recent posts, near location, seniority fit, salary/remote).
+- Use simple, non-AI starter keywords from the CV (or a small preset) and pre-sort results with easy rules (title/skill keyword matches) before scoring.
 - Basic tests and logging; minimal production readiness checklist
 
 ## 1. Milestones & Acceptance Criteria
@@ -38,14 +38,13 @@ Last updated: 2025-09-05
 - Acceptance
   - Queries reflect at least one relevant title from CV or fallback
 
-### M4 — Ranking Signals MVP (Day 5–7)
+### M4 — Pre-Sort Signals MVP (Day 5–7)
 - Tasks
-  - Add additive score: title match boost, recency boost, distance (if available), seniority match, remote flag, salary presence
-  - Keep a feature flag to switch between random and heuristic scoring
-  - Include reason string explaining top contributing signals
+  - Add a lightweight pre-sort that boosts jobs whose titles/descriptions include extracted title/skill keywords
+  - Keep a feature flag to switch between random and LLM scoring (SCORE_MODE)
+  - Note: pre-sort is not a scoring mode; it only determines which jobs to score first
 - Acceptance
-  - Top 5 jobs usually contain the main keyword in title
-  - Response `reason` lists the applied boosts (e.g., "title match +20, recent +10")
+  - Jobs surfaced first generally include the main keywords in the title/description
 
 ### M5 — Web UI Integration (Day 1–7 parallel or Week 2)
 - Tasks
@@ -91,16 +90,16 @@ Last updated: 2025-09-05
 - [ ] Scraper: dedupe, retries, timeouts, pagination caps (retry once and caps wired in API; in-scraper dedupe TBD)
 - [x] Heuristic: titles/skills extraction (first pass)
 - [x] Query builder: basic `(title OR group)` + location, days
-- [ ] Scoring flag: `SCORE_MODE=heuristic|random`
-- [ ] Ranking signals: title match, recency, seniority, remote, salary
-- [ ] Reason string explaining score
+- [x] Scoring flag: `SCORE_MODE=random|llm`
+- [x] Pre-sort signals: simple title/skill keyword matches to order candidates before scoring
+- [ ] (Optional) Human-readable reason strings (deferred)
 - [x] Web UI: upload form + results table
 - [x] Web UI: Recent CVs picker (IndexedDB) with reuse/remove
 - [x] Web UI: Recent CVs persist across refresh; sessionStorage fallback; capped at 5; persistent storage requested
 - [x] Web UI: Saved tab with reload and rating + feedback POST
 - [x] Tests: basic web App flow and DB endpoints (add more)
 - [ ] Fixtures: sample CVs and SERP HTML
-- [x] README: quickstart; curl examples; troubleshooting
+- [x] README: quickstart; curl examples; troubleshooting; two-mode scoring docs (random | llm)
 - [x] .env.example: template for local dev
 
 - [x] Prompt builder: `buildJobRelevancePrompt` + `parseRelevanceScore`
@@ -113,7 +112,7 @@ Last updated: 2025-09-05
 - [x] DB-4: compaction script removed; aggregation happens on demand
 
 - [x] LLM protective measures: capped retries/backoff for OpenAI (LLM_RETRIES) and per-request LLM job cap (LLM_MAX_SCORE_JOBS)
-- [x] Docs: LLM logging & debugging steps (envs, prompt visibility, troubleshooting)
+- [x] Docs: LLM logging & debugging steps (envs, prompt visibility, troubleshooting); scoring modes simplified to random | llm
 
 ## 3. Timeline (Suggestive)
 - Week 1: M1–M4 complete (API, scraper, heuristics, ranking)
@@ -128,7 +127,7 @@ Last updated: 2025-09-05
 ## 5. Acceptance/Exit Criteria for MVP
 - User can upload a .pdf/.docx/.txt CV and choose location/days
 - API responds <10s with at least 20 jobs (on default caps)
-- Results sorted by heuristic/flag with visible reasons
+- Results scored by random or LLM; simple pre-sort chooses which jobs to score first (reasons optional)
 - Web UI displays list and links work
 - Basic tests pass; docs (README, DESIGN, PLAN) are accurate
 
@@ -141,6 +140,6 @@ Last updated: 2025-09-05
 - Persist recent searches and add favorites
 
 ## 7. Recommendation — sequence before enabling LLM
-- Start by implementing heuristic scoring with clear reasons and a toggle (`SCORE_MODE=random|heuristic|llm`).
-- Add tests and logging for the heuristic to establish a stable baseline and cost-free ranking.
-- Then integrate optional LLM reranking for top-N using `buildJobRelevancePrompt` and `parseRelevanceScore`, guarded by env flags and concurrency/timeouts.
+- Start with random scoring only (no LLM) for a cost-free baseline.
+- Add simple pre-sort signals (title/skill keyword matches) to choose which jobs to score first.
+- Then integrate optional LLM scoring (replace-mode) behind env flags and timeouts; consider rerank later.

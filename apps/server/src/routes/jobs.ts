@@ -125,7 +125,9 @@ function filterByDays(jobs: JobItem[], days?: number): JobItem[] {
   });
 }
 
-function heuristicOrder(jobs: JobItem[], analysis: CVAnalysis): JobItem[] {
+// Lightweight pre-sort based on simple keyword signals from titles and skills.
+// This is NOT a scoring mode; it only helps choose which jobs to score first.
+function preSortByKeywordSignals(jobs: JobItem[], analysis: CVAnalysis): JobItem[] {
   const skills = new Set((analysis.topSkills || []).map(s => s.toLowerCase()));
   const titleTokens = new Set((analysis.titles || []).map(t => t.toLowerCase()));
   const scores = new Map<JobItem, number>();
@@ -222,9 +224,9 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       }
 
       const filteredJobs = filterByDays(rawJobsUnique, days);
-      const heuristicSorted = heuristicOrder(filteredJobs, analysis);
+      const preSorted = preSortByKeywordSignals(filteredJobs, analysis);
       const maxScoreJobs = Math.max(0, Math.min(100, Number(process.env.LLM_MAX_SCORE_JOBS || 30)));
-      const toScore = heuristicSorted.slice(0, Math.min(filteredJobs.length, maxScoreJobs));
+      const toScore = preSorted.slice(0, Math.min(filteredJobs.length, maxScoreJobs));
       const scored = await scoreJobs(analysis, toScore);
 
       // Optional LLM rerank (scaffold). Returns same list with annotations when enabled.

@@ -39,21 +39,22 @@ describe('scoring service', () => {
     expect(out.reason).toBe('random');
   });
 
-  it('heuristic mode includes reasons for title, recency, remote, salary', async () => {
-    process.env.SCORE_MODE = 'heuristic';
+  it('llm disabled returns random with annotation when SCORE_MODE=llm', async () => {
+    process.env.SCORE_MODE = 'llm';
+    // LLM_MODE defaults to off in tests; no API key, so llm-disabled path
     const out = await scoreJob(baseAnalysis, makeJob());
-    expect(out.score).toBeGreaterThan(0);
-    expect(out.reason).toContain('title +');
-    expect(out.reason).toContain('recency +');
-    expect(out.reason).toContain('remote +');
-    expect(out.reason).toContain('salary +');
+    expect(typeof out.score).toBe('number');
+    expect(out.score).toBeGreaterThanOrEqual(0);
+    expect(out.score).toBeLessThanOrEqual(100);
+    expect(out.reason).toContain('llm-disabled');
+    expect(out.reason).toContain('random');
   });
 
-  it('llm mode currently falls back to heuristic and annotates reason', async () => {
+  it('llm mode falls back to random and annotates reason when disabled', async () => {
     process.env.SCORE_MODE = 'llm';
     const out = await scoreJob(baseAnalysis, makeJob());
-    expect(out.score).toBeGreaterThan(0);
+    expect(out.score).toBeGreaterThanOrEqual(0);
     expect(out.reason).toContain('llm-disabled');
-    expect(out.reason).toContain('title +');
+    expect(out.reason).toContain('random');
   });
 });
