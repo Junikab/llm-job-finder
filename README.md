@@ -53,7 +53,7 @@ Use the app at http://localhost:5173
 2) Server extracts text (`pdf-parse` for PDF, `mammoth` for DOCX, plain for TXT) and picks simple titles/skills.
 3) It builds Jora URLs (e.g., `https://au.jora.com/j?...`).
 4) Scraper visits those pages and collects jobs (bounded by env limits).
-5) Jobs are scored based on SCORE_MODE and returned to the web app. Default is random (reason: `random`). When SCORE_MODE=llm and LLM_MODE=replace with a valid OPENAI_API_KEY, the server calls OpenAI per job using a detailed prompt; on failures it gracefully falls back to random and annotates the reason.
+5) Jobs are scored based on SCORE_MODE and returned to the web app. Default is random (reason: `random`). When SCORE_MODE=llm with a valid OPENAI_API_KEY, the server calls OpenAI per job using a detailed prompt; on failures it gracefully falls back to random and annotates the reason.
 6) Optional: server can save JSON snapshots of raw and scored jobs to disk (see Job DB below).
 
 
@@ -129,12 +129,12 @@ Additional (supported by server code):
 Default: random (see `.env.example`).
 
 - **random**: returns a random 0–100 score with reason `random`.
-- **llm**: enable LLM per-job scoring via `LLM_MODE=replace`. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to random and annotates the reason (e.g., `random; llm-replace-error: timeout`). Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
+- **llm**: enable LLM per-job scoring with `SCORE_MODE=llm`. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to random and annotates the reason (e.g., `random; llm-replace-error: timeout`). Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
 
 Note: The server uses a lightweight pre-sort (`preSortByKeywordSignals`) based on simple title/skill keyword matches before scoring. This pre-sort is not a scoring mode; it only helps choose which jobs to score first.
 
-Note on interplay between `SCORE_MODE` and `LLM_MODE`:
-- To use LLM scoring, set `SCORE_MODE=llm` AND `LLM_MODE=replace` (plus a valid `OPENAI_API_KEY`).
+Note on configuration:
+- To use LLM scoring, set `SCORE_MODE=llm` and provide a valid `OPENAI_API_KEY`.
 
 
 ## Job DB (JSON snapshots)
@@ -171,10 +171,9 @@ If you prefer the normal semantics (write when `JOB_DB_WRITE=true`), switch the 
 
 
 ## LLM mode
-LLM replace-mode is wired. When enabled, per-job prompts are sent to OpenAI and a single numeric score (0–100) is parsed. If an LLM call fails or is disabled, the server falls back to random and annotates the reason.
+When `SCORE_MODE=llm`, per-job prompts are sent to OpenAI and a single numeric score (0–100) is parsed. If an LLM call fails or is disabled, the server falls back to random and annotates the reason.
 
 - Relevant envs:
-  - `LLM_MODE`: `off` | `replace` (LLM per job)
   - `LLM_CONCURRENCY`: e.g. `2` (max parallel LLM calls)
   - `LLM_TIMEOUT_MS`: e.g. `8000` (per-call timeout in ms)
   - `LLM_CACHE_TTL_MS`: e.g. `900000` (TTL for in-memory replace-mode score cache)
@@ -204,10 +203,9 @@ These appear in the prompt after the CV summary and before the rubric, keeping t
 
 Follow these steps to see the actual prompts and responses used by the LLM in replace mode:
 
-1) Enable LLM replace scoring in `.env` (root):
+1) Enable LLM scoring in `.env` (root):
 ```
 SCORE_MODE=llm
-LLM_MODE=replace
 LLM_LOG=debug
 OPENAI_API_KEY=sk-...   # ensure this has no stray quotes or parentheses
 ```
@@ -260,7 +258,6 @@ npm run build
 - No LLM logs appear:
   - Ensure `.env` has:
     - `SCORE_MODE=llm`
-    - `LLM_MODE=replace`
     - `LLM_LOG=debug`
     - `OPENAI_API_KEY=...` (no stray quotes or parentheses)
   - Fully restart the API server after changing `.env` so values are reloaded.

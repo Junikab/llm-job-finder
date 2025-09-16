@@ -4,7 +4,6 @@
 export const LLM_DEBUG = (process.env.LLM_LOG || '').toLowerCase() === 'debug';
 
 export type LLMConfig = {
-  mode: 'off' | 'replace';
   concurrency: number;
   timeoutMs: number;
   apiKey?: string;
@@ -12,13 +11,11 @@ export type LLMConfig = {
 };
 
 export function getLLMConfig(): LLMConfig {
-  const modeRaw = (process.env.LLM_MODE || 'off').toLowerCase();
-  const mode: LLMConfig['mode'] = modeRaw === 'replace' ? 'replace' : 'off';
   const concurrency = Math.max(1, Math.min(5, Number(process.env.LLM_CONCURRENCY || 2)));
   const timeoutMs = Math.max(1000, Math.min(60000, Number(process.env.LLM_TIMEOUT_MS || 8000)));
   const apiKey = process.env.OPENAI_API_KEY || undefined;
   const model = (process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
-  return { mode, concurrency, timeoutMs, apiKey, model };
+  return { concurrency, timeoutMs, apiKey, model };
 }
 
 export function formatLLMError(err: any): string {

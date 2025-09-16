@@ -41,7 +41,6 @@ describe('scoring service', () => {
 
   it('llm disabled returns random with annotation when SCORE_MODE=llm', async () => {
     process.env.SCORE_MODE = 'llm';
-    // LLM_MODE defaults to off in tests; no API key, so llm-disabled path
     const out = await scoreJob(baseAnalysis, makeJob());
     expect(typeof out.score).toBe('number');
     expect(out.score).toBeGreaterThanOrEqual(0);

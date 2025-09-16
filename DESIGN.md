@@ -104,8 +104,6 @@ Current mode: Random by default (fast local iteration). Optional LLM replace-mod
 - OPENAI_API_KEY — required when LLM is enabled
 
 - LLM envs (when SCORE_MODE=llm):
-  - LLM_MODE: `off` | `rerank` | `replace`
-  - LLM_TOP_N: e.g., 10 (for rerank)
   - LLM_CONCURRENCY: e.g., 2
   - LLM_TIMEOUT_MS: e.g., 8000
   - LLM_CACHE_TTL_MS: e.g., 900000

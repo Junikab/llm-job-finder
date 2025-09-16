@@ -67,7 +67,7 @@ function cacheSet(key: string, entry: CacheEntry) {
 export function scoringConcurrency(): number {
   const mode = getScoreMode();
   const cfg = getLLMConfig();
-  return mode === 'llm' && cfg.mode === 'replace' ? cfg.concurrency : 3;
+  return mode === 'llm' && !!cfg.apiKey ? cfg.concurrency : 3;
 }
 
 // formatLLMError moved to ./llm.ts
@@ -90,7 +90,7 @@ export async function scoreJob(
   }
   // LLM mode
   const cfg = getLLMConfig();
-  if (cfg.mode === 'replace' && cfg.apiKey) {
+  if (cfg.apiKey) {
     // Cache key based on model, stable job identity, job/summary content and traits
     const goodTraits = (process.env.LLM_GOOD_TRAITS || '').trim();
     const badTraits = (process.env.LLM_BAD_TRAITS || '').trim();
