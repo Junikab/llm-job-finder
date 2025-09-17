@@ -8,6 +8,8 @@ import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { scoreJob, scoringConcurrency } from '../services/scoring.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
+import { buildCVSummaryPrompt } from '../services/prompt.js';
+import { getLLMConfig, callOpenAIChatText, LLM_DEBUG, formatLLMError } from '../services/llm.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);
@@ -179,6 +181,31 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const cvText = await bufferToText(data.filename, buf);
 
       const analysis = analyzeCV(cvText);
+
+      // Optional: pre-scoring LLM summarization to produce a concise, general candidate summary
+      try {
+        const scoreMode = (process.env.SCORE_MODE || 'random').toLowerCase();
+        const cfg = getLLMConfig();
+        if (scoreMode === 'llm' && cfg.apiKey) {
+          const { system, user } = buildCVSummaryPrompt(cvText);
+          if (LLM_DEBUG) {
+            (req as any).log?.info?.({ userLen: user.length, model: cfg.model }, 'llm summarize prompt');
+          }
+          const { content } = await callOpenAIChatText(cfg, system, user);
+          const summaryLLM = String(content || '').trim();
+          if (summaryLLM) {
+            analysis.summary = summaryLLM;
+            if (LLM_DEBUG) {
+              (req as any).log?.info?.({ summaryLen: summaryLLM.length }, 'llm summarize ok');
+            }
+          }
+        }
+      } catch (err: any) {
+        // Non-fatal: keep heuristic summary when summarize step fails
+        if (LLM_DEBUG) {
+          (req as any).log?.warn?.({ err: formatLLMError(err) }, 'llm summarize failed');
+        }
+      }
       const manualUrls = (manualSearchUrl && manualSearchUrl.trim()) ? [manualSearchUrl.trim()] : [];
       const searchUrls = manualUrls.length > 0
         ? manualUrls

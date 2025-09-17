@@ -15,3 +15,15 @@
   - Keep strict JSON response format; handle errors gracefully (no-op with annotations in debug).
   - Start with N=10 by default; cap to a safe upper bound (e.g., 50).
   - This is a nice-to-have; current system works with random or LLM scoring alone.
+
+## User-editable CV Summary (deferred)
+
+- __Concept__: After the initial LLM CV summarization step, let the user preview and optionally edit the generated summary before proceeding to build search URLs and score jobs. Default is to use the LLM summary as-is; editing is opt-in.
+- __Why__: Gives candidates control to correct mistakes, add nuance, and ensure the profile reflects their background (works for any profession, not tied to a specific role).
+- __How__:
+  - Backend: keep current single-step flow, but consider exposing a lightweight `POST /api/cv/summary` endpoint that accepts a CV file and returns `{ summary, source: 'llm'|'heuristic' }` for a two-step UI. Alternatively, support a `summaryOnly=true` flag on `/api/jobs/find`.
+  - Frontend: show a summary textarea with character count; buttons: "Use summary" to proceed, optional "Regenerate" (re-run summarize) when LLM is enabled. Persist last-used summary locally per recent CV.
+  - State/telemetry: include `analysis.summarySource` (`llm` vs `heuristic`) in responses to inform the UI; log redact-safe summary length for observability.
+  - Validation: enforce max length (e.g., 1200 chars) before proceeding to scoring.
+  - Privacy: redact PII in the displayed summary where feasible; avoid storing raw CV long-term.
+  - Tests: add route unit tests for summarize-only; UI tests for edit/submit flow and validation.
