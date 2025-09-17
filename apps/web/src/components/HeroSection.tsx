@@ -42,20 +42,9 @@ export default function HeroSection(props: {
   } = props;
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        backgroundImage:
-          'linear-gradient( to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.45) ), url(https://images.unsplash.com/photo-1522120692533-91be08007f30?q=80&w=1800&auto=format&fit=crop)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        color: 'white',
-        padding: '50px 15px',
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ maxWidth: 980, margin: '0 auto', padding:'0 20px' }}>
-        <h1 style={{ fontSize: 42, fontWeight: 800, margin: '0 0' }}>Lets make it personal</h1>
+    <div className="hero">
+      <div className="hero__inner">
+        <h1 className="hero__title">Lets make it personal</h1>
         <LiveForm
           onSubmit={onSubmit}
           onFileChange={onFileChange}
@@ -75,11 +64,11 @@ export default function HeroSection(props: {
           fileInputRef={fileInputRef}
           showInlineError={false}
         />
-        <div style={{ marginTop: 10, fontSize: 15, color: 'rgba(255,255,255,0.9)' }}>
+        <div className="hero__hint">
           {resultsCount > 0 ? `We have ${resultsCount} job offers for you!` : 'Upload your CV and optionally pick a recent URL.'}
         </div>
         {!!error && (
-          <div style={{ marginTop: 10, background: 'rgba(239, 68, 68, 0.15)', color: '#fee', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '8px 12px', borderRadius: 8, textAlign: 'left' }}>
+          <div className="hero__error">
             {error}
           </div>
         )}
