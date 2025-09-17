@@ -86,3 +86,18 @@
   border: 1px solid #e5e7eb;
   background: #fff;
 }
+
+/* App wrappers */
+.app-root {
+  font-family: ui-sans-serif, system-ui;
+}
+
+.content-container {
+  padding: 16px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.saved-section {
+  margin-top: 8px;
+}

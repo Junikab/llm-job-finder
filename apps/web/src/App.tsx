@@ -104,7 +104,7 @@ export default function App() {
   // Saved jobs handlers come from useSavedJobs
 
   return (
-    <div style={{ fontFamily: 'ui-sans-serif, system-ui' }}>
+    <div className="app-root">
       {/* Simple navbar */}
       <TopNav tab={tab} onChange={setTab} />
 
@@ -130,7 +130,7 @@ export default function App() {
       />
 
       {/* Main content container */}
-      <div style={{ padding: 16, maxWidth: 980, margin: '0 auto' }}>
+      <div className="content-container">
       {tab === 'live' && (
         <>
           <AnalysisHeader analysis={analysis} searchUrls={searchUrls} llmGoodTraits={llmGoodTraits} llmBadTraits={llmBadTraits} />
@@ -143,7 +143,7 @@ export default function App() {
       )}
 
       {tab === 'saved' && (
-        <div style={{ marginTop: 8 }}>
+        <div className="saved-section">
           {/* Fetch on enter Saved tab */}
           <SavedList
             items={saved}
