@@ -142,4 +142,4 @@ Last updated: 2025-09-05
 ## 7. Recommendation — sequence before enabling LLM
 - Start with random scoring only (no LLM) for a cost-free baseline.
 - Add simple pre-sort signals (title/skill keyword matches) to choose which jobs to score first.
-- Then integrate optional LLM scoring (replace-mode) behind env flags and timeouts; consider rerank later.
+- Then integrate optional LLM scoring behind env flags and timeouts; consider rerank later.

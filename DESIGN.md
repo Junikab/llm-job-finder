@@ -5,7 +5,7 @@ Last updated: 2025-09-05
 ## 1. Purpose and Scope
 This document describes the architecture, design decisions, data flow, and operational details of the Jora LLM Job Finder monorepo. It is written for contributors and maintainers to quickly understand how the system works, how to run it locally, and where to extend it.
 
-Current mode: Random by default (fast local iteration). Optional LLM replace-mode is available via env flags.
+Current mode: Random by default (fast local iteration). Optional LLM scoring is available via env flags.
 
 ## 2. Goals and Non-Goals
 - Goals
@@ -13,7 +13,7 @@ Current mode: Random by default (fast local iteration). Optional LLM replace-mod
   - Extract text from supported CV formats (.pdf, .docx, .txt).
   - Analyze CV to produce a minimal summary (mocked) and fallback job titles.
   - Generate Jora search URLs and scrape job listings.
-  - Score jobs and return ranked results (random by default; optional LLM replace-mode behind flags).
+  - Score jobs and return ranked results (random by default; optional LLM scoring behind flags).
   - Keep the development loop fast and simple.
 
 - Non-Goals (for now)
@@ -32,7 +32,7 @@ Current mode: Random by default (fast local iteration). Optional LLM replace-mod
 - Client (web or curl) uploads a CV and form fields to the server.
 - Server extracts text, runs mocked analysis, builds Jora search URLs.
 - Scraper fetches Jora SERP pages and job details.
-- Server scores jobs randomly by default to produce results (optional LLM replace-mode can score per job when enabled).
+- Server scores jobs randomly by default to produce results (optional LLM scoring can score per job when enabled).
 - Server returns JSON to the client.
  - Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
 
@@ -77,7 +77,7 @@ Current mode: Random by default (fast local iteration). Optional LLM replace-mod
   - Returns the first ~200 characters as summary; arrays are empty.
 - Scoring:
   - Random: returns a numeric score [0..100] with reason `random`.
-  - LLM replace-mode (optional): per-job prompt to LLM; parsed numeric score [0..100]; on failure, falls back to random and annotates reason.
+  - LLM scoring (optional): per-job prompt to LLM; parsed numeric score [0..100]; on failure, falls back to random and annotates reason.
 
 ### Prompt Builder Utility (LLM prep)
 - Location: `apps/server/src/services/prompt.ts`
@@ -132,7 +132,7 @@ Current mode: Random by default (fast local iteration). Optional LLM replace-mod
 - Fastify logger enabled (info-level) with request/response logs.
 - Clear 400 errors for missing file or unsupported type.
 - Try/catch around route handler; non-expected errors return 500 with message.
- - When `LLM_LOG=debug` and replace-mode is enabled, the server logs:
+ - When `LLM_LOG=debug` and LLM scoring is enabled, the server logs:
    - A header with job key, model, and user prompt length.
    - The first ~8000 characters of the user prompt for inspection.
    - Success/failure of OpenAI calls including latency, attempt number, and HTTP errors on retries.
@@ -152,11 +152,11 @@ Current mode: Random by default (fast local iteration). Optional LLM replace-mod
 - Random-by-default to remove OpenAI dependency and speed up iteration.
 - PDF support enabled using pdf-parse for improved UX and parity with DOCX/TXT.
 - Multipart attachFieldsToBody disabled to ensure req.file() reliability with curl; fields read from data.fields.
-- Optional LLM replace-mode behind flags with protective measures (capped retries and per-request job cap). Falls back to random on failures.
+- Optional LLM scoring behind flags with protective measures (capped retries and per-request job cap). Falls back to random on failures.
 
 ## 15. Alternatives Considered
 - Keeping attachFieldsToBody and reading file from req.body.file. Rejected for dev due to inconsistent behavior with curl; easier to rely on req.file().
-- Deferring OpenAI integration entirely. Partially accepted: we run heuristic by default but provide LLM replace-mode behind flags for targeted debugging and evaluation.
+- Deferring OpenAI integration entirely. Partially accepted: we run heuristic by default but provide LLM scoring behind flags for targeted debugging and evaluation.
 
 ## 16. Future Work
 - Extend LLM support with rerank mode and stricter schema/response validation.

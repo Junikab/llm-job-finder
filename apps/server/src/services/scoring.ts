@@ -24,7 +24,7 @@ function getScoreMode(): 'random' | 'llm' {
 
  
 
-// Simple in-memory TTL + LRU cache for LLM replace-mode scores
+// Simple in-memory TTL + LRU cache for LLM scoring results
 const LLM_CACHE_TTL_MS = Math.max(1, Number(process.env.LLM_CACHE_TTL_MS || 15 * 60 * 1000));
 const LLM_CACHE_MAX = Math.max(1, Number(process.env.LLM_CACHE_MAX || 200));
 type CacheEntry = { score: number; reason: string; t: number };
@@ -62,7 +62,7 @@ function cacheSet(key: string, entry: CacheEntry) {
 
 /**
  * Expose an appropriate concurrency for scoring jobs end-to-end.
- * If LLM replace-mode is enabled, use its configured concurrency; otherwise default to 3.
+ * If LLM scoring is enabled, use its configured concurrency; otherwise default to 3.
  */
 export function scoringConcurrency(): number {
   const mode = getScoreMode();
@@ -78,7 +78,7 @@ export function scoringConcurrency(): number {
 
 /**
  * Score a single job given the CV analysis.
- * Modes: random | llm (replace-mode implemented with random fallback).
+ * Modes: random | llm (falls back to random on failure).
  */
 export async function scoreJob(
   _analysis: CVAnalysis,
@@ -106,7 +106,7 @@ export async function scoreJob(
     if (hit) {
       if (LLM_DEBUG) {
         console.log('[llm] cache hit', { jobKey, model: cfg.model });
-        console.log('[llm] replace score', { jobKey, score: hit.score, source: 'cache' });
+        console.log('[llm] score', { jobKey, score: hit.score, source: 'cache' });
       }
       return { score: hit.score, reason: `${hit.reason} cache-hit` };
     }
@@ -115,35 +115,35 @@ export async function scoreJob(
     if (LLM_DEBUG) {
       const jobKeyDbg = normalizeJobKey(((_job as any).url || (_job as any).id || (_job as any).title || '') as string) || '';
       // Print a concise header and a truncated user prompt body to avoid overwhelming logs
-      console.log('[llm] replace prompt', { jobKey: jobKeyDbg, model: cfg.model, system, userLen: user.length });
-      console.log('[llm] replace prompt user', user.slice(0, 8000));
+      console.log('[llm] score prompt', { jobKey: jobKeyDbg, model: cfg.model, system, userLen: user.length });
+      console.log('[llm] score prompt user', user.slice(0, 8000));
     }
     try {
       const { content } = await callOpenAIChatText(cfg, system, user);
       const n = parseRelevanceScore(content || '');
       if (n !== null) {
-        const reason = `llm-replace ${cfg.model}`;
+        const reason = `llm ${cfg.model}`;
         cacheSet(cacheKey, { score: n, reason, t: Date.now() });
         if (LLM_DEBUG) {
-          console.log('[llm] replace score', { jobKey, score: n, model: cfg.model });
+          console.log('[llm] score', { jobKey, score: n, model: cfg.model });
         }
         return { score: n, reason };
       }
       if (LLM_DEBUG) {
-        console.warn('[llm] replace parse failed', { content: String(content || '').slice(0, 160) });
+        console.warn('[llm] parse failed', { content: String(content || '').slice(0, 160) });
       }
       const r = Math.floor(Math.random() * 101);
-      return { score: r, reason: `random; llm-replace-error: no-number` };
+      return { score: r, reason: `random; llm-error: no-number` };
     } catch (err: any) {
       const errMsg = formatLLMError(err);
       if (LLM_DEBUG) {
-        console.warn('[llm] replace failed', { err: errMsg });
+        console.warn('[llm] score failed', { err: errMsg });
       }
       const r = Math.floor(Math.random() * 101);
-      return { score: r, reason: `random; llm-replace-error: ${errMsg}` };
+      return { score: r, reason: `random; llm-error: ${errMsg}` };
     }
   }
-  // If LLM not configured for replace, fallback to random and annotate
+  // If LLM not configured, fallback to random and annotate
   const r = Math.floor(Math.random() * 101);
   return { score: r, reason: `random; llm-disabled` };
 }

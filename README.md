@@ -112,7 +112,7 @@ From `.env.example` (root):
 - `JORA_REGION=au` — Jora region prefix (domain)
 - `SCORE_MODE=random` — scoring mode: `random` | `llm`
 - `SEARCH_QUERY_MODE=rich|simple` — query builder mode; `rich` uses quoted titles + top skills; `simple` uses only the top detected title (no quotes/skills)
-- `OPENAI_API_KEY=` — required when LLM is enabled (replace or rerank)
+- `OPENAI_API_KEY=` — required when LLM is enabled
 
 - `OPENAI_MODEL=gpt-4o-mini` — model used for LLM calls (default shown)
 - `OPENAI_BASE_URL=` — optional API base override (e.g., Azure/OpenRouter/proxy). Defaults to `https://api.openai.com/v1`.
@@ -129,7 +129,7 @@ Additional (supported by server code):
 Default: random (see `.env.example`).
 
 - **random**: returns a random 0–100 score with reason `random`.
-- **llm**: enable LLM per-job scoring with `SCORE_MODE=llm`. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to random and annotates the reason (e.g., `random; llm-replace-error: timeout`). Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
+- **llm**: enable LLM per-job scoring with `SCORE_MODE=llm`. Concurrency is limited by `LLM_CONCURRENCY`; each call times out per `LLM_TIMEOUT_MS`. On error or parse failure, the server falls back to random and annotates the reason (e.g., `random; llm-error: timeout`). Requires `OPENAI_API_KEY` (and `OPENAI_MODEL`, defaults to `gpt-4o-mini`).
 
 Note: The server uses a lightweight pre-sort (`preSortByKeywordSignals`) based on simple title/skill keyword matches before scoring. This pre-sort is not a scoring mode; it only helps choose which jobs to score first.
 
@@ -176,7 +176,7 @@ When `SCORE_MODE=llm`, per-job prompts are sent to OpenAI and a single numeric s
 - Relevant envs:
   - `LLM_CONCURRENCY`: e.g. `2` (max parallel LLM calls)
   - `LLM_TIMEOUT_MS`: e.g. `8000` (per-call timeout in ms)
-  - `LLM_CACHE_TTL_MS`: e.g. `900000` (TTL for in-memory replace-mode score cache)
+  - `LLM_CACHE_TTL_MS`: e.g. `900000` (TTL for in-memory LLM scoring cache)
   - `LLM_CACHE_MAX`: e.g. `200` (max entries in the in-memory cache; LRU eviction)
   - `OPENAI_API_KEY`: required when LLM is enabled
   - `OPENAI_MODEL`: e.g. `gpt-4o-mini`
@@ -201,7 +201,7 @@ These appear in the prompt after the CV summary and before the rubric, keeping t
 
 ## LLM logging & debugging
 
-Follow these steps to see the actual prompts and responses used by the LLM in replace mode:
+Follow these steps to see the actual prompts and responses used by the LLM in LLM mode:
 
 1) Enable LLM scoring in `.env` (root):
 ```
@@ -218,8 +218,8 @@ Optional controls:
 
 3) Run a job search (via the web app or cURL). In the API terminal you should see log entries like:
 ```
-[llm] replace prompt { jobKey: '...', model: 'gpt-4o-mini', userLen: 12345 }
-[llm] replace prompt user <first 8000 characters of the user prompt>
+[llm] score prompt { jobKey: '...', model: 'gpt-4o-mini', userLen: 12345 }
+[llm] score prompt user <first 8000 characters of the user prompt>
 [llm] openai ok { ms: 1234, contentLen: 42, attempt: 1 }
 ```
 If a call fails, logs include detailed HTTP errors and retry attempts.
@@ -261,7 +261,7 @@ npm run build
     - `LLM_LOG=debug`
     - `OPENAI_API_KEY=...` (no stray quotes or parentheses)
   - Fully restart the API server after changing `.env` so values are reloaded.
-  - Run a search. Check the API terminal for lines starting with `[llm] replace prompt` and `[llm] openai`.
+  - Run a search. Check the API terminal for lines starting with `[llm] score prompt` and `[llm] openai`.
   - If you recently edited server entrypoints, ensure env is loaded before routes (this repo already does that in `apps/server/src/index.ts`).
   - To preview a sample prompt without calling the LLM, run: `npm --workspace apps/server run prompt:demo`.
 
