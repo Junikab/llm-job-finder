@@ -38,7 +38,7 @@ describe('prompt services', () => {
     expect(prompt).toContain('Scoring rubric (apply cumulatively):');
     expect(prompt).toContain('Calibration examples (concise):');
     expect(prompt).toContain('Now score the job below');
-    expect(prompt).toContain('Answer with a single integer only');
+    expect(prompt).toContain('Respond with JSON only');
 
     // Content presence
     expect(prompt).toContain(analysis.summary);

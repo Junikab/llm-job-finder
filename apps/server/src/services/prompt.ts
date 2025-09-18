@@ -26,7 +26,7 @@ export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, j
   const goodTraits = (process.env.LLM_GOOD_TRAITS || '').trim();
   const badTraits = (process.env.LLM_BAD_TRAITS || '').trim();
   return [
-    'You are an expert job relevance scorer. Output a single integer (0-100) only.',
+    'You are an expert job relevance scorer. Output strictly valid JSON with two fields only.',
     '',
     '<candidate>',
     'Candidate profile (CV summary):',
@@ -57,7 +57,8 @@ export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, j
     '</examples>',
     '',
     '<task>',
-    'Now score the job below from 0 to 100. Return only the number with no text.',
+    'Now score the job below from 0 to 100. Return strictly valid JSON with no extra text:',
+    '{"score": <integer 0-100>, "reason": "<10-20 words explaining the main factors>"}',
     '</task>',
     '',
     '<job>',
@@ -66,7 +67,7 @@ export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, j
     '</job>',
     '',
     '<answer>',
-    'Answer with a single integer only (no words, no units).',
+    'Respond with JSON only, no extra text or backticks.',
     '</answer>',
   ].join('\n');
 }

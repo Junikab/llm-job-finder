@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
-import { buildJobRelevancePrompt, parseRelevanceScore } from './prompt.js';
-import { LLM_DEBUG, getLLMConfig, formatLLMError, callOpenAIChatText } from './llm.js';
+import { buildJobRelevancePrompt } from './prompt.js';
+import { LLM_DEBUG, getLLMConfig, formatLLMError, callOpenAIChatJSON } from './llm.js';
 
 /**
  * Scoring-related helpers (random and LLM) for ranking jobs.
@@ -110,7 +110,7 @@ export async function scoreJob(
       }
       return { score: hit.score, reason: `${hit.reason} cache-hit` };
     }
-    const system = 'You score job relevance precisely. Output only a single integer 0-100, no extra text.';
+    const system = 'You score job relevance precisely. Return strictly valid JSON only.';
     const user = buildJobRelevancePrompt({ summary: _analysis.summary ?? '' }, _job);
     if (LLM_DEBUG) {
       const jobKeyDbg = normalizeJobKey(((_job as any).url || (_job as any).id || (_job as any).title || '') as string) || '';
@@ -119,10 +119,19 @@ export async function scoreJob(
       console.log('[llm] score prompt user', user.slice(0, 8000));
     }
     try {
-      const { content } = await callOpenAIChatText(cfg, system, user);
-      const n = parseRelevanceScore(content || '');
+      const { content } = await callOpenAIChatJSON(cfg, system, user);
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(content || '{}');
+      } catch {
+        parsed = null;
+      }
+      const nRaw = parsed && typeof parsed.score !== 'undefined' ? parsed.score : null;
+      const nNum = typeof nRaw === 'number' ? Math.round(nRaw) : (typeof nRaw === 'string' ? Math.round(parseFloat(nRaw)) : null);
+      const n = nNum == null || Number.isNaN(nNum) ? null : Math.max(0, Math.min(100, nNum));
+      const reasonLLM = parsed && typeof parsed.reason === 'string' ? String(parsed.reason).trim() : '';
       if (n !== null) {
-        const reason = `llm ${cfg.model}`;
+        const reason = reasonLLM || `llm ${cfg.model}`;
         cacheSet(cacheKey, { score: n, reason, t: Date.now() });
         if (LLM_DEBUG) {
           console.log('[llm] score', { jobKey, score: n, model: cfg.model });
@@ -133,7 +142,7 @@ export async function scoreJob(
         console.warn('[llm] parse failed', { content: String(content || '').slice(0, 160) });
       }
       const r = Math.floor(Math.random() * 101);
-      return { score: r, reason: `random; llm-error: no-number` };
+      return { score: r, reason: `random; llm-error: bad-json` };
     } catch (err: any) {
       const errMsg = formatLLMError(err);
       if (LLM_DEBUG) {
