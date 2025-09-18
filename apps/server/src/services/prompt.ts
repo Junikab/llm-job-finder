@@ -162,6 +162,25 @@ export function buildCVSummaryPrompt(cvText: string): { system: string; user: st
 }
 
 /**
+ * Build a prompt that extracts structured fields from a CV as JSON.
+ * Returns strictly valid JSON with: {"titles": string[], "topSkills": string[], "locationHints": string[]}
+ */
+export function buildCVAnalysisExtractPrompt(cvText: string): { system: string; user: string } {
+  const system = 'You extract structured candidate profile fields from a CV and return strictly valid JSON only.';
+  const safe = (cvText || '').slice(0, 6000);
+  const user = [
+    '<task>From the CV below, extract three arrays: titles (up to 3 concise role titles the candidate fits), and locationHints (up to 3 concise locations or regions). Prioritize explicit information from the CV; do not guess. Be role-agnostic. Exclude personal contact details or identifiers.</task>',
+    '',
+    '<cv_text>',
+    safe,
+    '</cv_text>',
+    '',
+    '<output>Return strictly valid JSON only with this exact shape: {"titles": string[], "locationHints": string[]}. No extra text.</output>'
+  ].join('\n');
+  return { system, user };
+}
+
+/**
  * Build a UI-safe preview of the LLM scoring prompt that matches the actual structure
  * but with the per-job <job> section redacted. Return both system and user strings.
  */

@@ -8,8 +8,8 @@ import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { scoreJob, scoringConcurrency } from '../services/scoring.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
-import { buildCVSummaryPrompt, buildJobRelevancePromptPreview } from '../services/prompt.js';
-import { getLLMConfig, callOpenAIChatText, LLM_DEBUG, formatLLMError } from '../services/llm.js';
+import { buildCVSummaryPrompt, buildCVAnalysisExtractPrompt, buildJobRelevancePromptPreview } from '../services/prompt.js';
+import { getLLMConfig, callOpenAIChatText, callOpenAIChatJSON, LLM_DEBUG, formatLLMError } from '../services/llm.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
   const summary = cvText.slice(0, 200);
@@ -182,29 +182,43 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
 
       const analysis = analyzeCV(cvText);
 
-      // Optional: pre-scoring LLM summarization to produce a concise, general candidate summary
+      // Optional: LLM enrichment of CV analysis (summary + structured fields)
       try {
         const scoreMode = (process.env.SCORE_MODE || 'random').toLowerCase();
         const cfg = getLLMConfig();
-        if (scoreMode === 'llm' && cfg.apiKey) {
-          const { system, user } = buildCVSummaryPrompt(cvText);
-          if (LLM_DEBUG) {
-            (req as any).log?.info?.({ userLen: user.length, model: cfg.model }, 'llm summarize prompt');
-          }
-          const { content } = await callOpenAIChatText(cfg, system, user);
-          const summaryLLM = String(content || '').trim();
+        if (cfg.apiKey && scoreMode === 'llm') {
+          // Summarize
+          const { system: sysSum, user: usrSum } = buildCVSummaryPrompt(cvText);
+          if (LLM_DEBUG) (req as any).log?.info?.({ userLen: usrSum.length, model: cfg.model }, 'llm summarize prompt');
+          const { content: contentSum } = await callOpenAIChatText(cfg, sysSum, usrSum);
+          const summaryLLM = String(contentSum || '').trim();
           if (summaryLLM) {
             analysis.summary = summaryLLM;
-            if (LLM_DEBUG) {
-              (req as any).log?.info?.({ summaryLen: summaryLLM.length }, 'llm summarize ok');
-            }
+            if (LLM_DEBUG) (req as any).log?.info?.({ summaryLen: summaryLLM.length }, 'llm summarize ok');
           }
+
+          // Extract structured fields for better search relevance
+          const { system: sysExt, user: usrExt } = buildCVAnalysisExtractPrompt(cvText);
+          if (LLM_DEBUG) (req as any).log?.info?.({ userLen: usrExt.length, model: cfg.model }, 'llm cv extract prompt');
+          const { content: contentExt } = await callOpenAIChatJSON(cfg, sysExt, usrExt);
+          let parsed: any = null;
+          try { parsed = JSON.parse(contentExt || '{}'); } catch { parsed = null; }
+
+          const normStrArr = (arr: any, max: number) => Array.isArray(arr)
+            ? Array.from(new Set(arr.map((x: any) => String(x || '').trim()).filter((s: string) => s))).slice(0, max)
+            : [];
+          const extTitles = normStrArr(parsed?.titles, 3);
+          const extSkills = normStrArr(parsed?.topSkills, 8);
+          const extLocs = normStrArr(parsed?.locationHints, 3);
+
+          if (extTitles.length) analysis.titles = extTitles;
+          if (extSkills.length) analysis.topSkills = extSkills;
+          if (extLocs.length) analysis.locationHints = extLocs;
+          if (LLM_DEBUG) (req as any).log?.info?.({ titles: analysis.titles, topSkills: analysis.topSkills, locationHints: analysis.locationHints }, 'llm cv extract ok');
         }
       } catch (err: any) {
-        // Non-fatal: keep heuristic summary when summarize step fails
-        if (LLM_DEBUG) {
-          (req as any).log?.warn?.({ err: formatLLMError(err) }, 'llm summarize failed');
-        }
+        // Non-fatal: keep heuristic fields when enrichment fails
+        if (LLM_DEBUG) (req as any).log?.warn?.({ err: formatLLMError(err) }, 'llm cv enrichment failed');
       }
       const manualUrls = (manualSearchUrl && manualSearchUrl.trim()) ? [manualSearchUrl.trim()] : [];
       const searchUrls = manualUrls.length > 0
