@@ -1,5 +1,8 @@
 import type { CVAnalysis, JobItem } from '../types.js';
 
+// Single source of truth for the LLM scoring system message
+export const LLM_SCORING_SYSTEM = 'You score job relevance precisely. Return strictly valid JSON only.';
+
 /**
  * Format a JobItem into a stable, human-readable block suitable for LLM prompts.
  */
@@ -20,12 +23,16 @@ export function formatJobForPrompt(job: JobItem): string {
  * Build a single-text prompt instructing the LLM to score a job's relevance (0-100)
  * to the given CV summary. Response contract: a single number only.
  */
-export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, job: JobItem): string {
+export function buildJobRelevancePromptUnified(
+  analysis: Pick<CVAnalysis, 'summary'>,
+  job: JobItem | null,
+  opts: { redactJob?: boolean } = {}
+): { system: string; user: string } {
   const summary = (analysis.summary ?? '').trim();
-  const jobBlock = formatJobForPrompt(job);
   const goodTraits = (process.env.LLM_GOOD_TRAITS || '').trim();
   const badTraits = (process.env.LLM_BAD_TRAITS || '').trim();
-  return [
+  const redact = !!opts.redactJob;
+  const userParts: string[] = [
     'You are an expert job relevance scorer. Output strictly valid JSON with two fields only.',
     '',
     '<candidate>',
@@ -62,14 +69,21 @@ export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, j
     '</task>',
     '',
     '<job>',
-    'Job details:',
-    jobBlock,
-    '</job>',
-    '',
-    '<answer>',
-    'Respond with JSON only, no extra text or backticks.',
-    '</answer>',
-  ].join('\n');
+  ];
+  if (redact || !job) {
+    userParts.push('[redacted in UI: per-job details (title, company, location, URL, description) are included during scoring]');
+  } else {
+    const jobBlock = formatJobForPrompt(job);
+    userParts.push('Job details:');
+    userParts.push(jobBlock);
+  }
+  userParts.push('</job>');
+  userParts.push('', '<answer>', 'Respond with JSON only, no extra text or backticks.', '</answer>');
+  return { system: LLM_SCORING_SYSTEM, user: userParts.join('\n') };
+}
+
+export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, job: JobItem): string {
+  return buildJobRelevancePromptUnified(analysis, job, { redactJob: false }).user;
 }
 
 /**
@@ -105,4 +119,10 @@ export function buildCVSummaryPrompt(cvText: string): { system: string; user: st
   return { system, user };
 }
 
- 
+/**
+ * Build a UI-safe preview of the LLM scoring prompt that matches the actual structure
+ * but with the per-job <job> section redacted. Return both system and user strings.
+ */
+export function buildJobRelevancePromptPreview(analysis: Pick<CVAnalysis, 'summary'>): { system: string; user: string } {
+  return buildJobRelevancePromptUnified(analysis, null, { redactJob: true });
+}

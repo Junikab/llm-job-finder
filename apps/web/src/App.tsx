@@ -24,6 +24,8 @@ export default function App() {
   const [searchUrls, setSearchUrls] = useState<string[]>([]);
   const [llmGoodTraits, setLlmGoodTraits] = useState<string>('');
   const [llmBadTraits, setLlmBadTraits] = useState<string>('');
+  const [llmPromptUserPreview, setLlmPromptUserPreview] = useState<string | undefined>();
+  const [llmPromptSystem, setLlmPromptSystem] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
   // Toast
   const { toast, showToast } = useToast(1600);
@@ -84,6 +86,8 @@ export default function App() {
       setSearchUrls(json.searchUrls || []);
       setLlmGoodTraits(json.llmGoodTraits || '');
       setLlmBadTraits(json.llmBadTraits || '');
+      setLlmPromptUserPreview(json.llmPromptUserPreview || undefined);
+      setLlmPromptSystem(json.llmPromptSystem || undefined);
       setResults(json.results || []);
     } catch (err: any) {
       console.error(err);
@@ -133,7 +137,7 @@ export default function App() {
       <div className="content-container">
       {tab === 'live' && (
         <>
-          <AnalysisHeader analysis={analysis} searchUrls={searchUrls} llmGoodTraits={llmGoodTraits} llmBadTraits={llmBadTraits} />
+          <AnalysisHeader analysis={analysis} searchUrls={searchUrls} llmGoodTraits={llmGoodTraits} llmBadTraits={llmBadTraits} llmPromptUserPreview={llmPromptUserPreview} llmPromptSystem={llmPromptSystem} />
 
           {/* Sort By between CV summary and job cards */}
           <SortSelect sortBy={sortBy} onChange={setSortBy} />

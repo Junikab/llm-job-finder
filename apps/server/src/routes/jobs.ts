@@ -8,7 +8,7 @@ import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { scoreJob, scoringConcurrency } from '../services/scoring.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
-import { buildCVSummaryPrompt } from '../services/prompt.js';
+import { buildCVSummaryPrompt, buildJobRelevancePromptPreview } from '../services/prompt.js';
 import { getLLMConfig, callOpenAIChatText, LLM_DEBUG, formatLLMError } from '../services/llm.js';
 
 function analyzeCV(cvText: string): CVAnalysis {
@@ -265,11 +265,14 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         }
       }
 
+      const preview = ((process.env.SCORE_MODE || 'random').toLowerCase() === 'llm') ? buildJobRelevancePromptPreview(analysis) : null;
       return reply.send({
         analysis,
         searchUrls,
         llmGoodTraits: (process.env.LLM_GOOD_TRAITS || '').trim(),
         llmBadTraits: (process.env.LLM_BAD_TRAITS || '').trim(),
+        llmPromptUserPreview: preview?.user,
+        llmPromptSystem: preview?.system,
         total: scored.length,
         results: scored,
       });

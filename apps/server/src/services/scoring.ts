@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
 import { normalizeJobKey } from '../lib/job-keys.js';
-import { buildJobRelevancePrompt } from './prompt.js';
+import { buildJobRelevancePrompt, LLM_SCORING_SYSTEM } from './prompt.js';
 import { LLM_DEBUG, getLLMConfig, formatLLMError, callOpenAIChatJSON } from './llm.js';
 
 /**
@@ -110,7 +110,7 @@ export async function scoreJob(
       }
       return { score: hit.score, reason: `${hit.reason} cache-hit` };
     }
-    const system = 'You score job relevance precisely. Return strictly valid JSON only.';
+    const system = LLM_SCORING_SYSTEM;
     const user = buildJobRelevancePrompt({ summary: _analysis.summary ?? '' }, _job);
     if (LLM_DEBUG) {
       const jobKeyDbg = normalizeJobKey(((_job as any).url || (_job as any).id || (_job as any).title || '') as string) || '';
