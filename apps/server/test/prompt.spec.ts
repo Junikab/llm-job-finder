@@ -35,7 +35,7 @@ describe('prompt services', () => {
     // Structure markers (updated rubric-based prompt)
     expect(prompt).toContain('You are an expert job relevance scorer.');
     expect(prompt).toContain('Candidate profile (CV summary):');
-    expect(prompt).toContain('Scoring rubric (apply cumulatively):');
+    expect(prompt).toContain('Scoring rubric (apply cumulatively, 0–100 scale):');
     expect(prompt).toContain('Calibration examples (concise):');
     expect(prompt).toContain('Now score the job below');
     expect(prompt).toContain('Respond with JSON only');

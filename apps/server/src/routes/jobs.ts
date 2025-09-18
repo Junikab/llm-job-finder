@@ -265,7 +265,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         }
       }
 
-      const preview = ((process.env.SCORE_MODE || 'random').toLowerCase() === 'llm') ? buildJobRelevancePromptPreview(analysis) : null;
+      const preview = buildJobRelevancePromptPreview(analysis);
       return reply.send({
         analysis,
         searchUrls,
