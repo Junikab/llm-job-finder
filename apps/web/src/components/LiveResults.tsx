@@ -3,7 +3,7 @@ import type { RankedJob } from '../../../server/src/types';
 import { useAppliedJobs } from '../hooks/useAppliedJobs';
 
 export default function LiveResults({ results, loading, sortBy }: { results: RankedJob[]; loading: boolean; sortBy: 'model' | 'recency' }) {
-  const { isApplied, setApplied } = useAppliedJobs();
+  const { isApplied, setApplied, getAppliedAt } = useAppliedJobs();
 
   function parseListedDays(text?: string | null): number | null {
     if (!text) return null;
@@ -14,6 +14,17 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
     if (unit.startsWith('hour') || unit === 'h') return 0;
     if (unit.startsWith('week') || unit === 'w') return n * 7;
     return n;
+  }
+
+  function formatAppliedDate(iso?: string | null): string | null {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString();
+    } catch {
+      return null;
+    }
   }
 
   const filtered = useMemo(() => {
@@ -38,6 +49,7 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
         {filtered.map(r => {
           const k = (r as any).key ?? r.id;
           const applied = isApplied(k);
+          const appliedAtText = formatAppliedDate(getAppliedAt(k));
           const checkboxId = `applied-${k}`;
           return (
           <li key={k} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
@@ -49,7 +61,12 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
               <div>{r.company} · {r.location} · {r.listedAgo}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => setApplied(k, e.target.checked)} />
-                <label htmlFor={checkboxId} style={{ fontSize: 12, color: '#222' }}>Applied</label>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <label htmlFor={checkboxId} style={{ fontSize: 12, color: '#222' }}>Applied</label>
+                  {applied && appliedAtText && (
+                    <span style={{ fontSize: 11, color: '#777' }}>{appliedAtText}</span>
+                  )}
+                </div>
               </div>
             </div>
             <div style={{ marginTop: 8, color: '#333' }}>{r.reason}</div>
