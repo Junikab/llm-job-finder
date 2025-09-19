@@ -36,10 +36,10 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
 
       <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
         {filtered.map(r => {
-          const applied = isApplied(r.id);
-          const checkboxId = `applied-${r.id}`;
+          const applied = isApplied(r.key);
+          const checkboxId = `applied-${r.key}`;
           return (
-          <li key={r.id} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
+          <li key={r.key} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
               <a href={r.url} target="_blank" style={{ fontWeight: 600, color: '#0b5' }}>{r.title}</a>
               <div style={{ fontWeight: 700 }}>{Math.round(r.score)}/100</div>
@@ -47,7 +47,7 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#555', marginTop: 4, gap: 8 }}>
               <div>{r.company} · {r.location} · {r.listedAgo}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => setApplied(r.id, e.target.checked)} />
+                <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => setApplied(r.key, e.target.checked)} />
                 <label htmlFor={checkboxId} style={{ fontSize: 12, color: '#222' }}>Applied</label>
               </div>
             </div>

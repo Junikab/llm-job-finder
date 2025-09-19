@@ -18,6 +18,7 @@ export type JobItem = {
 };
 
 export type RankedJob = JobItem & {
+  key: string;
   score: number; // 0-100
   reason: string;
 };

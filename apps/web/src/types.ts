@@ -9,6 +9,7 @@ export type CVAnalysis = {
 
 export type RankedJob = {
   id: string;
+  key: string;
   title: string;
   company?: string;
   location?: string;
