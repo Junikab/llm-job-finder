@@ -25,4 +25,12 @@ export async function sendFeedback(jobId: string, userScore: number): Promise<vo
   });
 }
 
+export async function sendApplied(jobId: string, applied: boolean): Promise<void> {
+  await fetchJson('/api/db/applied', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId, applied }),
+  });
+}
+
 export { API_BASE };

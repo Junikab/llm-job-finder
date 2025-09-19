@@ -33,6 +33,7 @@ export type SavedJob = {
   listedAgo: string | null;
   modelScore: number | null;
   userScore: number | null;
+  applied: boolean | null;
   source: string;
   data?: any;
 };

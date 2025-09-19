@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { sendApplied } from '../api';
 
 const STORAGE_KEY = 'appliedJobs:v1';
 
@@ -36,12 +37,21 @@ export function useAppliedJobs() {
       if (value) next.add(id); else next.delete(id);
       return next;
     });
+    // Best-effort persist to server DB snapshots
+    (async () => {
+      try { await sendApplied(id, value); } catch { /* ignore network/db errors */ }
+    })();
   }, []);
 
   const toggleApplied = useCallback((id: string) => {
     setSetState(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      const willBeApplied = !next.has(id);
+      if (willBeApplied) next.add(id); else next.delete(id);
+      // Best-effort persist to server DB snapshots
+      (async () => {
+        try { await sendApplied(id, willBeApplied); } catch { /* ignore */ }
+      })();
       return next;
     });
   }, []);

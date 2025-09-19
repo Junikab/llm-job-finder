@@ -15,6 +15,7 @@ export default function SavedList(props: {
   const [location, setLocation] = useState('');
   const [maxDays, setMaxDays] = useState<number | ''>('');
   const [sortBy, setSortBy] = useState<'model' | 'user' | 'recency'>('model');
+  const [appliedOnly, setAppliedOnly] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
   function parseListedDays(text?: string | null): number | null {
@@ -32,6 +33,8 @@ export default function SavedList(props: {
     const comp = company.trim().toLowerCase();
     const loc = location.trim().toLowerCase();
     const arr = items.filter((j: any) => {
+      // applied filter
+      if (appliedOnly && j.applied !== true) return false;
       // min model score
       if (typeof minScore === 'number' && minScore > 0) {
         if (j.modelScore == null || j.modelScore < minScore) return false;
@@ -116,6 +119,10 @@ export default function SavedList(props: {
               <option value="14">Last 14 days</option>
               <option value="30">Last 30 days</option>
             </select>
+          </label>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input type="checkbox" checked={appliedOnly} onChange={e => setAppliedOnly(e.target.checked)} />
+            <span style={{ color: '#333' }}>Applied only</span>
           </label>
           <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
             style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>

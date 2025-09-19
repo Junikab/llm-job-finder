@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import path from 'path';
-import { listJobs, updateFeedback } from '../services/job-db.js';
+import { listJobs, updateFeedback, updateApplied } from '../services/job-db.js';
 
 export default async function registerDbRoutes(app: FastifyInstance) {
   // Aggregate latest jobs from JSON snapshots
@@ -34,6 +34,29 @@ export default async function registerDbRoutes(app: FastifyInstance) {
     } catch (err) {
       (req as any).log?.error?.({ err }, 'feedback failed');
       return reply.code(500).send({ error: 'Failed to store feedback' });
+    }
+  });
+
+  // Mark/unmark a job as applied and update existing job JSON (prefer scored)
+  app.post('/api/db/applied', async (req, reply) => {
+    try {
+      const body = (req as any).body || {};
+      const jobId = body.jobId?.toString();
+      const appliedRaw = body.applied;
+      const applied = typeof appliedRaw === 'string' ? appliedRaw === 'true' : !!appliedRaw;
+      if (!jobId || typeof applied === 'undefined') {
+        return reply.code(400).send({ error: 'jobId and applied (boolean) are required' });
+      }
+      const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
+      const result = await updateApplied((req as any).id, dir, jobId, applied);
+      if (!result.updated) {
+        return reply.code(404).send({ error: 'job record not found to update' });
+      }
+      (req as any).log?.info?.({ jobId, applied, file: result.file }, 'applied updated');
+      return reply.send({ ok: true });
+    } catch (err) {
+      (req as any).log?.error?.({ err }, 'applied failed');
+      return reply.code(500).send({ error: 'Failed to store applied state' });
     }
   });
 }

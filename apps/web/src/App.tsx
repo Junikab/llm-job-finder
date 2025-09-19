@@ -58,7 +58,46 @@ export default function App() {
   // Allow submit with CV only (auto-generate URLs) or with manual URL
   const canSubmit = useMemo(() => !!file && !loading, [file, loading]);
 
-  
+  // Persist latest live results in localStorage so they survive page refreshes
+  const LIVE_CACHE_KEY = 'liveResults:v1';
+  function loadLiveCache(): any | null {
+    try {
+      const raw = localStorage.getItem(LIVE_CACHE_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !Array.isArray(obj.results)) return null;
+      return obj;
+    } catch {
+      return null;
+    }
+  }
+  function saveLiveCache(payload: any) {
+    try {
+      localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({ ...payload, savedAt: new Date().toISOString() }));
+    } catch {}
+  }
+
+  // On first load, restore last successful results if present
+  useEffect(() => {
+    const cached = loadLiveCache();
+    if (cached && Array.isArray(cached.results) && cached.results.length > 0) {
+      setAnalysis(cached.analysis ?? null);
+      setSearchUrls(cached.searchUrls ?? []);
+      setLlmGoodTraits(cached.llmGoodTraits || '');
+      setLlmBadTraits(cached.llmBadTraits || '');
+      setLlmPromptUserPreview(cached.llmPromptUserPreview || undefined);
+      setLlmPromptSystem(cached.llmPromptSystem || undefined);
+      setResults(cached.results);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // After a successful fetch (not during loading) persist the latest results snapshot
+  useEffect(() => {
+    if (!loading && results.length > 0) {
+      saveLiveCache({ analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem });
+    }
+  }, [loading, analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem]);
 
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
