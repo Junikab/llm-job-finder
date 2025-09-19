@@ -15,8 +15,15 @@ export default function AnalysisHeader({ analysis, searchUrls, llmGoodTraits, ll
         <pre style={{ whiteSpace: 'pre-wrap', margin: 0, marginTop: 6, padding: 10, background: '#f1f5f9', borderRadius: 8, border: '1px solid #eee', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', color: '#111' }}>{llmPromptSystem}</pre>
       )}
       <pre style={{ whiteSpace: 'pre-wrap', margin: 0, marginTop: 6, padding: 10, background: '#f8fafc', borderRadius: 8, border: '1px solid #eee', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', color: '#111' }}>{promptHeader}</pre>
-      <div style={{ marginTop: 6, color: '#555' }}><strong>Titles:</strong> {analysis.titles?.join(', ')}</div>
-      <div style={{ marginTop: 6, color: '#555' }}><strong>Top skills:</strong> {analysis.topSkills?.join(', ')}</div>
+      {analysis.titles?.length ? (
+        <div style={{ marginTop: 6, color: '#555' }}><strong>Titles:</strong> {analysis.titles.join(', ')}</div>
+      ) : null}
+      {analysis.topSkills?.length ? (
+        <div style={{ marginTop: 6, color: '#555' }}><strong>Top skills:</strong> {analysis.topSkills.join(', ')}</div>
+      ) : null}
+      {analysis.locationHints?.length ? (
+        <div style={{ marginTop: 6, color: '#555' }}><strong>Location hints:</strong> {analysis.locationHints.join(', ')}</div>
+      ) : null}
       {!!(searchUrls?.length) && (
         <div style={{ marginTop: 6 }}>
           <strong>Search URLs:</strong> {searchUrls.map((u: string) => {

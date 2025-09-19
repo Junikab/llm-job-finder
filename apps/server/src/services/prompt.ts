@@ -169,13 +169,13 @@ export function buildCVAnalysisExtractPrompt(cvText: string): { system: string; 
   const system = 'You extract structured candidate profile fields from a CV and return strictly valid JSON only.';
   const safe = (cvText || '').slice(0, 6000);
   const user = [
-    '<task>From the CV below, extract three arrays: titles (up to 3 concise role titles the candidate fits), and locationHints (up to 3 concise locations or regions). Prioritize explicit information from the CV; do not guess. Be role-agnostic. Exclude personal contact details or identifiers.</task>',
+    '<task>From the CV below, extract three arrays: titles (up to 3 concise role titles the candidate fits), topSkills (up to 8 concise domain-relevant skills/tools/techniques), and locationHints (up to 3 concise locations or regions). Prioritize explicit information from the CV; do not guess. Be role-agnostic (works for any profession). Include concrete items (e.g., "wedding bouquets", "vendor coordination", "flower care" for a florist; or "React", "TypeScript" for a developer). Avoid generic words like "next", "rest", or single letters. Deduplicate and use 1–3 words per item. Exclude personal contact details or identifiers.</task>',
     '',
     '<cv_text>',
     safe,
     '</cv_text>',
     '',
-    '<output>Return strictly valid JSON only with this exact shape: {"titles": string[], "locationHints": string[]}. No extra text.</output>'
+    '<output>Return strictly valid JSON only with this exact shape: {"titles": string[], "topSkills": string[], "locationHints": string[]}. No extra text.</output>'
   ].join('\n');
   return { system, user };
 }
