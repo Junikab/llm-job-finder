@@ -22,7 +22,7 @@
   left: 10px; /* align with pre padding */
   right: 10px;
   bottom: 10px; /* sit inside the pre padding */
-  height: 52px;
+  height: 150px;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
   background: linear-gradient(
@@ -43,7 +43,7 @@
   background: #2563eb; /* blue-600 */
   color: #fff;
   border: none;
-  border-radius: 999px;
+  border-radius: 0.5rem;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
