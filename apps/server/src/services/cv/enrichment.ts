@@ -4,9 +4,11 @@ import { getLLMConfig, callOpenAIChatText, callOpenAIChatJSON, LLM_DEBUG, format
 
 export async function enrichAnalysisWithLLM(cvText: string, analysis: CVAnalysis, log?: any): Promise<CVAnalysis> {
   try {
-    const scoreMode = (process.env.SCORE_MODE || 'random').toLowerCase();
     const cfg = getLLMConfig();
-    if (!cfg.apiKey || scoreMode !== 'llm') return analysis;
+    if (!cfg.apiKey) return analysis;
+    const scoreMode = (process.env.SCORE_MODE || 'random').toLowerCase();
+    const enrichFlag = (process.env.LLM_ENRICH_CV || 'false') === 'true';
+    if (!enrichFlag && scoreMode !== 'llm') return analysis;
 
     // Summarize
     const { system: sysSum, user: usrSum } = buildCVSummaryPrompt(cvText);
