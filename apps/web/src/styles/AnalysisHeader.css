@@ -1,0 +1,53 @@
+.promptContainer {
+  position: relative;
+  margin-top: 6px;
+}
+
+.promptPre {
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 10px;
+  background: #f8fafc; /* slate-50-ish */
+  border-radius: 8px;
+  border: 1px solid #eee;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #111;
+  overflow: hidden; /* allow overlay to sit on top */
+}
+
+/* Only shown when collapsed to give a soft fade */
+.fadeOverlay {
+  pointer-events: none;
+  position: absolute;
+  left: 10px; /* align with pre padding */
+  right: 10px;
+  bottom: 10px; /* sit inside the pre padding */
+  height: 52px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0) 0%,
+    rgba(248, 250, 252, 0.9) 70%,
+    rgba(248, 250, 252, 1) 100%
+  );
+}
+
+.toggleButton {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1;
+  background: #2563eb; /* blue-600 */
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.toggleButton:hover {
+  background: #1d4ed8; /* blue-700 */
+}
