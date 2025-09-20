@@ -3,8 +3,9 @@ import React from 'react';
 export default function TopNav(props: {
   tab: 'live' | 'saved';
   onChange: (tab: 'live' | 'saved') => void;
+  onAbout?: () => void;
 }) {
-  const { tab, onChange } = props;
+  const { tab, onChange, onAbout } = props;
   return (
     <div className="topnav">
       <div className="topnav__title">LLM Job Finder</div>
@@ -23,7 +24,14 @@ export default function TopNav(props: {
         >
           History
         </button>
-        <span className="topnav__about">About</span>
+        <button
+          type="button"
+          onClick={() => onAbout?.()}
+          className="topnav__btn"
+          aria-label="About"
+        >
+          About
+        </button>
       </div>
     </div>
   );

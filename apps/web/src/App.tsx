@@ -13,6 +13,7 @@ import Toast from './components/Toast';
 import HeroSection from './components/HeroSection';
 import { useTab } from './hooks/useTab';
 import { useToast } from './hooks/useToast';
+import AboutModal from './components/AboutModal';
 
 export default function App() {
   // Tabs and UI state
@@ -27,6 +28,7 @@ export default function App() {
   const [llmPromptUserPreview, setLlmPromptUserPreview] = useState<string | undefined>();
   const [llmPromptSystem, setLlmPromptSystem] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
+  const [aboutOpen, setAboutOpen] = useState(false);
   // Toast
   const { toast, showToast } = useToast(1600);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -149,7 +151,7 @@ export default function App() {
   return (
     <div className="app-root">
       {/* Simple navbar */}
-      <TopNav tab={tab} onChange={setTab} />
+      <TopNav tab={tab} onChange={setTab} onAbout={() => setAboutOpen(true)} />
 
       {/* Hero section */}
       <HeroSection
@@ -199,6 +201,7 @@ export default function App() {
       )}
       </div>
       <Toast message={toast} />
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }
