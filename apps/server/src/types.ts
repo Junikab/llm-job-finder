@@ -34,6 +34,7 @@ export type SavedJob = {
   modelScore: number | null;
   userScore: number | null;
   applied: boolean | null;
+  appliedAt: string | null;
   source: string;
   data?: any;
 };

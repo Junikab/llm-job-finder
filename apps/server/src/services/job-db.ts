@@ -150,6 +150,7 @@ export async function listJobs(dir: string) {
       modelScore: scored?.modelScore ?? null,
       userScore: feedback?.userScore ?? null,
       applied: (appliedRec && typeof appliedRec.applied !== 'undefined') ? !!appliedRec.applied : (base?.applied ?? null),
+      appliedAt: appliedRec?.appliedAt ?? (base?.appliedAt ?? null),
       title: base?.data?.title || base?.data?.jobTitle || null,
       url: base?.data?.url || null,
       company: base?.data?.company || null,

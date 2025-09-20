@@ -14,7 +14,7 @@ export default function SavedList(props: {
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
   const [maxDays, setMaxDays] = useState<number | ''>('');
-  const [sortBy, setSortBy] = useState<'model' | 'user' | 'recency'>('model');
+  const [sortBy, setSortBy] = useState<'model' | 'user' | 'recency' | 'applied'>('model');
   const [appliedOnly, setAppliedOnly] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
@@ -64,6 +64,10 @@ export default function SavedList(props: {
         return d == null ? Infinity : d;
       };
       copy.sort((a, b) => ad(a) - ad(b));
+    } else if (sortBy === 'applied') {
+      const ts = (x: SavedJob) => (x.appliedAt ? Date.parse(x.appliedAt) : -Infinity);
+      // Newest applied first
+      copy.sort((a, b) => ts(b) - ts(a));
     }
     return copy;
   }, [items, minScore, company, location, maxDays, sortBy]);
@@ -90,7 +94,7 @@ export default function SavedList(props: {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: 18, margin: 0, color: '#333' }}>Saved</h2>
+        <h2 style={{ fontSize: 18, margin: 0, color: '#333' }}>History</h2>
         <button type="button" onClick={() => onRefresh()} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Reload</button>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -132,6 +136,7 @@ export default function SavedList(props: {
               <option value="model">Model score</option>
               <option value="user">Your score</option>
               <option value="recency">Recency</option>
+              <option value="applied">Applied date (newest)</option>
             </select>
           </label>
         </div>
