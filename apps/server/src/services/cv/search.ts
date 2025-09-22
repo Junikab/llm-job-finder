@@ -1,4 +1,4 @@
-import type { CVAnalysis } from '../../types.js';
+import type { CVAnalysis } from '@shared/types';
 
 export function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string }): string[] {
   const region = process.env.JORA_REGION || 'au';

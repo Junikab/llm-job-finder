@@ -1,6 +1,6 @@
 import { normalizeJobKey } from '../../lib/job-keys.js';
 import { parseListedAgoToDays } from '../../lib/utils.js';
-import type { CVAnalysis, JobItem } from '../../types.js';
+import type { CVAnalysis, JobItem } from '@shared/types';
 
 export function dedupeJobs(rawJobs: JobItem[]): JobItem[] {
   const uniq = new Map<string, JobItem>();

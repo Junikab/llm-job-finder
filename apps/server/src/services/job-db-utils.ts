@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { getJobKey, safeFileName, shortHash } from '../lib/job-keys.js';
-import type { JobItem } from '../types.js';
+import type { JobItem } from '@shared/types';
 
 export type DbDirs = { base: string; raw: string; scored: string };
 

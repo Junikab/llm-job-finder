@@ -1,4 +1,4 @@
-import type { CVAnalysis } from '../../types.js';
+import type { CVAnalysis } from '@shared/types';
 import { buildCVSummaryPrompt, buildCVAnalysisExtractPrompt } from '../prompt.js';
 import { getLLMConfig, callOpenAIChatText, callOpenAIChatJSON, LLM_DEBUG, formatLLMError } from '../llm.js';
 

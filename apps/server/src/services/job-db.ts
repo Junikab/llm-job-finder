@@ -1,5 +1,5 @@
 import path from 'path';
-import type { JobItem, SavedJob } from '../types.js';
+import type { JobItem, SavedJob } from '@shared/types';
 import { normalizeJobKey, safeFileName, shortHash } from '../lib/job-keys.js';
 import { readJsonFiles, pickLatest } from '../lib/utils.js';
 import { ensureDbDirs, selectUpdateTarget, writeRecord, groupByKey, type SnapshotRecord, type SnapshotJobData } from './job-db-utils.js';

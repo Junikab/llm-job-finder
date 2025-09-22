@@ -1,5 +1,5 @@
 import pLimit from 'p-limit';
-import type { CVAnalysis, JobItem, RankedJob } from '../../types.js';
+import type { CVAnalysis, JobItem, RankedJob } from '@shared/types';
 import { scoreJob, scoringConcurrency } from '../scoring.js';
 import { normalizeJobKey } from '../../lib/job-keys.js';
 

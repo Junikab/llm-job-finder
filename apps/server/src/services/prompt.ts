@@ -1,4 +1,4 @@
-import type { CVAnalysis, JobItem } from '../types.js';
+import type { CVAnalysis, JobItem } from '@shared/types';
 
 // Single source of truth for the LLM scoring system message
 export const LLM_SCORING_SYSTEM = 'You score job relevance precisely. Return strictly valid JSON only.';

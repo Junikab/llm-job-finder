@@ -1,5 +1,5 @@
 import { scrapeJora } from 'scraper';
-import type { JobItem } from '../../types.js';
+import type { JobItem } from '@shared/types';
 
 export async function scrapeWithRetry(searchUrls: string[], options: {
   headless: boolean,

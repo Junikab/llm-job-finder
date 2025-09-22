@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import type { CVAnalysis, JobItem, RankedJob } from '../types.js';
+import type { CVAnalysis, JobItem, RankedJob } from '@shared/types';
 import { normalizeJobKey } from '../lib/job-keys.js';
 import { buildJobRelevancePrompt, LLM_SCORING_SYSTEM } from './prompt.js';
 import { LLM_DEBUG, getLLMConfig, formatLLMError, callOpenAIChatJSON } from './llm.js';

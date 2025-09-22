@@ -1,4 +1,4 @@
-import type { CVAnalysis } from '../../types.js';
+import type { CVAnalysis } from '@shared/types';
 
 // Heuristic CV analysis (fallback when LLM enrichment unavailable)
 export function analyzeCVHeuristic(cvText: string): CVAnalysis {

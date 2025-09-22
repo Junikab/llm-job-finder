@@ -1,5 +1,5 @@
 import { buildJobRelevancePrompt, parseRelevanceScore } from '../services/prompt.js';
-import type { JobItem } from '../types.js';
+import type { JobItem } from '@shared/types';
 
 // Mock CV analysis summary
 const analysis = {
