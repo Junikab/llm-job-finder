@@ -3,6 +3,7 @@ import type { SavedJob } from '../../../server/src/types';
 import { useAppliedJobs } from '../hooks/useAppliedJobs';
 import { parseListedDays, formatAppliedDate } from '../utils/date';
 import SavedJobCard from './SavedJobCard';
+import SavedFilters from './SavedFilters';
 
 export default function SavedList(props: {
   items: SavedJob[];
@@ -87,52 +88,14 @@ export default function SavedList(props: {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        {/* <h2 style={{ fontSize: 18, margin: 0, color: '#333' }}>History</h2> */}
-        <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: '#333' }}>Min score</span>
-            <input type="number" min={0} max={100} value={minScore}
-              onChange={e => setMinScore(Math.max(0, Math.min(100, Number(e.target.value))))}
-              style={{ width: 72 }} />
-          </label>
-          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: '#333' }}>Company</span>
-            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Atlassian" />
-          </label> */}
-          {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: '#333' }}>Location</span>
-            <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Sydney" />
-          </label> */}
-          {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: '#333' }}>Listed within</span>
-            <select value={maxDays === '' ? '' : String(maxDays)} onChange={e => {
-              const v = e.target.value;
-              setMaxDays(v === '' ? '' : Number(v));
-            }}>
-              <option value="">Any time</option>
-              <option value="1">Last 24 hours</option>
-              <option value="7">Last 7 days</option>
-              <option value="14">Last 14 days</option>
-              <option value="30">Last 30 days</option>
-            </select>
-          </label> */}
-           <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ color: '#333' }}>Sort by</span>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
-              <option value="model">Model score</option>
-              <option value="user">Your score</option>
-              <option value="recency">Recency</option>
-              <option value="applied">Applied date (newest)</option>
-            </select>
-          </label>
-          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <input type="checkbox" checked={appliedOnly} onChange={e => setAppliedOnly(e.target.checked)} />
-            <span style={{ color: '#333' }}>Applied only</span>
-          </label>
-          <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
-            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
-            <button type="button" onClick={() => onRefresh()} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Reload</button>
-        </div>
+        <SavedFilters
+          sortBy={sortBy}
+          onSortByChange={(v) => setSortBy(v)}
+          appliedOnly={appliedOnly}
+          onAppliedOnlyChange={setAppliedOnly}
+          onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
+          onReload={onRefresh}
+        />
       </div>
       {loading && <div style={{ color: '#666' }}>Loading…</div>}
       {!!error && <div style={{ color: '#b00' }}>{error}</div>}
