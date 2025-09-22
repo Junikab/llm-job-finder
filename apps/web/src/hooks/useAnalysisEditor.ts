@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { CVAnalysis, RankedJob, JobItem } from '@shared/types';
 import { rescoreJobs } from '../api';
+import { mapRankedToJobItem } from '../utils/jobMapping';
 
 export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis | null; onToast?: (msg: string) => void }) {
   const [draft, setDraft] = useState<CVAnalysis | null>(null);
@@ -26,16 +27,6 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
   const onChangeDraft = useCallback((next: CVAnalysis) => {
     setDraft(next);
   }, []);
-
-  const mapRankedToJobItem = (r: RankedJob): JobItem => ({
-    id: r.id,
-    title: r.title,
-    company: r.company,
-    location: r.location,
-    url: r.url,
-    listedAgo: r.listedAgo,
-    description: (r as any).description,
-  });
 
   const handleRescore = useCallback(
     async (
