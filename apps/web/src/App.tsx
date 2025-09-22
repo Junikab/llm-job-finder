@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { findJobs, rescoreJobs } from './api';
-import type { RankedJob, CVAnalysis, JobItem } from '@shared/types';
+import { findJobs } from './api';
+import type { RankedJob, CVAnalysis } from '@shared/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
@@ -14,6 +14,7 @@ import HeroSection from './components/HeroSection';
 import { useTab } from './hooks/useTab';
 import { useToast } from './hooks/useToast';
 import AboutModal from './components/AboutModal';
+import { useAnalysisEditor } from './hooks/useAnalysisEditor';
 
 export default function App() {
   // Tabs and UI state
@@ -33,10 +34,16 @@ export default function App() {
   const { toast, showToast } = useToast(1600);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Analysis editing + rescore state
-  const [draftAnalysis, setDraftAnalysis] = useState<CVAnalysis | null>(null);
-  const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
-  const [rescoring, setRescoring] = useState(false);
+  // Analysis editor (extracted logic: edit + rescore)
+  const {
+    draft: draftAnalysis,
+    isEditing: isEditingAnalysis,
+    rescoring,
+    startEdit: startEditAnalysis,
+    cancelEdit: cancelEditAnalysis,
+    onChangeDraft,
+    handleRescore,
+  } = useAnalysisEditor({ analysis, onToast: showToast });
 
   // Recent CVs (IndexedDB) via hook
   const {
@@ -136,8 +143,7 @@ export default function App() {
       setLlmPromptSystem(json.llmPromptSystem || undefined);
       setResults(json.results || []);
       // Reset edit state after a fresh search
-      setIsEditingAnalysis(false);
-      setDraftAnalysis(null);
+      cancelEditAnalysis();
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Something went wrong. Please try again.');
@@ -146,58 +152,14 @@ export default function App() {
     }
   }, [file, searchUrl, loading, updateSearchUrlHistory]);
 
-  // Helpers for editing analysis and rescoring
-  const startEditAnalysis = useCallback(() => {
-    if (!analysis) return;
-    setDraftAnalysis({
-      summary: analysis.summary || '',
-      titles: [...(analysis.titles || [])],
-      topSkills: [...(analysis.topSkills || [])],
-      locationHints: [...(analysis.locationHints || [])],
+  // (Rescore handler provided by the hook; we just adapt it to our state setters)
+  const onRescore = useCallback(() => {
+    handleRescore(results, {
+      onResults: setResults,
+      onAnalysisCommitted: setAnalysis,
+      onEditingDone: () => {},
     });
-    setIsEditingAnalysis(true);
-  }, [analysis]);
-
-  const cancelEditAnalysis = useCallback(() => {
-    setIsEditingAnalysis(false);
-    setDraftAnalysis(null);
-  }, []);
-
-  const onChangeDraft = useCallback((next: CVAnalysis) => {
-    setDraftAnalysis(next);
-  }, []);
-
-  const mapRankedToJobItem = (r: RankedJob): JobItem => ({
-    id: r.id,
-    title: r.title,
-    company: r.company,
-    location: r.location,
-    url: r.url,
-    listedAgo: r.listedAgo,
-    description: (r as any).description,
-  });
-
-  const handleRescore = useCallback(async () => {
-    if (!draftAnalysis) return;
-    if (results.length === 0) {
-      showToast('No results to rescore');
-      return;
-    }
-    try {
-      setRescoring(true);
-      const jobs: JobItem[] = results.map(mapRankedToJobItem);
-      const rescored = await rescoreJobs(draftAnalysis, jobs);
-      setResults(rescored);
-      setAnalysis(draftAnalysis);
-      setIsEditingAnalysis(false);
-      showToast('Rescored');
-    } catch (err: any) {
-      console.error(err);
-      showToast('Rescore failed');
-    } finally {
-      setRescoring(false);
-    }
-  }, [draftAnalysis, results, showToast]);
+  }, [handleRescore, results]);
 
   // File change, recent CVs handlers are provided by useRecentCVs
   // Ensure mutually exclusive selection: selecting a recent CV clears the uploaded file input UI
@@ -251,7 +213,7 @@ export default function App() {
             onStartEdit={startEditAnalysis}
             onCancelEdit={cancelEditAnalysis}
             onChangeDraft={onChangeDraft}
-            onRescore={handleRescore}
+            onRescore={onRescore}
             rescoring={rescoring}
           />
 
