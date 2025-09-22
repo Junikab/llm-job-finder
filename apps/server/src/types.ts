@@ -30,11 +30,13 @@ export type SavedJob = {
   title: string | null;
   url: string | null;
   company: string | null;
+  location: string | null;
   listedAgo: string | null;
   modelScore: number | null;
   userScore: number | null;
   applied: boolean | null;
   appliedAt: string | null;
+  reason: string | null;
   source: string;
   data?: any;
 };

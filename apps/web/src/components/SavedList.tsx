@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { SavedJob } from '../../../server/src/types';
+import { useAppliedJobs } from '../hooks/useAppliedJobs';
+import { parseListedDays, formatAppliedDate } from '../utils/date';
+import SavedJobCard from './SavedJobCard';
 
 export default function SavedList(props: {
   items: SavedJob[];
@@ -10,6 +13,7 @@ export default function SavedList(props: {
 }) {
   const { items, loading, error, onRefresh, onRate } = props;
   useEffect(() => { onRefresh(); /* fetch when mounted */ }, []);
+  const { isApplied, setApplied, getAppliedAt } = useAppliedJobs();
   const [minScore, setMinScore] = useState<number>(0);
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
@@ -18,21 +22,10 @@ export default function SavedList(props: {
   const [appliedOnly, setAppliedOnly] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
-  function parseListedDays(text?: string | null): number | null {
-    if (!text) return null;
-    const m = text.match(/(\d+)\s*(day|days|d|week|weeks|w|hour|hours|h)/i);
-    if (!m) return null;
-    const n = Number(m[1]);
-    const unit = m[2].toLowerCase();
-    if (unit.startsWith('hour') || unit === 'h') return 0;
-    if (unit.startsWith('week') || unit === 'w') return n * 7;
-    return n;
-  }
-
-  const filtered = useMemo(() => {
+  const filtered = useMemo<SavedJob[]>(() => {
     const comp = company.trim().toLowerCase();
     const loc = location.trim().toLowerCase();
-    const arr = items.filter((j: any) => {
+    const arr = items.filter((j: SavedJob) => {
       // applied filter
       if (appliedOnly && j.applied !== true) return false;
       // min model score
@@ -41,9 +34,9 @@ export default function SavedList(props: {
       }
       // company substring
       if (comp && !(j.company || '').toLowerCase().includes(comp)) return false;
-      // location (from nested data)
+      // location substring
       if (loc) {
-        const jl = (j.data?.location || '').toLowerCase();
+        const jl = (j.location || '').toLowerCase();
         if (!jl.includes(loc)) return false;
       }
       // days filter (keep unknowns)
@@ -94,9 +87,8 @@ export default function SavedList(props: {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: 18, margin: 0, color: '#333' }}>History</h2>
-        <button type="button" onClick={() => onRefresh()} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Reload</button>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* <h2 style={{ fontSize: 18, margin: 0, color: '#333' }}>History</h2> */}
+        <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ color: '#333' }}>Min score</span>
             <input type="number" min={0} max={100} value={minScore}
@@ -111,7 +103,7 @@ export default function SavedList(props: {
             <span style={{ color: '#333' }}>Location</span>
             <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Sydney" />
           </label> */}
-          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {/* <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ color: '#333' }}>Listed within</span>
             <select value={maxDays === '' ? '' : String(maxDays)} onChange={e => {
               const v = e.target.value;
@@ -123,14 +115,8 @@ export default function SavedList(props: {
               <option value="14">Last 14 days</option>
               <option value="30">Last 30 days</option>
             </select>
-          </label>
-          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <input type="checkbox" checked={appliedOnly} onChange={e => setAppliedOnly(e.target.checked)} />
-            <span style={{ color: '#333' }}>Applied only</span>
-          </label>
-          <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
-            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
-          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          </label> */}
+           <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <span style={{ color: '#333' }}>Sort by</span>
             <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
               <option value="model">Model score</option>
@@ -139,40 +125,38 @@ export default function SavedList(props: {
               <option value="applied">Applied date (newest)</option>
             </select>
           </label>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input type="checkbox" checked={appliedOnly} onChange={e => setAppliedOnly(e.target.checked)} />
+            <span style={{ color: '#333' }}>Applied only</span>
+          </label>
+          <button type="button" onClick={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
+            <button type="button" onClick={() => onRefresh()} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Reload</button>
         </div>
       </div>
       {loading && <div style={{ color: '#666' }}>Loading…</div>}
       {!!error && <div style={{ color: '#b00' }}>{error}</div>}
       {!loading && !error && filtered.length === 0 && <div style={{ color: '#666' }}>No saved jobs yet.</div>}
       <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
-        {filtered.map(j => (
-          <li key={j.id} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              {j.url ? <a href={j.url} target="_blank" style={{ fontWeight: 600, color: '#0b5' }}>{j.title || j.id}</a> : <span style={{ fontWeight: 600 }}>{j.title || j.id}</span>}
-              <div style={{ display: 'flex', gap: 12 }}>
-                <span title="Model score" style={{ color: '#333' }}>Model: {j.modelScore != null ? Math.round(j.modelScore) : '–'}</span>
-                <span title="Your score" style={{ color: '#333' }}>You: {j.userScore != null ? Math.round(j.userScore) : '–'}</span>
-              </div>
-            </div>
-            <div style={{ color: '#555', marginTop: 4 }}>{j.company || 'Unknown'} · {j.listedAgo || '—'}</div>
-            <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 70, color: '#333' }}>Rate:</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={draftScores[j.id] ?? (j.userScore ?? 0)}
-                  onChange={e => setDraftScores(prev => ({ ...prev, [j.id]: Number(e.target.value) }))}
-                  onPointerUp={() => commitScore(j.id)}
-                  onBlur={() => commitScore(j.id)}
-                  style={{ flex: 1 }}
-                />
-                <span style={{ width: 36, textAlign: 'right', color: '#333' }}>{draftScores[j.id] ?? (j.userScore ?? 0)}</span>
-              </label>
-            </div>
-          </li>
-        ))}
+        {filtered.map(j => {
+          const k = j.key || j.id;
+          const applied = isApplied(k);
+          const appliedAtText = formatAppliedDate(getAppliedAt(k));
+          const draft = draftScores[j.id] ?? (j.userScore ?? 0);
+          return (
+            <SavedJobCard
+              key={j.id}
+              job={j}
+              jobKey={k}
+              applied={applied}
+              appliedAtText={appliedAtText}
+              onAppliedChange={(checked) => setApplied(k, checked)}
+              draftScore={draft}
+              onDraftScoreChange={(value) => setDraftScores(prev => ({ ...prev, [j.id]: value }))}
+              onCommitScore={() => commitScore(j.id)}
+            />
+          );
+        })}
       </ol>
     </div>
   );

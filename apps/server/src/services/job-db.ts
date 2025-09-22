@@ -154,7 +154,9 @@ export async function listJobs(dir: string) {
       title: base?.data?.title || base?.data?.jobTitle || null,
       url: base?.data?.url || null,
       company: base?.data?.company || null,
+      location: base?.data?.location || null,
       listedAgo: base?.data?.listedAgo || null,
+      reason: scored?.reason ?? null,
       source: base?.source || 'jora',
       data: base?.data || null,
     });
