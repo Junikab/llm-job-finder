@@ -1,12 +1,11 @@
 import path from 'path';
-import fs from 'fs/promises';
-import type { JobItem } from '../types.js';
-import { normalizeJobKey, safeFileName, shortHash, getJobKey } from '../lib/job-keys.js';
+import type { JobItem, SavedJob } from '../types.js';
+import { normalizeJobKey, safeFileName, shortHash } from '../lib/job-keys.js';
 import { readJsonFiles, pickLatest } from '../lib/utils.js';
+import { ensureDbDirs, selectUpdateTarget, writeRecord, groupByKey, type SnapshotRecord, type SnapshotJobData } from './job-db-utils.js';
 
 export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]) {
-  const rawDir = path.join(dir, 'raw');
-  await fs.mkdir(rawDir, { recursive: true });
+  const { raw: rawDir } = await ensureDbDirs(dir);
   await Promise.all(rawJobs.map(async (job, idx) => {
     const stableKey = normalizeJobKey(job.url || (job as any).id || '');
     const base = safeFileName(stableKey || job.title || `job-${idx}`);
@@ -22,78 +21,20 @@ export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]
       'job-description': (job as any).description ?? null,
       data: job,
     };
-    await fs.writeFile(path.join(rawDir, fname), JSON.stringify(record, null, 2), 'utf8');
+    await writeRecord(path.join(rawDir, fname), record);
   }));
 }
 
 export async function updateApplied(reqId: string, dir: string, jobId: string, applied: boolean) {
-  const rawDir = path.join(dir, 'raw');
-  const scoredDir = path.join(dir, 'scored');
-  await fs.mkdir(rawDir, { recursive: true });
-  await fs.mkdir(scoredDir, { recursive: true });
+  const dirs = await ensureDbDirs(dir);
   const key = normalizeJobKey(jobId);
-
-  // Find existing record files for this job key
-  const scanDirs = [dir, rawDir, scoredDir];
-  const matches: { path: string; rec: any }[] = [];
-  for (const d of scanDirs) {
-    let entries: any[] = [];
-    try { entries = await fs.readdir(d, { withFileTypes: true }); } catch {}
-    for (const e of entries) {
-      if (!e.isFile() || !e.name.endsWith('.json')) continue;
-      const filePath = path.join(d, e.name);
-      try {
-        const text = await fs.readFile(filePath, 'utf8');
-        const rec = JSON.parse(text);
-        const recKey = getJobKey(rec);
-        if (recKey === key) matches.push({ path: filePath, rec });
-      } catch {}
-    }
-  }
-
-  // Choose target: prefer latest scored, else latest raw
-  let target: { path: string; rec: any } | null = null;
-  for (const m of matches) {
-    if (m.rec?.scoredAt) {
-      if (!target || Date.parse(m.rec.scoredAt) > Date.parse(target.rec.scoredAt || '')) target = m;
-    }
-  }
-  if (!target) {
-    for (const m of matches) {
-      if (m.rec?.scrapedAt) {
-        if (!target || Date.parse(m.rec.scrapedAt) > Date.parse(target.rec.scrapedAt || '')) target = m;
-      }
-    }
-  }
-
-  // As a last fallback, try the stable filenames if nothing matched (e.g. legacy files not yet present)
-  if (!target) {
-    const base = safeFileName(key);
-    const candidates = [
-      path.join(scoredDir, `${base}_${shortHash(key)}_scored.json`),
-      path.join(rawDir, `${base}_${shortHash(key)}_raw.json`),
-      // legacy locations
-      path.join(dir, `${base}_${shortHash(key)}_scored.json`),
-      path.join(dir, `${base}_${shortHash(key)}_raw.json`),
-    ];
-    for (const p of candidates) {
-      try {
-        const text = await fs.readFile(p, 'utf8');
-        const rec = JSON.parse(text);
-        target = { path: p, rec };
-        break;
-      } catch {}
-    }
-  }
-
-  if (!target) {
-    return { updated: false };
-  }
+  const target = await selectUpdateTarget(dirs, key);
+  if (!target) return { updated: false };
 
   target.rec.appliedAt = new Date().toISOString();
   target.rec.applied = !!applied;
   target.rec.reqId = reqId;
-  await fs.writeFile(target.path, JSON.stringify(target.rec, null, 2), 'utf8');
+  await writeRecord(target.path, target.rec);
   return { updated: true, file: target.path };
 }
 
@@ -102,8 +43,7 @@ export async function saveScoredJobs(
   dir: string,
   scoredJobs: Array<JobItem & { score?: number; reason?: string }>
 ) {
-  const scoredDir = path.join(dir, 'scored');
-  await fs.mkdir(scoredDir, { recursive: true });
+  const { scored: scoredDir } = await ensureDbDirs(dir);
   await Promise.all(scoredJobs.map(async (job, idx) => {
     const stableKey = normalizeJobKey(job.url || (job as any).id || '');
     const base = safeFileName(stableKey || job.title || `job-${idx}`);
@@ -120,30 +60,24 @@ export async function saveScoredJobs(
       reason: (job as any).reason ?? null,
       data: job,
     };
-    await fs.writeFile(path.join(scoredDir, fname), JSON.stringify(record, null, 2), 'utf8');
+    await writeRecord(path.join(scoredDir, fname), record);
   }));
 }
 
-export async function listJobs(dir: string) {
-  const all = [
-    ...(await readJsonFiles(dir)),
-    ...(await readJsonFiles(path.join(dir, 'raw'))),
-    ...(await readJsonFiles(path.join(dir, 'scored'))),
-  ];
-  const groups = new Map<string, any[]>();
-  for (const rec of all) {
-    const key = getJobKey(rec);
-    if (!key) continue;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(rec);
-  }
-  const merged: any[] = [];
+export async function listJobs(dir: string): Promise<SavedJob[]> {
+  const baseArr = await readJsonFiles(dir);
+  const rawArr = await readJsonFiles(path.join(dir, 'raw'));
+  const scoredArr = await readJsonFiles(path.join(dir, 'scored'));
+  const all = [...baseArr, ...rawArr, ...scoredArr] as SnapshotRecord[];
+  const groups = groupByKey(all);
+  const merged: SavedJob[] = [];
   for (const [key, arr] of groups) {
     const raw = pickLatest(arr.filter(r => r.scrapedAt), 'scrapedAt');
     const scored = pickLatest(arr.filter(r => r.scoredAt), 'scoredAt');
     const feedback = pickLatest(arr.filter(r => r.userScoredAt), 'userScoredAt');
     const appliedRec = pickLatest(arr.filter(r => r.appliedAt), 'appliedAt');
     const base = scored || raw || arr[0];
+    const data = (base?.data ?? null) as SnapshotJobData | null;
     merged.push({
       id: base?.id || key,
       key,
@@ -151,86 +85,28 @@ export async function listJobs(dir: string) {
       userScore: feedback?.userScore ?? null,
       applied: (appliedRec && typeof appliedRec.applied !== 'undefined') ? !!appliedRec.applied : (base?.applied ?? null),
       appliedAt: appliedRec?.appliedAt ?? (base?.appliedAt ?? null),
-      title: base?.data?.title || base?.data?.jobTitle || null,
-      url: base?.data?.url || null,
-      company: base?.data?.company || null,
-      location: base?.data?.location || null,
-      listedAgo: base?.data?.listedAgo || null,
+      title: data?.title || data?.jobTitle || null,
+      url: data?.url || null,
+      company: data?.company || null,
+      location: data?.location || null,
+      listedAgo: data?.listedAgo || null,
       reason: scored?.reason ?? null,
       source: base?.source || 'jora',
-      data: base?.data || null,
+      data: data || null,
     });
   }
   return merged;
 }
 
 export async function updateFeedback(reqId: string, dir: string, jobId: string, userScore: number) {
-  const rawDir = path.join(dir, 'raw');
-  const scoredDir = path.join(dir, 'scored');
-  await fs.mkdir(rawDir, { recursive: true });
-  await fs.mkdir(scoredDir, { recursive: true });
+  const dirs = await ensureDbDirs(dir);
   const key = normalizeJobKey(jobId);
-
-  // Find existing record files for this job key
-  const scanDirs = [dir, rawDir, scoredDir];
-  const matches: { path: string; rec: any }[] = [];
-  for (const d of scanDirs) {
-    let entries: any[] = [];
-    try { entries = await fs.readdir(d, { withFileTypes: true }); } catch {}
-    for (const e of entries) {
-      if (!e.isFile() || !e.name.endsWith('.json')) continue;
-      const filePath = path.join(d, e.name);
-      try {
-        const text = await fs.readFile(filePath, 'utf8');
-        const rec = JSON.parse(text);
-        const recKey = getJobKey(rec);
-        if (recKey === key) matches.push({ path: filePath, rec });
-      } catch {}
-    }
-  }
-
-  // Choose target: prefer latest scored, else latest raw
-  let target: { path: string; rec: any } | null = null;
-  for (const m of matches) {
-    if (m.rec?.scoredAt) {
-      if (!target || Date.parse(m.rec.scoredAt) > Date.parse(target.rec.scoredAt || '')) target = m;
-    }
-  }
-  if (!target) {
-    for (const m of matches) {
-      if (m.rec?.scrapedAt) {
-        if (!target || Date.parse(m.rec.scrapedAt) > Date.parse(target.rec.scrapedAt || '')) target = m;
-      }
-    }
-  }
-
-  // As a last fallback, try the stable filenames if nothing matched (e.g. legacy files not yet present)
-  if (!target) {
-    const base = safeFileName(key);
-    const candidates = [
-      path.join(scoredDir, `${base}_${shortHash(key)}_scored.json`),
-      path.join(rawDir, `${base}_${shortHash(key)}_raw.json`),
-      // legacy locations
-      path.join(dir, `${base}_${shortHash(key)}_scored.json`),
-      path.join(dir, `${base}_${shortHash(key)}_raw.json`),
-    ];
-    for (const p of candidates) {
-      try {
-        const text = await fs.readFile(p, 'utf8');
-        const rec = JSON.parse(text);
-        target = { path: p, rec };
-        break;
-      } catch {}
-    }
-  }
-
-  if (!target) {
-    return { updated: false };
-  }
+  const target = await selectUpdateTarget(dirs, key);
+  if (!target) return { updated: false };
 
   target.rec.userScoredAt = new Date().toISOString();
   target.rec.userScore = userScore;
   target.rec.reqId = reqId;
-  await fs.writeFile(target.path, JSON.stringify(target.rec, null, 2), 'utf8');
+  await writeRecord(target.path, target.rec);
   return { updated: true, file: target.path };
 }

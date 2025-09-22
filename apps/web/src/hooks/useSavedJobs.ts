@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { listSavedJobs, sendFeedback } from '../api';
-import type { SavedJob } from '../../../server/src/types';
+import type { SavedJob } from '@shared/types';
 
 export function useSavedJobs(onToast?: (msg: string) => void) {
   const [saved, setSaved] = useState<SavedJob[]>([]);

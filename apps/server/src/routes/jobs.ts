@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import path from 'path';
 import { bufferToText } from '../lib/cv.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
-import type { CVAnalysis } from '../types.js';
+import type { CVAnalysis } from '@shared/types';
 import { buildJobRelevancePromptPreview } from '../services/prompt.js';
 import {
   analyzeCVHeuristic,

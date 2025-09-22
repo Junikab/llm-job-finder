@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { findJobs } from './api';
-import type { RankedJob, CVAnalysis } from '../../server/src/types';
+import type { RankedJob, CVAnalysis } from '@shared/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';

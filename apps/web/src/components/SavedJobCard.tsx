@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SavedJob } from '../../../server/src/types';
+import type { SavedJob } from '@shared/types';
 
 export type SavedJobCardProps = {
   job: SavedJob;

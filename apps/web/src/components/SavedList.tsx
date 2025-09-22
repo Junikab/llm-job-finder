@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { SavedJob } from '../../../server/src/types';
+import type { SavedJob } from '@shared/types';
 import { useAppliedJobs } from '../hooks/useAppliedJobs';
 import { parseListedDays, formatAppliedDate } from '../utils/date';
 import SavedJobCard from './SavedJobCard';

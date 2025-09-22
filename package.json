@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n API,WEB -c blue,magenta \"npm --workspace apps/server run dev\" \"npm --workspace apps/web run dev\"",
-    "build": "npm --workspace packages/scraper run build && npm --workspace apps/server run build && npm --workspace apps/web run build",
+    "build": "npm --workspace packages/shared-types run build && npm --workspace packages/scraper run build && npm --workspace apps/server run build && npm --workspace apps/web run build",
     "start": "npm --workspace apps/server run start",
     "preview": "npm --workspace apps/web run preview",
     "start:web": "npm --workspace apps/web run preview",

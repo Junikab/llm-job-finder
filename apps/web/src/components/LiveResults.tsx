@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { RankedJob } from '../../../server/src/types';
+import type { RankedJob } from '@shared/types';
 import { useAppliedJobs } from '../hooks/useAppliedJobs';
 import { parseListedDays, formatAppliedDate } from '../utils/date';
 

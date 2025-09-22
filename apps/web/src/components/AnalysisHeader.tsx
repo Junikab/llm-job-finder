@@ -1,6 +1,6 @@
 import React from 'react';
 import '../styles/AnalysisHeader.css';
-import type { CVAnalysis } from '../../../server/src/types';
+import type { CVAnalysis } from '@shared/types';
 
 export default function AnalysisHeader({ analysis, searchUrls, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem }: { analysis: CVAnalysis | null; searchUrls: string[]; llmGoodTraits?: string; llmBadTraits?: string; llmPromptUserPreview?: string; llmPromptSystem?: string; }) {
   if (!analysis) return null;
