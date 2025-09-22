@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { findJobs } from './api';
-import type { RankedJob, CVAnalysis } from '@shared/types';
+import { findJobs, rescoreJobs } from './api';
+import type { RankedJob, CVAnalysis, JobItem } from '@shared/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
@@ -32,6 +32,11 @@ export default function App() {
   // Toast
   const { toast, showToast } = useToast(1600);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Analysis editing + rescore state
+  const [draftAnalysis, setDraftAnalysis] = useState<CVAnalysis | null>(null);
+  const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
+  const [rescoring, setRescoring] = useState(false);
 
   // Recent CVs (IndexedDB) via hook
   const {
@@ -130,6 +135,9 @@ export default function App() {
       setLlmPromptUserPreview(json.llmPromptUserPreview || undefined);
       setLlmPromptSystem(json.llmPromptSystem || undefined);
       setResults(json.results || []);
+      // Reset edit state after a fresh search
+      setIsEditingAnalysis(false);
+      setDraftAnalysis(null);
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Something went wrong. Please try again.');
@@ -137,6 +145,59 @@ export default function App() {
       setLoading(false);
     }
   }, [file, searchUrl, loading, updateSearchUrlHistory]);
+
+  // Helpers for editing analysis and rescoring
+  const startEditAnalysis = useCallback(() => {
+    if (!analysis) return;
+    setDraftAnalysis({
+      summary: analysis.summary || '',
+      titles: [...(analysis.titles || [])],
+      topSkills: [...(analysis.topSkills || [])],
+      locationHints: [...(analysis.locationHints || [])],
+    });
+    setIsEditingAnalysis(true);
+  }, [analysis]);
+
+  const cancelEditAnalysis = useCallback(() => {
+    setIsEditingAnalysis(false);
+    setDraftAnalysis(null);
+  }, []);
+
+  const onChangeDraft = useCallback((next: CVAnalysis) => {
+    setDraftAnalysis(next);
+  }, []);
+
+  const mapRankedToJobItem = (r: RankedJob): JobItem => ({
+    id: r.id,
+    title: r.title,
+    company: r.company,
+    location: r.location,
+    url: r.url,
+    listedAgo: r.listedAgo,
+    description: (r as any).description,
+  });
+
+  const handleRescore = useCallback(async () => {
+    if (!draftAnalysis) return;
+    if (results.length === 0) {
+      showToast('No results to rescore');
+      return;
+    }
+    try {
+      setRescoring(true);
+      const jobs: JobItem[] = results.map(mapRankedToJobItem);
+      const rescored = await rescoreJobs(draftAnalysis, jobs);
+      setResults(rescored);
+      setAnalysis(draftAnalysis);
+      setIsEditingAnalysis(false);
+      showToast('Rescored');
+    } catch (err: any) {
+      console.error(err);
+      showToast('Rescore failed');
+    } finally {
+      setRescoring(false);
+    }
+  }, [draftAnalysis, results, showToast]);
 
   // File change, recent CVs handlers are provided by useRecentCVs
   // Ensure mutually exclusive selection: selecting a recent CV clears the uploaded file input UI
@@ -178,7 +239,21 @@ export default function App() {
       <div className="content-container">
       {tab === 'live' && (
         <>
-          <AnalysisHeader analysis={analysis} searchUrls={searchUrls} llmGoodTraits={llmGoodTraits} llmBadTraits={llmBadTraits} llmPromptUserPreview={llmPromptUserPreview} llmPromptSystem={llmPromptSystem} />
+          <AnalysisHeader
+            analysis={analysis}
+            searchUrls={searchUrls}
+            llmGoodTraits={llmGoodTraits}
+            llmBadTraits={llmBadTraits}
+            llmPromptUserPreview={llmPromptUserPreview}
+            llmPromptSystem={llmPromptSystem}
+            draft={draftAnalysis}
+            isEditing={isEditingAnalysis}
+            onStartEdit={startEditAnalysis}
+            onCancelEdit={cancelEditAnalysis}
+            onChangeDraft={onChangeDraft}
+            onRescore={handleRescore}
+            rescoring={rescoring}
+          />
 
           {/* Sort By between CV summary and job cards */}
           <SortSelect sortBy={sortBy} onChange={setSortBy} />

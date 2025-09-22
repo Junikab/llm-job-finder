@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import path from 'path';
 import { bufferToText } from '../lib/cv.js';
 import { saveRawJobs, saveScoredJobs } from '../services/job-db.js';
-import type { CVAnalysis } from '@shared/types';
+import type { CVAnalysis, JobItem, RankedJob } from '@shared/types';
 import { buildJobRelevancePromptPreview } from '../services/prompt.js';
 import {
   analyzeCVHeuristic,
@@ -109,6 +109,23 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
     } catch (err: any) {
       (req as any).log?.error?.({ err }, 'jobs.find failed');
       return reply.code(500).send({ error: 'Failed to process request' });
+    }
+  });
+
+  // Rescore endpoint: accepts a user-edited analysis and a list of jobs to rescore
+  app.post('/api/jobs/rescore', async (req, reply) => {
+    try {
+      const body = (req as any).body || {};
+      const analysis = body.analysis as CVAnalysis | undefined;
+      const jobs = Array.isArray(body.jobs) ? (body.jobs as JobItem[]) : [];
+      if (!analysis || !Array.isArray(jobs) || jobs.length === 0) {
+        return reply.code(400).send({ error: 'analysis and jobs are required' });
+      }
+      const scored: RankedJob[] = await scoreJobs(analysis, jobs);
+      return reply.send({ total: scored.length, results: scored });
+    } catch (err: any) {
+      (req as any).log?.error?.({ err }, 'jobs.rescore failed');
+      return reply.code(500).send({ error: 'Failed to rescore' });
     }
   });
 }

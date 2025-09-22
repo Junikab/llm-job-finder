@@ -34,3 +34,15 @@ export async function sendApplied(jobId: string, applied: boolean): Promise<void
 }
 
 export { API_BASE };
+
+// New: rescore previously fetched jobs using a user-edited analysis
+import type { CVAnalysis, JobItem, RankedJob } from '@shared/types';
+
+export async function rescoreJobs(analysis: CVAnalysis, jobs: JobItem[]): Promise<RankedJob[]> {
+  const data = await fetchJson('/api/jobs/rescore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ analysis, jobs }),
+  });
+  return Array.isArray(data?.results) ? data.results as RankedJob[] : [];
+}

@@ -38,6 +38,17 @@ export function buildJobRelevancePromptUnified(
     '<candidate>',
     'Candidate profile (CV summary):',
     summary.length > 0 ? summary : '(empty)',
+    '',
+    'Structured profile hints (optional):',
+    ...(Array.isArray((analysis as any).titles) && (analysis as any).titles.length
+      ? [`Titles: ${(analysis as any).titles.join(', ')}`]
+      : []),
+    ...(Array.isArray((analysis as any).topSkills) && (analysis as any).topSkills.length
+      ? [`Top skills: ${(analysis as any).topSkills.join(', ')}`]
+      : []),
+    ...(Array.isArray((analysis as any).locationHints) && (analysis as any).locationHints.length
+      ? [`Location hints: ${(analysis as any).locationHints.join(', ')}`]
+      : []),
     ...(goodTraits || badTraits ? ['', 'Compact prompt customization (optional):'] : []),
     ...(goodTraits ? [`Good traits: ${goodTraits}`] : []),
     ...(badTraits ? [`Bad traits: ${badTraits}`] : []),
