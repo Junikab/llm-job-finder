@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: always_on
 description: Use when I ask to make any front end related actions.
 ---
 
