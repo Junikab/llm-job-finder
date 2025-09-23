@@ -16,14 +16,24 @@
   - Start with N=10 by default; cap to a safe upper bound (e.g., 50).
   - This is a nice-to-have; current system works with random or LLM scoring alone.
 
-## User-editable CV Summary (deferred)
+## Edit & Rescore — Improvements
 
-- __Concept__: After the initial LLM CV summarization step, let the user preview and optionally edit the generated summary before proceeding to build search URLs and score jobs. Default is to use the LLM summary as-is; editing is opt-in.
-- __Why__: Gives candidates control to correct mistakes, add nuance, and ensure the profile reflects their background (works for any profession, not tied to a specific role).
+- __Current__: The web UI now supports editing `summary`, `titles`, `topSkills`, and `locationHints` in `AnalysisHeader`, then rescoring via `POST /api/jobs/rescore`. The prompt builder includes these hints to influence scores.
+
+- __Next ideas__:
+  - Persist edits per CV locally (localStorage/indexedDB) with a stable key (e.g., hash of CV bytes or recent item id) so reopening the app restores your last draft.
+  - Validation UX: deduplicate comma lists; cap `titles` (≤3), `topSkills` (≤8), `locationHints` (≤3); trim and normalize casing; surface quick warnings inline.
+  - Undo/reset: add "Reset edits" to revert to server-provided analysis without leaving edit mode.
+  - Regenerate (LLM mode): button to re-run CV summarization when LLM is enabled, then let user tweak and rescore.
+  - Dirty state indicator: warn before navigating away with unsaved edits.
+  - Tests: unit tests for `useAnalysisEditor` hook and `mapRankedToJobItem` util; integration test to verify that editing specific skills increases relevant job scores.
+  - Accessibility: label inputs properly, ensure buttons and textareas are keyboard-accessible; announce rescoring status via ARIA-live.
+  - Telemetry (dev): count how often users rescore and which fields change (redact-safe, no PII).
+
+## Summary-only Step (optional)
+
+- __Concept__: Provide a `summaryOnly=true` flow or a dedicated `POST /api/cv/summary` endpoint to split the process into (1) summarize, (2) review/edit, (3) search + score. This is optional because we already support editing-and-rescoring after the initial run.
+- __Why__: Useful when users want to polish the profile before any scraping/scoring.
 - __How__:
-  - Backend: keep current single-step flow, but consider exposing a lightweight `POST /api/cv/summary` endpoint that accepts a CV file and returns `{ summary, source: 'llm'|'heuristic' }` for a two-step UI. Alternatively, support a `summaryOnly=true` flag on `/api/jobs/find`.
-  - Frontend: show a summary textarea with character count; buttons: "Use summary" to proceed, optional "Regenerate" (re-run summarize) when LLM is enabled. Persist last-used summary locally per recent CV.
-  - State/telemetry: include `analysis.summarySource` (`llm` vs `heuristic`) in responses to inform the UI; log redact-safe summary length for observability.
-  - Validation: enforce max length (e.g., 1200 chars) before proceeding to scoring.
-  - Privacy: redact PII in the displayed summary where feasible; avoid storing raw CV long-term.
-  - Tests: add route unit tests for summarize-only; UI tests for edit/submit flow and validation.
+  - Backend: a lightweight route returning `{ summary, titles, topSkills, locationHints }` from the CV.
+  - Frontend: wizard-like UX; Analysis review screen with character counter and quality hints.

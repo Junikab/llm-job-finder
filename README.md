@@ -11,6 +11,7 @@ A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads,
 - `apps/server/` — Fastify API
 - `apps/web/` — React web app
 - `packages/scraper/` — Jora scraper used by the API
+- `packages/shared-types/` — Shared type definitions (`CVAnalysis`, `JobItem`, `RankedJob`, `SavedJob`) consumed by server and web
 - `PLAN.md` / `DESIGN.md` — project docs
 
 
@@ -64,6 +65,10 @@ Use the app at http://localhost:5173
   - `days` (number, optional)
   - Response: `{ analysis, searchUrls, total, results: RankedJob[] }`
 
+- `POST /api/jobs/rescore` — rescore existing jobs using a user-edited analysis
+  - JSON body: `{ analysis: CVAnalysis, jobs: JobItem[] }`
+  - Response: `{ total, results: RankedJob[] }`
+
 - `GET /api/db/jobs` — list merged jobs from on-disk JSON snapshots
   - Response: `{ total, results: SavedJob[] }`
 
@@ -100,6 +105,23 @@ curl -s http://localhost:5174/api/db/jobs | jq '.total, .results[0]'
 curl -X POST http://localhost:5174/api/db/feedback \
   -H 'Content-Type: application/json' \
   -d '{"jobId":"<copy-from-results-id>","userScore":5}' | jq
+```
+
+- Rescore (send edited analysis + original jobs):
+```bash
+curl -X POST http://localhost:5174/api/jobs/rescore \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "analysis": {
+          "summary": "Frontend engineer focusing on React/TS",
+          "titles": ["Frontend Developer", "React Developer"],
+          "topSkills": ["React", "TypeScript", "Testing"],
+          "locationHints": ["Sydney NSW"]
+        },
+        "jobs": [
+          { "id": "job-1", "title": "Frontend Dev", "company": "Acme", "location": "Sydney", "url": "https://...", "listedAgo": "3 days ago", "description": "..." }
+        ]
+      }' | jq '.total, .results[0]'
 ```
 
 
@@ -188,7 +210,7 @@ When `SCORE_MODE=llm`, per-job prompts are sent to OpenAI and a single numeric s
 
 Privacy note: When LLM mode is enabled, extracted CV text and job snippets are sent to the provider for scoring.
 
-### Compact prompt customization
+### Compact prompt customization + structured profile hints
 To guide the model without pasting long examples, set concise traits in `.env`:
 
 ```
@@ -197,6 +219,8 @@ LLM_BAD_TRAITS=senior-only, backend-only Java, no UI, on-site far away
 ```
 
 These appear in the prompt after the CV summary and before the rubric, keeping token usage low.
+
+When present, the structured fields from the current analysis (`titles`, `topSkills`, `locationHints`) are also included as short hints in the prompt. Editing these in the web UI and clicking Rescore will influence model scoring.
 
 
 ## LLM logging & debugging
@@ -229,7 +253,7 @@ Privacy reminder: Prompt logs include slices of CV text and job snippets; use th
 ## Prompt builder (dev utility)
 - Code: `apps/server/src/services/prompt.ts`
   - `formatJobForPrompt(job)`
-  - `buildJobRelevancePrompt(analysis, job)`
+  - `buildJobRelevancePrompt(analysis, job)` — includes candidate summary and structured hints (titles/topSkills/locationHints)
   - `parseRelevanceScore(text)`
 - Demo:
   ```bash
@@ -237,6 +261,15 @@ Privacy reminder: Prompt logs include slices of CV text and job snippets; use th
   ```
   Prints a sample prompt and demonstrates score parsing.
 - Tests: `apps/server/test/prompt.spec.ts`
+
+## Edit & Rescore (Web UI)
+- After the initial search, the web app shows an `AnalysisHeader` summarizing the candidate profile and the exact LLM prompt header.
+- Click `Edit analysis` to adjust `summary`, `titles`, `topSkills`, and `locationHints`.
+- Click `Rescore` to send the edited analysis and the currently displayed jobs to `POST /api/jobs/rescore`. New scores replace the list.
+- Implementation:
+  - Component: `apps/web/src/components/AnalysisHeader.tsx`
+  - Hook (logic): `apps/web/src/hooks/useAnalysisEditor.ts`
+  - Mapping util: `apps/web/src/utils/jobMapping.ts` (converts `RankedJob` → `JobItem` for rescoring)
 
 
 ## Testing

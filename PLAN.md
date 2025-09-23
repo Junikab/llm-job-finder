@@ -1,6 +1,6 @@
 # Project Plan — Jora LLM Job Finder (Mock Mode)
 
-Last updated: 2025-09-05
+Last updated: 2025-09-24
 
 ## 0. Objectives (Next 2–3 weeks)
 - Stable, fast local dev loop with mocked analysis/scoring
@@ -81,6 +81,16 @@ Last updated: 2025-09-05
 - Acceptance
   - When enabled, JSON files are emitted under raw/ and scored/; API returns aggregated jobs with latest modelScore/userScore; UI feedback updates the same scored file and persists to disk.
 
+### M9 — Edit & Rescore (Done)
+- Tasks
+  - Add `POST /api/jobs/rescore` endpoint that accepts `{ analysis: CVAnalysis, jobs: JobItem[] }` and returns rescored results.
+  - Expose an editable `AnalysisHeader` in the web UI (summary, titles, topSkills, locationHints) and a `Rescore` action that calls the endpoint.
+  - Include structured profile hints (titles/topSkills/locationHints) in the LLM prompt builder so edits influence scores.
+  - Introduce `packages/shared-types` consumed by server and web for a single source of truth for API types.
+- Acceptance
+  - User can edit the analysis and click Rescore to refresh scores for the same scraped jobs.
+  - Server returns updated scores; web list updates accordingly.
+
 ## 2. Work Breakdown (Checklist)
 
 - [x] API: ensure req.file() + fields from data.fields fallback
@@ -110,6 +120,11 @@ Last updated: 2025-09-05
 - [x] DB-2: write scored JSON after scoring (db/scored; stable filenames; overwrite)
 - [x] DB-3: API list + feedback update in-place; UI displays and posts
 - [x] DB-4: compaction script removed; aggregation happens on demand
+
+- [x] API: `POST /api/jobs/rescore` for edited-analysis rescoring
+- [x] Web UI: Edit analysis + Rescore UX (AnalysisHeader + button)
+- [x] Prompt: include structured profile hints (titles/topSkills/locationHints)
+- [x] Monorepo: add `packages/shared-types` and migrate server/web to consume it
 
 - [x] LLM protective measures: capped retries/backoff for OpenAI (LLM_RETRIES) and per-request LLM job cap (LLM_MAX_SCORE_JOBS)
 - [x] Docs: LLM logging & debugging steps (envs, prompt visibility, troubleshooting); scoring modes simplified to random | llm

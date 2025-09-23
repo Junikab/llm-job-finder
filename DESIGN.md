@@ -27,6 +27,7 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
   - web/ — React/Vite web app
 - packages/
   - scraper/ — Playwright + Cheerio-based Jora scraper
+  - shared-types/ — Shared API types used by both server and web (CVAnalysis, JobItem, RankedJob, SavedJob)
 
 ## 4. High-Level Architecture
 - Client (web or curl) uploads a CV and form fields to the server.
@@ -34,7 +35,8 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 - Scraper fetches Jora SERP pages and job details.
 - Server scores jobs randomly by default to produce results (optional LLM scoring can score per job when enabled).
 - Server returns JSON to the client.
- - Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
+- Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
+- Edit & Rescore: After initial results, the user can edit the analysis (summary, titles, topSkills, locationHints) in the UI and request a rescore; the web calls a dedicated endpoint with the edited analysis and current jobs to get updated scores.
 
 ## 5. Data Flow
 1) POST /api/jobs/find (multipart/form-data)
@@ -42,11 +44,14 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 2) Server
    - Reads the file via Fastify multipart (req.file). Note: attachFieldsToBody is disabled to ensure reliable req.file() in dev.
    - Extracts text via pdf-parse (.pdf), Mammoth (.docx), or utf-8 (.txt).
-   - analyzeCV: returns a summary slice and empty arrays for titles/skills in mock mode.
-   - Generates a search URL with fallback titles (e.g., "software developer OR frontend developer").
+   - analyzeCV: returns a heuristic summary and initial titles/skills.
+   - Generates search URLs (rich or simple) from titles/skills and location.
    - Invokes the scraper with limits (pages/jobs) to fetch job cards.
-   - scoreJob: returns random [0..100] with reason "Mock score".
+   - scoreJob: returns a score [0..100] and short reason. Default mode "random"; when LLM is enabled, the LLM returns JSON `{score, reason}` and failures fall back to random.
    - Responds with analysis, searchUrls, total, results.
+3) POST /api/jobs/rescore (JSON)
+   - Body: `{ analysis: CVAnalysis, jobs: JobItem[] }`
+   - Server reuses the scoring pipeline to rescore the provided jobs with the edited analysis and returns `{ total, results: RankedJob[] }`.
 
 ## 6. API Design
 - GET /health
@@ -58,10 +63,18 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
     - location: string (e.g., "Sydney NSW")
     - days: integer (1–60)
   - Response (JSON):
-    - analysis: { summary: string, titles: string[], topSkills: string[], niceToHave: string[] }
+    - analysis: { summary: string, titles: string[], topSkills: string[], locationHints?: string[] }
     - searchUrls: string[]
     - total: number
     - results: Array<{ id, title, company, location, url, listedAgo, score, reason }>
+
+- POST /api/jobs/rescore
+  - Request (JSON):
+    - analysis: CVAnalysis (edited)
+    - jobs: JobItem[] (the current jobs to rescore)
+  - Response (JSON):
+    - total: number
+    - results: RankedJob[]
 
 ## 7. Server Implementation (apps/server)
 - Framework: Fastify (TypeScript)
@@ -83,8 +96,8 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 - Location: `apps/server/src/services/prompt.ts`
 - Functions:
   - `formatJobForPrompt(job)` — stable, readable block of job fields for prompts.
-  - `buildJobRelevancePrompt(analysis, job)` — numbered instructions, CV summary + job block; response must be a single number (0–100).
-  - `parseRelevanceScore(text)` — extracts, rounds, and clamps a numeric score from a model response.
+  - `buildJobRelevancePrompt(analysis, job)` — rubric-based instructions; includes CV summary and structured hints (titles/topSkills/locationHints) when present; response is strict JSON: `{ "score": 0..100, "reason": string }`.
+  - `parseRelevanceScore(text)` — retained for legacy/simple flows; LLM mode uses strict JSON parsing with fallback to random.
 - Demo: `npm --workspace apps/server run prompt:demo` prints a sample prompt and parses a mocked response.
 - Tests: `apps/server/test/prompt.spec.ts` cover formatting, composition, and parsing.
 
