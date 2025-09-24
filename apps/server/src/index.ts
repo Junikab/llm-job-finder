@@ -10,6 +10,7 @@ dotenv.config();
 // (e.g. LLM_DEBUG) are computed with the correct values from .env
 const { default: registerJobsRoutes } = await import('./routes/jobs.js');
 const { default: registerDbRoutes } = await import('./routes/db.js');
+const { default: registerProfileRoutes } = await import('./routes/profiles.js');
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: process.env.NODE_ENV === 'production' ? (process.env.CORS_ORIGIN || false) : true });
@@ -28,6 +29,7 @@ const PORT = Number(process.env.PORT || 5174);
 // Register route modules
 await app.register(registerJobsRoutes);
 await app.register(registerDbRoutes);
+await app.register(registerProfileRoutes);
 
 app.listen({ port: PORT, host: '0.0.0.0' }).then(() => {
   console.log(`API listening on http://localhost:${PORT}`);

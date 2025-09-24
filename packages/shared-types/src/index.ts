@@ -41,3 +41,13 @@ export type SavedJob = {
   source: string;
   data?: any;
 };
+
+// Minimal user profile storing an edited analysis for future reuse
+export type Profile = {
+  id: string;
+  label: string | null;
+  analysis: CVAnalysis;
+  createdAt: string; // ISO date
+  updatedAt: string; // ISO date
+  lastUsedAt: string | null; // ISO date or null
+};

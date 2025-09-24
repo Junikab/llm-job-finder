@@ -8,6 +8,39 @@ async function fetchJson(input: string, init?: RequestInit) {
   return res.json();
 }
 
+// Profiles API
+/**
+ * List saved profiles.
+ */
+export async function listProfiles(): Promise<Profile[]> {
+  const data = await fetchJson('/api/profiles');
+  return Array.isArray(data?.results) ? (data.results as Profile[]) : [];
+}
+
+/**
+ * Get a profile by id; returns null if not found.
+ */
+export async function getProfile(id: string): Promise<Profile | null> {
+  try {
+    const data = await fetchJson(`/api/profiles/${encodeURIComponent(id)}`);
+    return (data as Profile) || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Create or update a profile. If id is omitted, creates a new profile.
+ */
+export async function saveProfile(payload: { id?: string; label?: string; analysis: CVAnalysis }): Promise<Profile> {
+  const data = await fetchJson('/api/profiles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return data as Profile;
+}
+
 export async function findJobs(form: FormData): Promise<any> {
   return fetchJson('/api/jobs/find', { method: 'POST', body: form });
 }
@@ -36,7 +69,7 @@ export async function sendApplied(jobId: string, applied: boolean): Promise<void
 export { API_BASE };
 
 // New: rescore previously fetched jobs using a user-edited analysis
-import type { CVAnalysis, JobItem, RankedJob } from '@shared/types';
+import type { CVAnalysis, JobItem, RankedJob, Profile } from '@shared/types';
 
 export type RescoreResponse = {
   results: RankedJob[];
