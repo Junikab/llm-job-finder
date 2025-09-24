@@ -34,16 +34,17 @@ export function AnalysisActions({
 
   return (
     <div className="analysisActions">
-      <button type="button" onClick={onCancelEdit} disabled={rescoring} className="btn btnSecondary">Cancel</button>
-      <button type="button" onClick={onRescore} disabled={rescoring} className="btn btnPrimary btnBold">
-        {rescoring ? 'Rescoring…' : 'Rescore'}
-      </button>
       <ProfileControls
         draft={draft}
         isEditing={true}
         onApplyProfile={(a) => onChangeDraft({ ...a })}
         onProfileLoadMeta={onProfileLoadMeta}
       />
+      <button type="button" onClick={onCancelEdit} disabled={rescoring} className="btn btnSecondary">Cancel edits</button>
+      <button type="button" onClick={onRescore} disabled={rescoring} className="btn btnPrimary btnBold">
+        {rescoring ? 'Rescoring…' : 'Rescore'}
+      </button>
+      
     </div>
   );
 }
