@@ -1,8 +1,8 @@
 import React from 'react';
 import '../styles/AnalysisHeader.css';
 import type { CVAnalysis } from '@shared/types';
-import { ProfileControls } from './ProfileControls';
 import { AnalysisDetails } from './AnalysisDetails';
+import { AnalysisActions } from './AnalysisActions';
 
 export default function AnalysisHeader({
   analysis,
@@ -76,26 +76,19 @@ export default function AnalysisHeader({
       )}
       <div className="analysisHeaderRow">
         <strong>LLM prompt {llmPromptUserPreview ? '(exact preview)' : 'header'}:</strong>
-        {!isEditing ? (
-          <button type="button" onClick={onStartEdit}>Edit analysis</button>
-        ) : (
-          <div className="analysisHeaderRow">
-            <button type="button" onClick={onCancelEdit} disabled={rescoring}>Cancel</button>
-            <button type="button" onClick={onRescore} disabled={rescoring} className="btnBold">
-              {rescoring ? 'Rescoring…' : 'Rescore'}
-            </button>
-            {/* Minimal Save/Load profile controls extracted to a reusable component */}
-            <ProfileControls
-              draft={d}
-              isEditing={isEditing}
-              onApplyProfile={(a) => onChangeDraft({ ...a })}
-              onProfileLoadMeta={(meta) => {
-                setActiveProfileMeta(meta);
-                try { localStorage.setItem(PROFILE_META_KEY, JSON.stringify(meta)); } catch {}
-              }}
-            />
-          </div>
-        )}
+        <AnalysisActions
+          isEditing={isEditing}
+          rescoring={rescoring}
+          draft={d}
+          onStartEdit={onStartEdit}
+          onCancelEdit={onCancelEdit}
+          onRescore={onRescore}
+          onChangeDraft={onChangeDraft}
+          onProfileLoadMeta={(meta) => {
+            setActiveProfileMeta(meta);
+            try { localStorage.setItem(PROFILE_META_KEY, JSON.stringify(meta)); } catch {}
+          }}
+        />
       </div>
       {llmPromptSystem && (
         <pre className="systemPre">{llmPromptSystem}</pre>

@@ -1,22 +1,29 @@
 /* ProfileControls styles */
 .pc-container {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .pc-row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
 .pc-select,
 .pc-input {
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db; /* gray-300 */
+  background: #ffffff;
+  color: #111827;
   min-width: 180px;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
 
 .pc-input {
@@ -24,11 +31,28 @@
 }
 
 .pc-button {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background: #f8fafc;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb; /* gray-200 */
+  background: #f3f4f6; /* gray-100 */
+  color: #111827; /* gray-900 */
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
+}
+
+.pc-button:hover {
+  background: #e5e7eb; /* gray-200 */
+}
+
+.pc-select:focus-visible,
+.pc-input:focus-visible,
+.pc-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); /* blue-600 ring */
+  border-color: #2563eb;
 }
 
 .pc-button:disabled {

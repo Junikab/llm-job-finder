@@ -1,0 +1,60 @@
+/* AnalysisActions: action bar and unified button styles */
+.analysisActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db; /* gray-300 */
+  background: #ffffff;
+  color: #111827; /* gray-900 */
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
+}
+
+.btn:hover {
+  background: #f9fafb; /* gray-50 */
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); /* blue-600 ring */
+  border-color: #2563eb;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: #2563eb; /* blue-600 */
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.btnPrimary:hover {
+  background: #1d4ed8; /* blue-700 */
+  border-color: #1d4ed8;
+}
+
+.btnSecondary {
+  background: #f3f4f6; /* gray-100 */
+  color: #111827;
+  border-color: #e5e7eb; /* gray-200 */
+}
+
+.btnBold {
+  font-weight: 600;
+}
