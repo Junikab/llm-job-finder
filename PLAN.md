@@ -53,7 +53,7 @@ Last updated: 2025-09-24
   - Loading and error states; show reason and score columns
 - Acceptance
   - E2E flow: select file → see ranked list → click opens job URL
-  - Recent CVs persist across refresh using IndexedDB (db "cv-store" v2, store "files"), capped at 5 and pruned; falls back to sessionStorage when IndexedDB is unavailable; best-effort `navigator.storage.persist()` requested.
+  - No browser persistence of CVs for privacy; users upload a file per session.
 
 ### M6 — Testing & DX (Week 2)
 - Tasks
@@ -104,8 +104,8 @@ Last updated: 2025-09-24
 - [x] Pre-sort signals: simple title/skill keyword matches to order candidates before scoring
 - [ ] (Optional) Human-readable reason strings (deferred)
 - [x] Web UI: upload form + results table
-- [x] Web UI: Recent CVs picker (IndexedDB) with reuse/remove
-- [x] Web UI: Recent CVs persist across refresh; sessionStorage fallback; capped at 5; persistent storage requested
+- [x] Web UI: Profiles (save/load edited analysis)
+- [x] Web UI: Removed Recent CVs feature to avoid storing files in-browser
 - [x] Web UI: Saved tab with reload and rating + feedback POST
 - [x] Tests: basic web App flow and DB endpoints (add more)
 - [ ] Fixtures: sample CVs and SERP HTML

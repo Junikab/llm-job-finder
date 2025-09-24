@@ -67,7 +67,9 @@ Use the app at http://localhost:5173
 
 - `POST /api/jobs/rescore` — rescore existing jobs using a user-edited analysis
   - JSON body: `{ analysis: CVAnalysis, jobs: JobItem[] }`
-  - Response: `{ total, results: RankedJob[] }`
+  - Optional: `{ refreshSearch: boolean, location?: string, days?: number }`
+    - When `refreshSearch=true`, the server rebuilds search URLs from the edited analysis (and optional `location`/`days`), re-scrapes, then rescroes.
+  - Response: `{ total, results: RankedJob[], llmPromptUserPreview?: string, llmPromptSystem?: string, searchUrls?: string[] }`
 
 - `GET /api/db/jobs` — list merged jobs from on-disk JSON snapshots
   - Response: `{ total, results: SavedJob[] }`
@@ -77,6 +79,15 @@ Use the app at http://localhost:5173
   - Response: `{ ok: true }`
 
 See code: `apps/server/src/routes/jobs.ts`, `apps/server/src/routes/db.ts`, `apps/server/src/services/job-db.ts`.
+
+### Profiles API
+- `GET /api/profiles` — list saved profiles.
+  - Response: `{ total, results: Profile[] }`
+- `GET /api/profiles/:id` — fetch a profile by id.
+  - Response: `Profile`
+- `POST /api/profiles` — create or update a profile.
+  - JSON body: `{ id?: string, label?: string, analysis: CVAnalysis }`
+  - Response: `Profile`
 
 
 ## cURL examples

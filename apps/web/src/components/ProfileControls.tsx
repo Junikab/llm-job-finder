@@ -6,6 +6,7 @@ export type ProfileControlsProps = {
   draft: CVAnalysis | null;
   isEditing: boolean;
   onApplyProfile: (a: CVAnalysis) => void;
+  onProfileLoadMeta?: (meta: { id: string; label: string | null }) => void;
 };
 
 /**
@@ -13,7 +14,7 @@ export type ProfileControlsProps = {
  * - Save profile persists the current analysis with an optional label
  * - Load profile applies a saved analysis to the editor draft
  */
-export function ProfileControls({ draft, isEditing, onApplyProfile }: ProfileControlsProps) {
+export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoadMeta }: ProfileControlsProps) {
   const [profiles, setProfiles] = React.useState<Profile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = React.useState('');
   const [profileLabel, setProfileLabel] = React.useState('');
@@ -54,6 +55,7 @@ export function ProfileControls({ draft, isEditing, onApplyProfile }: ProfileCon
     const p = profiles.find(x => x.id === selectedProfileId);
     if (!p) return;
     onApplyProfile({ ...p.analysis });
+    onProfileLoadMeta?.({ id: p.id, label: p.label ?? null });
   }
 
   if (!isEditing) return null;

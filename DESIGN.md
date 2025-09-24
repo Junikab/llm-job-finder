@@ -35,7 +35,7 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 - Scraper fetches Jora SERP pages and job details.
 - Server scores jobs randomly by default to produce results (optional LLM scoring can score per job when enabled).
 - Server returns JSON to the client.
-- Web client stores up to 5 recent CVs in-browser using IndexedDB (store: `files` in `cv-store` v2), prunes older ones, and falls back to sessionStorage when IndexedDB is unavailable.
+ - Web client does not persist CV files in-browser. The CV is uploaded only when the user submits the form.
 - Edit & Rescore: After initial results, the user can edit the analysis (summary, titles, topSkills, locationHints) in the UI and request a rescore; the web calls a dedicated endpoint with the edited analysis and current jobs to get updated scores.
 
 ## 5. Data Flow
@@ -52,6 +52,14 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 3) POST /api/jobs/rescore (JSON)
    - Body: `{ analysis: CVAnalysis, jobs: JobItem[] }`
    - Server reuses the scoring pipeline to rescore the provided jobs with the edited analysis and returns `{ total, results: RankedJob[] }`.
+   - Optional request fields:
+     - refreshSearch: boolean — when true, rebuild search URLs from the edited analysis (and optional `location`/`days`), re-scrape, and rescore.
+     - location: string — optional override for location; defaults to the first `locationHints`.
+     - days: number — optional age filter for listings.
+   - Additional response fields (when available):
+     - llmPromptUserPreview: string — redacted prompt header for UI preview.
+     - llmPromptSystem: string — system prompt used.
+     - searchUrls: string[] — present when `refreshSearch=true` triggered a rebuild.
 
 ## 6. API Design
 - GET /health
@@ -75,6 +83,19 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
   - Response (JSON):
     - total: number
     - results: RankedJob[]
+  - Optional request fields:
+    - refreshSearch: boolean — when true, rebuild search URLs from the edited analysis (and optional `location`/`days`), re-scrape, and rescore.
+    - location: string — optional override for location; defaults to the first `locationHints`.
+    - days: number — optional age filter for listings.
+  - Additional response fields (when available):
+    - llmPromptUserPreview: string — redacted prompt header for UI preview.
+    - llmPromptSystem: string — system prompt used.
+    - searchUrls: string[] — present when `refreshSearch=true` triggered a rebuild.
+
+ - Profiles API
+   - GET /api/profiles — list saved profiles. Response: `{ total, results: Profile[] }`
+   - GET /api/profiles/:id — fetch a profile by id. Response: `Profile`
+   - POST /api/profiles — create/update a profile. Body: `{ id?: string, label?: string, analysis: CVAnalysis }`. Response: `Profile`
 
 ## 7. Server Implementation (apps/server)
 - Framework: Fastify (TypeScript)
@@ -154,7 +175,7 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 - File size limited to 5MB; allowed types: .pdf/.docx/.txt.
 - CORS open in dev; configure CORS_ORIGIN for production.
 - No rate limiting yet (consider @fastify/rate-limit for prod).
-- No server-side persistence of CVs; processed in-memory on the server. The web client may persist recent CVs locally in the browser (IndexedDB, up to 5; sessionStorage fallback). Use `navigator.storage.persist()` best-effort to reduce eviction.
+ - No server-side persistence of CVs; processed in-memory on the server. The web client does not persist CVs locally.
  - Privacy: When LLM mode is enabled, extracted CV text and job snippets are sent to the LLM provider for scoring. Logs may include truncated portions of these prompts when `LLM_LOG=debug`.
 
 ## 13. Performance

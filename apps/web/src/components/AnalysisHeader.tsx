@@ -47,11 +47,19 @@ export default function AnalysisHeader({
 
   const d = draft || analysis;
 
+  // Active profile indicator (set when a profile is loaded via ProfileControls)
+  const [activeProfileMeta, setActiveProfileMeta] = React.useState<{ id: string; label: string | null } | null>(null);
+
   const toList = (arr?: string[]) => (arr && arr.length ? arr.join(', ') : '');
   const fromList = (s: string): string[] => Array.from(new Set(s.split(',').map(x => x.trim()).filter(Boolean)));
 
   return (
     <div style={{ marginBottom: 16, padding: 12, border: '1px solid #eee', borderRadius: 12 }}>
+      {activeProfileMeta && (
+        <div style={{ marginBottom: 6, color: '#334155' }}>
+          <strong>Profile label:</strong> {activeProfileMeta.label || activeProfileMeta.id}
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <strong>LLM prompt {llmPromptUserPreview ? '(exact preview)' : 'header'}:</strong>
         {!isEditing ? (
@@ -63,7 +71,12 @@ export default function AnalysisHeader({
               {rescoring ? 'Rescoring…' : 'Rescore'}
             </button>
             {/* Minimal Save/Load profile controls extracted to a reusable component */}
-            <ProfileControls draft={d} isEditing={isEditing} onApplyProfile={(a) => onChangeDraft({ ...a })} />
+            <ProfileControls
+              draft={d}
+              isEditing={isEditing}
+              onApplyProfile={(a) => onChangeDraft({ ...a })}
+              onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
+            />
           </div>
         )}
       </div>
