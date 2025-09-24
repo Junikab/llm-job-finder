@@ -55,7 +55,7 @@ export default function HeroSection(props: {
           showInlineError={false}
         />
         <div className="hero__hint">
-          {resultsCount > 0 ? `We have ${resultsCount} job offers for you!` : 'Upload your CV and optionally pick a recent URL.'}
+          {resultsCount > 0 ? `We have ${resultsCount} job offers for you!` : 'Upload your CV and optionally paste a custom job search URL.'}
         </div>
         {!!error && (
           <div className="hero__error">

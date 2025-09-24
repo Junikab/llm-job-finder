@@ -22,7 +22,7 @@ export default function TopNav(props: {
           onClick={() => onChange('saved')}
           className={`topnav__btn ${tab === 'saved' ? 'topnav__btn--active' : ''}`}
         >
-          History
+          Saved
         </button>
         <button
           type="button"
