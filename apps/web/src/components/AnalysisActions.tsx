@@ -26,7 +26,7 @@ export function AnalysisActions({
 }: AnalysisActionsProps) {
   if (!isEditing) {
     return (
-      <div className="analysisActions">
+      <div className="analysisActions analysisActions--right">
         <button type="button" onClick={onStartEdit} className="btn btnSecondary">Edit analysis</button>
       </div>
     );

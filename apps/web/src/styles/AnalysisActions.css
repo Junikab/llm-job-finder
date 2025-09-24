@@ -9,6 +9,11 @@
   min-width: 0;             /* allow children to shrink as needed */
 }
 
+/* Right-align variant (used when there's only one button: Edit analysis) */
+.analysisActions--right {
+  justify-content: flex-end;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
