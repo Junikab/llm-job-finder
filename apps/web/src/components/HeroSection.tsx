@@ -1,15 +1,11 @@
 import React, { type RefObject, type ChangeEvent, type FormEvent } from 'react';
 import LiveForm from './LiveForm';
-import type { CVMeta } from '../idb';
 
 export default function HeroSection(props: {
   resultsCount: number;
   error: string | null;
   onSubmit: (e: FormEvent) => void;
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  recent: CVMeta[];
-  recentSelectedId: string;
-  onChangeRecentSelected: (id: string) => void;
   searchUrlSelectValue: string;
   searchUrlHistory: string[];
   searchUrlCustomMode: boolean;
@@ -26,9 +22,6 @@ export default function HeroSection(props: {
     error,
     onSubmit,
     onFileChange,
-    recent,
-    recentSelectedId,
-    onChangeRecentSelected,
     searchUrlSelectValue,
     searchUrlHistory,
     searchUrlCustomMode,
@@ -48,9 +41,6 @@ export default function HeroSection(props: {
         <LiveForm
           onSubmit={onSubmit}
           onFileChange={onFileChange}
-          recent={recent}
-          recentSelectedId={recentSelectedId}
-          onChangeRecentSelected={onChangeRecentSelected}
           searchUrlSelectValue={searchUrlSelectValue}
           searchUrlHistory={searchUrlHistory}
           searchUrlCustomMode={searchUrlCustomMode}

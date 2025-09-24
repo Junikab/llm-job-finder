@@ -4,7 +4,6 @@ import type { RankedJob, CVAnalysis } from '@shared/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
-import { useRecentCVs } from './hooks/useRecentCVs';
 import { useSearchUrl } from './hooks/useSearchUrl';
 import { useSavedJobs } from './hooks/useSavedJobs';
 import TopNav from './components/TopNav';
@@ -45,14 +44,12 @@ export default function App() {
     handleRescore,
   } = useAnalysisEditor({ analysis, onToast: showToast });
 
-  // Recent CVs (IndexedDB) via hook
-  const {
-    file,
-    recent,
-    recentSelectedId,
-    setRecentSelectedId,
-    onFileChange,
-  } = useRecentCVs();
+  // Simplified file upload state (Recent CVs removed)
+  const [file, setFile] = useState<File | null>(null);
+  const onFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setFile(f);
+  }, []);
 
   // Search URL selection/history via hook
   const {
@@ -168,13 +165,7 @@ export default function App() {
     });
   }, [handleRescore, results]);
 
-  // File change, recent CVs handlers are provided by useRecentCVs
-  // Ensure mutually exclusive selection: selecting a recent CV clears the uploaded file input UI
-  useEffect(() => {
-    if (recentSelectedId && fileInputRef.current) {
-      try { fileInputRef.current.value = ''; } catch {}
-    }
-  }, [recentSelectedId]);
+  // Recent CVs removed – no extra effects needed
 
   // Saved jobs handlers come from useSavedJobs
 
@@ -189,9 +180,6 @@ export default function App() {
         error={error}
         onSubmit={onSubmit}
         onFileChange={onFileChange}
-        recent={recent}
-        recentSelectedId={recentSelectedId}
-        onChangeRecentSelected={setRecentSelectedId}
         searchUrlSelectValue={searchUrlSelectValue}
         searchUrlHistory={searchUrlHistory}
         searchUrlCustomMode={searchUrlCustomMode}

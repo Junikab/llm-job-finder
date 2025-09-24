@@ -1,14 +1,9 @@
-import React, { useEffect, useState, type FormEvent, type ChangeEvent, type RefObject } from 'react';
-import RecentCVs from './RecentCVs';
+import React, { useState, type FormEvent, type ChangeEvent, type RefObject } from 'react';
 import SearchUrlPicker from './SearchUrlPicker';
-import type { CVMeta } from '../idb';
 
 export default function LiveForm(props: {
   onSubmit: (e: FormEvent) => void;
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  recent: CVMeta[];
-  recentSelectedId: string;
-  onChangeRecentSelected: (id: string) => void;
   searchUrlSelectValue: string;
   searchUrlHistory: string[];
   searchUrlCustomMode: boolean;
@@ -25,9 +20,6 @@ export default function LiveForm(props: {
   const {
     onSubmit,
     onFileChange,
-    recent,
-    recentSelectedId,
-    onChangeRecentSelected,
     searchUrlSelectValue,
     searchUrlHistory,
     searchUrlCustomMode,
@@ -52,11 +44,6 @@ export default function LiveForm(props: {
     setUploadedFileName(f?.name || '');
     onFileChange(e);
   };
-
-  // Clear displayed filename if a recent CV is chosen (mutually exclusive source)
-  useEffect(() => {
-    if (recentSelectedId) setUploadedFileName('');
-  }, [recentSelectedId]);
 
   return (
     <form onSubmit={onSubmit} className="lf-grid">
@@ -91,11 +78,6 @@ export default function LiveForm(props: {
             />
           </div>
         </div>
-        <RecentCVs
-          recent={recent}
-          recentSelectedId={recentSelectedId}
-          onChangeSelected={onChangeRecentSelected}
-        />
       </div>
 
       {/* Right column: URL picker */}

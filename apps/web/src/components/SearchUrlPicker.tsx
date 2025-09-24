@@ -31,7 +31,7 @@ export default function SearchUrlPicker(props: {
           placeholder="https://au.jora.com/"
         />
       </div>
-      <div className="lf-field">
+      {/* <div className="lf-field">
         <label className="lf-label" htmlFor="lf-url-picker">URL picker (optional)</label>
         <select
           id="lf-url-picker"
@@ -45,7 +45,7 @@ export default function SearchUrlPicker(props: {
           ))}
           <option value="__custom__">Custom…</option>
         </select>
-      </div>
+      </div> */}
     </>
   );
 }
