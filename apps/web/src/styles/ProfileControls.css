@@ -1,0 +1,37 @@
+/* ProfileControls styles */
+.pc-container {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+}
+
+.pc-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pc-select,
+.pc-input {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  min-width: 180px;
+}
+
+.pc-input {
+  min-width: 160px;
+}
+
+.pc-button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.pc-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

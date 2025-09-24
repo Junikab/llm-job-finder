@@ -2,6 +2,7 @@ import React from 'react';
 import '../styles/AnalysisHeader.css';
 import type { CVAnalysis } from '@shared/types';
 import { ProfileControls } from './ProfileControls';
+import { AnalysisDetails } from './AnalysisDetails';
 
 export default function AnalysisHeader({
   analysis,
@@ -49,25 +50,38 @@ export default function AnalysisHeader({
 
   // Active profile indicator (set when a profile is loaded via ProfileControls)
   const [activeProfileMeta, setActiveProfileMeta] = React.useState<{ id: string; label: string | null } | null>(null);
+  const PROFILE_META_KEY = 'activeProfileMeta:v1';
 
-  const toList = (arr?: string[]) => (arr && arr.length ? arr.join(', ') : '');
-  const fromList = (s: string): string[] => Array.from(new Set(s.split(',').map(x => x.trim()).filter(Boolean)));
+  // Restore last-used profile meta on mount
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_META_KEY);
+      if (raw) {
+        const meta = JSON.parse(raw) as { id: string; label: string | null };
+        if (meta && typeof meta.id === 'string') {
+          setActiveProfileMeta({ id: meta.id, label: meta.label ?? null });
+        }
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+ 
 
   return (
-    <div style={{ marginBottom: 16, padding: 12, border: '1px solid #eee', borderRadius: 12 }}>
+    <div className="analysisCard">
       {activeProfileMeta && (
-        <div style={{ marginBottom: 6, color: '#334155' }}>
-          <strong>Profile label:</strong> {activeProfileMeta.label || activeProfileMeta.id}
+        <div className="profileLine">
+          <strong>Profile: </strong> {activeProfileMeta.label || activeProfileMeta.id}
         </div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div className="analysisHeaderRow">
         <strong>LLM prompt {llmPromptUserPreview ? '(exact preview)' : 'header'}:</strong>
         {!isEditing ? (
           <button type="button" onClick={onStartEdit}>Edit analysis</button>
         ) : (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="analysisHeaderRow">
             <button type="button" onClick={onCancelEdit} disabled={rescoring}>Cancel</button>
-            <button type="button" onClick={onRescore} disabled={rescoring} style={{ fontWeight: 600 }}>
+            <button type="button" onClick={onRescore} disabled={rescoring} className="btnBold">
               {rescoring ? 'Rescoring…' : 'Rescore'}
             </button>
             {/* Minimal Save/Load profile controls extracted to a reusable component */}
@@ -75,13 +89,16 @@ export default function AnalysisHeader({
               draft={d}
               isEditing={isEditing}
               onApplyProfile={(a) => onChangeDraft({ ...a })}
-              onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
+              onProfileLoadMeta={(meta) => {
+                setActiveProfileMeta(meta);
+                try { localStorage.setItem(PROFILE_META_KEY, JSON.stringify(meta)); } catch {}
+              }}
             />
           </div>
         )}
       </div>
       {llmPromptSystem && (
-        <pre style={{ whiteSpace: 'pre-wrap', margin: 0, marginTop: 6, padding: 10, background: '#f1f5f9', borderRadius: 8, border: '1px solid #eee', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', color: '#111' }}>{llmPromptSystem}</pre>
+        <pre className="systemPre">{llmPromptSystem}</pre>
       )}
       <div className="promptContainer">
         <pre id="llm-prompt-preview" className="promptPre">{visiblePrompt}</pre>
@@ -101,65 +118,14 @@ export default function AnalysisHeader({
         )}
       </div>
 
-      {!isEditing ? (
-        <>
-          {analysis.titles?.length ? (
-            <div style={{ marginTop: 6, color: '#555' }}><strong>Titles:</strong> {analysis.titles.join(', ')}</div>
-          ) : null}
-          {analysis.topSkills?.length ? (
-            <div style={{ marginTop: 6, color: '#555' }}><strong>Top skills:</strong> {analysis.topSkills.join(', ')}</div>
-          ) : null}
-          {analysis.locationHints?.length ? (
-            <div style={{ marginTop: 6, color: '#555' }}><strong>Location hints:</strong> {analysis.locationHints.join(', ')}</div>
-          ) : null}
-        </>
-      ) : (
-        <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontWeight: 600 }}>Summary</span>
-            <textarea
-              value={d.summary || ''}
-              onChange={e => onChangeDraft({ ...d, summary: e.target.value })}
-              rows={4}
-              style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}
-            />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontWeight: 600 }}>Titles (comma-separated)</span>
-            <input
-              type="text"
-              value={toList(d.titles)}
-              onChange={e => onChangeDraft({ ...d, titles: fromList(e.target.value) })}
-              style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}
-            />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontWeight: 600 }}>Top skills (comma-separated)</span>
-            <input
-              type="text"
-              value={toList(d.topSkills)}
-              onChange={e => onChangeDraft({ ...d, topSkills: fromList(e.target.value) })}
-              style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}
-            />
-          </label>
-          <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontWeight: 600 }}>Location hints (comma-separated)</span>
-            <input
-              type="text"
-              value={toList(d.locationHints)}
-              onChange={e => onChangeDraft({ ...d, locationHints: fromList(e.target.value) })}
-              style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}
-            />
-          </label>
-        </div>
-      )}
+      <AnalysisDetails analysis={analysis} draft={d} isEditing={isEditing} onChangeDraft={onChangeDraft} />
 
       {!!(searchUrls?.length) && (
-        <div style={{ marginTop: 8 }}>
+        <div className="linksRow">
           <strong>Search URLs:</strong> {searchUrls.map((u: string) => {
             try {
               const q = new URL(u).searchParams.get('q') || u;
-              return (<a key={u} href={u} target="_blank" style={{ marginLeft: 8 }}>{q}</a>);
+              return (<a key={u} href={u} target="_blank" rel="noopener noreferrer">{q}</a>);
             } catch {
               return null;
             }

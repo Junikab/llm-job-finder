@@ -12,7 +12,11 @@
   border: 1px solid #eee;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: #111;
-  overflow: hidden; /* allow overlay to sit on top */
+  /* Make long prompts scrollable; scrollbar on the right */
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 280px;
+  scrollbar-gutter: stable; /* keep layout stable when scrollbar appears */
 }
 
 /* Only shown when collapsed to give a soft fade */
@@ -31,6 +35,84 @@
     rgba(248, 250, 252, 0.9) 70%,
     rgba(248, 250, 252, 1) 100%
   );
+}
+
+/* AnalysisHeader layout */
+.analysisCard {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+}
+
+.profileLine {
+  margin-bottom: 6px;
+  color: #334155;
+}
+
+.analysisHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btnBold {
+  font-weight: 600;
+}
+
+.systemPre {
+  white-space: pre-wrap;
+  margin: 0;
+  margin-top: 6px;
+  padding: 10px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #111;
+}
+
+.infoLine {
+  margin-top: 6px;
+  color: #555;
+}
+
+.editGrid {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.editLabel {
+  display: grid;
+  gap: 4px;
+}
+
+.editLabelTitle {
+  font-weight: 600;
+}
+
+.editInput,
+.editTextarea {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font: inherit;
+}
+
+.editTextarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.linksRow {
+  margin-top: 8px;
+}
+
+.linksRow a {
+  margin-left: 8px;
 }
 
 .toggleButton {

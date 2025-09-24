@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CVAnalysis, Profile } from '@shared/types';
 import { listProfiles, saveProfile } from '../api';
+import '../styles/ProfileControls.css';
 
 export type ProfileControlsProps = {
   draft: CVAnalysis | null;
@@ -41,7 +42,10 @@ export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoa
     if (!draft) return;
     try {
       setSavingProfile(true);
-      await saveProfile({ label: profileLabel || undefined, analysis: draft });
+      const saved = await saveProfile({ label: profileLabel || undefined, analysis: draft });
+      // Bubble up saved profile meta so parent can mark it as active
+      onProfileLoadMeta?.({ id: saved.id, label: saved.label ?? null });
+      setSelectedProfileId(saved.id);
       // Refresh list so the new/updated profile appears
       const items = await listProfiles();
       setProfiles(items);
@@ -61,32 +65,32 @@ export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoa
   if (!isEditing) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <input
-          type="text"
-          placeholder="Profile label"
-          value={profileLabel}
-          onChange={e => setProfileLabel(e.target.value)}
-          style={{ padding: 6, borderRadius: 6, border: '1px solid #ddd', minWidth: 160 }}
-        />
-        <button type="button" onClick={handleSaveProfile} disabled={savingProfile}>
-          {savingProfile ? 'Saving…' : 'Save profile'}
-        </button>
-      </div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+    <div className="pc-container">
+      <div className="pc-row">
         <select
+          className="pc-select"
           value={selectedProfileId}
           onChange={e => setSelectedProfileId(e.target.value)}
           disabled={loadingProfiles}
-          style={{ padding: 6, borderRadius: 6, border: '1px solid #ddd', minWidth: 180 }}
         >
           <option value="">{loadingProfiles ? 'Loading profiles…' : 'Select profile'}</option>
           {profiles.map(p => (
             <option key={p.id} value={p.id}>{p.label || (p.analysis?.summary || '').slice(0, 24)}</option>
           ))}
         </select>
-        <button type="button" onClick={handleLoadProfile} disabled={!selectedProfileId}>Load</button>
+        <button className="pc-button" type="button" onClick={handleLoadProfile} disabled={!selectedProfileId}>Load</button>
+      </div>
+      <div className="pc-row">
+        <input
+          className="pc-input"
+          type="text"
+          placeholder="Profile label"
+          value={profileLabel}
+          onChange={e => setProfileLabel(e.target.value)}
+        />
+        <button className="pc-button" type="button" onClick={handleSaveProfile} disabled={savingProfile}>
+          {savingProfile ? 'Saving…' : 'Save profile'}
+        </button>
       </div>
     </div>
   );
