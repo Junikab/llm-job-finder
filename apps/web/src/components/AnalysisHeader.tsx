@@ -1,6 +1,7 @@
 import React from 'react';
 import '../styles/AnalysisHeader.css';
 import type { CVAnalysis } from '@shared/types';
+import { ProfileControls } from './ProfileControls';
 
 export default function AnalysisHeader({
   analysis,
@@ -51,16 +52,18 @@ export default function AnalysisHeader({
 
   return (
     <div style={{ marginBottom: 16, padding: 12, border: '1px solid #eee', borderRadius: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <strong>LLM prompt {llmPromptUserPreview ? '(exact preview)' : 'header'}:</strong>
         {!isEditing ? (
           <button type="button" onClick={onStartEdit}>Edit analysis</button>
         ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <button type="button" onClick={onCancelEdit} disabled={rescoring}>Cancel</button>
             <button type="button" onClick={onRescore} disabled={rescoring} style={{ fontWeight: 600 }}>
               {rescoring ? 'Rescoring…' : 'Rescore'}
             </button>
+            {/* Minimal Save/Load profile controls extracted to a reusable component */}
+            <ProfileControls draft={d} isEditing={isEditing} onApplyProfile={(a) => onChangeDraft({ ...a })} />
           </div>
         )}
       </div>
