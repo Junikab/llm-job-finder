@@ -38,11 +38,23 @@ export { API_BASE };
 // New: rescore previously fetched jobs using a user-edited analysis
 import type { CVAnalysis, JobItem, RankedJob } from '@shared/types';
 
-export async function rescoreJobs(analysis: CVAnalysis, jobs: JobItem[]): Promise<RankedJob[]> {
+export type RescoreResponse = {
+  results: RankedJob[];
+  total: number;
+  llmPromptUserPreview?: string;
+  llmPromptSystem?: string;
+};
+
+export async function rescoreJobs(analysis: CVAnalysis, jobs: JobItem[]): Promise<RescoreResponse> {
   const data = await fetchJson('/api/jobs/rescore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ analysis, jobs }),
   });
-  return Array.isArray(data?.results) ? data.results as RankedJob[] : [];
+  return {
+    results: Array.isArray(data?.results) ? (data.results as RankedJob[]) : [],
+    total: typeof data?.total === 'number' ? data.total : Number(data?.total || 0) || 0,
+    llmPromptUserPreview: typeof data?.llmPromptUserPreview === 'string' ? data.llmPromptUserPreview : undefined,
+    llmPromptSystem: typeof data?.llmPromptSystem === 'string' ? data.llmPromptSystem : undefined,
+  };
 }

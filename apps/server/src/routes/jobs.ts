@@ -122,7 +122,13 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: 'analysis and jobs are required' });
       }
       const scored: RankedJob[] = await scoreJobs(analysis, jobs);
-      return reply.send({ total: scored.length, results: scored });
+      const preview = buildJobRelevancePromptPreview(analysis);
+      return reply.send({
+        total: scored.length,
+        results: scored,
+        llmPromptUserPreview: preview?.user,
+        llmPromptSystem: preview?.system,
+      });
     } catch (err: any) {
       (req as any).log?.error?.({ err }, 'jobs.rescore failed');
       return reply.code(500).send({ error: 'Failed to rescore' });

@@ -158,6 +158,10 @@ export default function App() {
       onResults: setResults,
       onAnalysisCommitted: setAnalysis,
       onEditingDone: () => {},
+      onPromptUpdated: ({ user, system }) => {
+        if (typeof user === 'string') setLlmPromptUserPreview(user);
+        if (typeof system === 'string') setLlmPromptSystem(system);
+      },
     });
   }, [handleRescore, results]);
 

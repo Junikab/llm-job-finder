@@ -95,11 +95,19 @@ export async function scoreJob(
     const goodTraits = (process.env.LLM_GOOD_TRAITS || '').trim();
     const badTraits = (process.env.LLM_BAD_TRAITS || '').trim();
     const jobKey = normalizeJobKey(((_job as any).url || ( _job as any).id || (_job as any).title || '') as string) || '';
+    const analysisHash = hash16(
+      JSON.stringify({
+        s: _analysis.summary || '',
+        t: Array.isArray(_analysis.titles) ? _analysis.titles : [],
+        k: Array.isArray(_analysis.topSkills) ? _analysis.topSkills : [],
+        l: Array.isArray(_analysis.locationHints) ? _analysis.locationHints : [],
+      })
+    );
     const cacheKey = [
       cfg.model,
       jobKey,
       hash16(_job.description || ''),
-      hash16(_analysis.summary || ''),
+      analysisHash,
       hash16(`${goodTraits}|${badTraits}`)
     ].join('|');
     const hit = cacheGet(cacheKey);
@@ -111,7 +119,15 @@ export async function scoreJob(
       return { score: hit.score, reason: `${hit.reason} cache-hit` };
     }
     const system = LLM_SCORING_SYSTEM;
-    const user = buildJobRelevancePrompt({ summary: _analysis.summary ?? '' }, _job);
+    const user = buildJobRelevancePrompt(
+      {
+        summary: _analysis.summary ?? '',
+        titles: Array.isArray(_analysis.titles) ? _analysis.titles : [],
+        topSkills: Array.isArray(_analysis.topSkills) ? _analysis.topSkills : [],
+        locationHints: Array.isArray(_analysis.locationHints) ? _analysis.locationHints : [],
+      },
+      _job
+    );
     if (LLM_DEBUG) {
       const jobKeyDbg = normalizeJobKey(((_job as any).url || (_job as any).id || (_job as any).title || '') as string) || '';
       // Print a concise header and a truncated user prompt body to avoid overwhelming logs

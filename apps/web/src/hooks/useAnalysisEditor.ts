@@ -31,7 +31,12 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
   const handleRescore = useCallback(
     async (
       results: RankedJob[],
-      opts: { onResults: (r: RankedJob[]) => void; onAnalysisCommitted?: (a: CVAnalysis) => void; onEditingDone?: () => void }
+      opts: {
+        onResults: (r: RankedJob[]) => void;
+        onAnalysisCommitted?: (a: CVAnalysis) => void;
+        onEditingDone?: () => void;
+        onPromptUpdated?: (p: { user?: string; system?: string }) => void;
+      }
     ) => {
       if (!draft) return;
       if (results.length === 0) {
@@ -41,9 +46,10 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
       try {
         setRescoring(true);
         const jobs: JobItem[] = results.map(mapRankedToJobItem);
-        const rescored = await rescoreJobs(draft, jobs);
-        opts.onResults(rescored);
+        const resp = await rescoreJobs(draft, jobs);
+        opts.onResults(resp.results);
         opts.onAnalysisCommitted?.(draft);
+        opts.onPromptUpdated?.({ user: resp.llmPromptUserPreview, system: resp.llmPromptSystem });
         setIsEditing(false);
         onToast?.('Rescored');
       } catch (err) {

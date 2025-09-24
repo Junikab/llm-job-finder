@@ -24,7 +24,7 @@ export function formatJobForPrompt(job: JobItem): string {
  * to the given CV summary. Response contract: a single number only.
  */
 export function buildJobRelevancePromptUnified(
-  analysis: Pick<CVAnalysis, 'summary'>,
+  analysis: Pick<CVAnalysis, 'summary'> & Partial<Pick<CVAnalysis, 'titles' | 'topSkills' | 'locationHints'>>,
   job: JobItem | null,
   opts: { redactJob?: boolean } = {}
 ): { system: string; user: string } {
@@ -40,14 +40,14 @@ export function buildJobRelevancePromptUnified(
     summary.length > 0 ? summary : '(empty)',
     '',
     'Structured profile hints (optional):',
-    ...(Array.isArray((analysis as any).titles) && (analysis as any).titles.length
-      ? [`Titles: ${(analysis as any).titles.join(', ')}`]
+    ...(Array.isArray(analysis.titles) && analysis.titles.length
+      ? [`Titles: ${analysis.titles.join(', ')}`]
       : []),
-    ...(Array.isArray((analysis as any).topSkills) && (analysis as any).topSkills.length
-      ? [`Top skills: ${(analysis as any).topSkills.join(', ')}`]
+    ...(Array.isArray(analysis.topSkills) && analysis.topSkills.length
+      ? [`Top skills: ${analysis.topSkills.join(', ')}`]
       : []),
-    ...(Array.isArray((analysis as any).locationHints) && (analysis as any).locationHints.length
-      ? [`Location hints: ${(analysis as any).locationHints.join(', ')}`]
+    ...(Array.isArray(analysis.locationHints) && analysis.locationHints.length
+      ? [`Location hints: ${analysis.locationHints.join(', ')}`]
       : []),
     ...(goodTraits || badTraits ? ['', 'Compact prompt customization (optional):'] : []),
     ...(goodTraits ? [`Good traits: ${goodTraits}`] : []),
@@ -135,7 +135,7 @@ export function buildJobRelevancePromptUnified(
   return { system: LLM_SCORING_SYSTEM, user: userParts.join('\n') };
 }
 
-export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'>, job: JobItem): string {
+export function buildJobRelevancePrompt(analysis: Pick<CVAnalysis, 'summary'> & Partial<Pick<CVAnalysis, 'titles' | 'topSkills' | 'locationHints'>>, job: JobItem): string {
   return buildJobRelevancePromptUnified(analysis, job, { redactJob: false }).user;
 }
 
@@ -195,6 +195,6 @@ export function buildCVAnalysisExtractPrompt(cvText: string): { system: string; 
  * Build a UI-safe preview of the LLM scoring prompt that matches the actual structure
  * but with the per-job <job> section redacted. Return both system and user strings.
  */
-export function buildJobRelevancePromptPreview(analysis: Pick<CVAnalysis, 'summary'>): { system: string; user: string } {
+export function buildJobRelevancePromptPreview(analysis: Pick<CVAnalysis, 'summary'> & Partial<Pick<CVAnalysis, 'titles' | 'topSkills' | 'locationHints'>>): { system: string; user: string } {
   return buildJobRelevancePromptUnified(analysis, null, { redactJob: true });
 }
