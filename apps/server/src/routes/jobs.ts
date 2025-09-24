@@ -118,8 +118,45 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const body = (req as any).body || {};
       const analysis = body.analysis as CVAnalysis | undefined;
       const jobs = Array.isArray(body.jobs) ? (body.jobs as JobItem[]) : [];
-      if (!analysis || !Array.isArray(jobs) || jobs.length === 0) {
-        return reply.code(400).send({ error: 'analysis and jobs are required' });
+      const refreshSearch = body && (body.refreshSearch === true);
+      if (!analysis) {
+        return reply.code(400).send({ error: 'analysis is required' });
+      }
+
+      if (refreshSearch) {
+        // Rebuild search URLs using edited analysis (and optional location override), scrape, and rescore
+        const locationOverride = typeof body.location === 'string' ? body.location : undefined;
+        const daysRaw = body.days != null ? Number(body.days) : undefined;
+        const days = daysRaw ? Math.max(1, Math.min(60, Number(daysRaw))) : undefined;
+        const maxJobs = Math.max(1, Math.min(200, Number(process.env.LLM_MAX_SCORE_JOBS || 30)));
+        const manualUrls: string[] = [];
+        const searchUrls = manualUrls.length > 0
+          ? manualUrls
+          : toJoraSearchUrls(analysis, { location: locationOverride });
+
+        const rawJobs = await scrapeWithRetry(searchUrls, {
+          headless: (process.env.SCRAPER_HEADLESS || 'true') === 'true',
+          maxPages: Number(process.env.MAX_PAGES || 3),
+          maxJobs: Number(process.env.MAX_JOBS || 40),
+          totalTimeoutMs: process.env.SCRAPE_TOTAL_TIMEOUT_MS ? Number(process.env.SCRAPE_TOTAL_TIMEOUT_MS) : undefined,
+        });
+        const rawJobsUnique = dedupeJobs(rawJobs);
+        const filteredJobs = filterByDays(rawJobsUnique, days);
+        const preSorted = preSortByKeywordSignals(filteredJobs, analysis);
+        const toScore = preSorted.slice(0, Math.min(filteredJobs.length, maxJobs));
+        const scored: RankedJob[] = await scoreJobs(analysis, toScore);
+        const preview = buildJobRelevancePromptPreview(analysis);
+        return reply.send({
+          total: scored.length,
+          results: scored,
+          searchUrls,
+          llmPromptUserPreview: preview?.user,
+          llmPromptSystem: preview?.system,
+        });
+      }
+
+      if (!Array.isArray(jobs) || jobs.length === 0) {
+        return reply.code(400).send({ error: 'jobs are required when refreshSearch is false' });
       }
       const scored: RankedJob[] = await scoreJobs(analysis, jobs);
       const preview = buildJobRelevancePromptPreview(analysis);

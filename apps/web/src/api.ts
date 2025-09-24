@@ -43,18 +43,24 @@ export type RescoreResponse = {
   total: number;
   llmPromptUserPreview?: string;
   llmPromptSystem?: string;
+  searchUrls?: string[];
 };
 
-export async function rescoreJobs(analysis: CVAnalysis, jobs: JobItem[]): Promise<RescoreResponse> {
+export async function rescoreJobs(
+  analysis: CVAnalysis,
+  jobs: JobItem[],
+  opts?: { refreshSearch?: boolean; location?: string; days?: number }
+): Promise<RescoreResponse> {
   const data = await fetchJson('/api/jobs/rescore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ analysis, jobs }),
+    body: JSON.stringify({ analysis, jobs, ...(opts || {}) }),
   });
   return {
     results: Array.isArray(data?.results) ? (data.results as RankedJob[]) : [],
     total: typeof data?.total === 'number' ? data.total : Number(data?.total || 0) || 0,
     llmPromptUserPreview: typeof data?.llmPromptUserPreview === 'string' ? data.llmPromptUserPreview : undefined,
     llmPromptSystem: typeof data?.llmPromptSystem === 'string' ? data.llmPromptSystem : undefined,
+    searchUrls: Array.isArray(data?.searchUrls) ? (data.searchUrls as string[]) : undefined,
   };
 }

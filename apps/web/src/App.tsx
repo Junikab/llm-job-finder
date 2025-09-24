@@ -162,6 +162,9 @@ export default function App() {
         if (typeof user === 'string') setLlmPromptUserPreview(user);
         if (typeof system === 'string') setLlmPromptSystem(system);
       },
+      onSearchUrlsUpdated: (urls: string[]) => {
+        setSearchUrls(urls);
+      },
     });
   }, [handleRescore, results]);
 

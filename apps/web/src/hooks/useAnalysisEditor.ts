@@ -36,6 +36,7 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
         onAnalysisCommitted?: (a: CVAnalysis) => void;
         onEditingDone?: () => void;
         onPromptUpdated?: (p: { user?: string; system?: string }) => void;
+        onSearchUrlsUpdated?: (urls: string[]) => void;
       }
     ) => {
       if (!draft) return;
@@ -46,10 +47,24 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
       try {
         setRescoring(true);
         const jobs: JobItem[] = results.map(mapRankedToJobItem);
-        const resp = await rescoreJobs(draft, jobs);
+        // If location hints changed, ask server to rebuild search URLs and re-scrape
+        const normalize = (arr?: readonly string[]) => (arr || []).map(s => s.trim().toLowerCase()).filter(Boolean).sort();
+        const prevLoc = normalize(analysis?.locationHints);
+        const nextLoc = normalize(draft.locationHints);
+        const locationChanged = prevLoc.length !== nextLoc.length || prevLoc.some((v, i) => v !== nextLoc[i]);
+        const resp = await rescoreJobs(
+          draft,
+          jobs,
+          locationChanged
+            ? { refreshSearch: true, location: (draft.locationHints && draft.locationHints[0]) || undefined }
+            : undefined
+        );
         opts.onResults(resp.results);
         opts.onAnalysisCommitted?.(draft);
         opts.onPromptUpdated?.({ user: resp.llmPromptUserPreview, system: resp.llmPromptSystem });
+        if (resp.searchUrls && resp.searchUrls.length) {
+          opts.onSearchUrlsUpdated?.(resp.searchUrls);
+        }
         setIsEditing(false);
         onToast?.('Rescored');
       } catch (err) {
