@@ -22,8 +22,54 @@ select.lf-select::-ms-expand { display: none; }
 .lf-control { height: 44px; display: inline-flex; align-items: center; }
 
 /* Buttons */
-.lf-btn-primary { height: 44px; padding: 0 30px; border-radius: 8px; border: none; background: #2a62ff; color: #fff; font-weight: 500; cursor: pointer; }
-.lf-button-row { grid-column: 1 / -1; display: flex; justify-content: center; }
+.lf-btn-primary {
+     height: 44px; 
+     padding: 0 30px; 
+     border-radius: 8px; 
+     border: none; 
+     background: #344e41; 
+     color: #fff; 
+     font-weight: 500; 
+     cursor: pointer;
+     box-shadow: 0 1px 2px rgba(0,0,0,0.4); 
+    }
+
+    .lf-btn-primary:hover {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        opacity: 0.9;
+    }
+
+.lf-button-row { 
+    grid-column: 1 / -1; 
+    display: flex; 
+    justify-content: center; 
+}
+
+.lf-btn-row {
+  height: 44px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #656d4a; /* disabled/default */
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* Active (enabled) state matches previous inline style */
+.lf-btn-row:not(:disabled) {
+  background: #344e41;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.lf-btn-row:not(:disabled):hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+}
+
+.lf-btn-row:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
 
 /* Errors */
 .lf-error { grid-column: 1 / -1; color: #b91c1c; background: #fee2e2; padding: 8px 10px; border-radius: 8px; }

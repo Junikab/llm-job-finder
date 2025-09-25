@@ -94,7 +94,11 @@ export default function LiveForm(props: {
       </div>
 
       <div className="lf-button-row">
-        <button type="submit" aria-busy={loading} disabled={!canSubmit} style={{ padding: '14px 18px', borderRadius: 8, border: 'none', background: canSubmit ? '#2a62ff' : '#a3b3ff', color: 'white', fontWeight: 600 }}>
+        <button 
+        className="lf-btn-row" 
+        type="submit" 
+        aria-busy={loading} 
+        disabled={!canSubmit} >
           {loading ? 'Finding…' : 'Find Jobs'}
         </button>
       </div>
