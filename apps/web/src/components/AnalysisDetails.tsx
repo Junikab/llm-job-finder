@@ -2,6 +2,13 @@ import React from 'react';
 import type { CVAnalysis } from '@shared/types';
 import '../styles/AnalysisHeader.css';
 
+/**
+ * Props for AnalysisDetails.
+ * - analysis: the committed analysis to display when not editing
+ * - draft: the working copy bound to inputs while editing
+ * - isEditing: toggles between view and edit modes
+ * - onChangeDraft: emits updated draft objects using immutable updates
+ */
 export type AnalysisDetailsProps = {
   analysis: CVAnalysis;
   draft: CVAnalysis;
@@ -19,24 +26,14 @@ function fromList(s: string): string[] {
 
 /**
  * View/Edit block for CV analysis details.
- * - Not editing: shows Titles, Top skills, and Location hints from the current analysis
- * - Editing: shows inputs bound to the provided draft, emitting changes via onChangeDraft
+ * - View mode: hidden (the <candidate> preview shows this info already)
+ * - Edit mode: shows inputs bound to the provided draft, emitting changes via onChangeDraft
  */
-export function AnalysisDetails({ analysis, draft, isEditing, onChangeDraft }: AnalysisDetailsProps) {
+export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ analysis, draft, isEditing, onChangeDraft }: AnalysisDetailsProps) {
   if (!isEditing) {
-    return (
-      <>
-        {analysis.titles?.length ? (
-          <div className="infoLine"><strong>Titles:</strong> {analysis.titles.join(', ')}</div>
-        ) : null}
-        {analysis.topSkills?.length ? (
-          <div className="infoLine"><strong>Top skills:</strong> {analysis.topSkills.join(', ')}</div>
-        ) : null}
-        {analysis.locationHints?.length ? (
-          <div className="infoLine"><strong>Location hints:</strong> {analysis.locationHints.join(', ')}</div>
-        ) : null}
-      </>
-    );
+    // In view mode, the <candidate> block already shows summary and hints.
+    // Hide these duplicate fields until the user enters edit mode.
+    return null;
   }
 
   const d = draft;
@@ -48,7 +45,7 @@ export function AnalysisDetails({ analysis, draft, isEditing, onChangeDraft }: A
         <textarea
           value={d.summary || ''}
           onChange={e => onChangeDraft({ ...d, summary: e.target.value })}
-          rows={4}
+          rows={10}
           className="editTextarea"
         />
       </label>
@@ -81,4 +78,4 @@ export function AnalysisDetails({ analysis, draft, isEditing, onChangeDraft }: A
       </label>
     </div>
   );
-}
+});

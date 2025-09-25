@@ -22,9 +22,8 @@ export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoa
   const [savingProfile, setSavingProfile] = React.useState(false);
   const [loadingProfiles, setLoadingProfiles] = React.useState(false);
 
-  // Load profiles when entering edit mode
+  // Load profiles on mount (visible in both view and edit modes)
   React.useEffect(() => {
-    if (!isEditing) return;
     let cancelled = false;
     setLoadingProfiles(true);
     (async () => {
@@ -36,7 +35,7 @@ export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoa
       }
     })();
     return () => { cancelled = true; };
-  }, [isEditing]);
+  }, []);
 
   async function handleSaveProfile() {
     if (!draft) return;
@@ -62,8 +61,6 @@ export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoa
     onProfileLoadMeta?.({ id: p.id, label: p.label ?? null });
   }
 
-  if (!isEditing) return null;
-
   return (
     <div className="pc-container">
       <div className="pc-row">
@@ -84,7 +81,7 @@ export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoa
         <input
           className="pc-input"
           type="text"
-          placeholder="Profile label"
+          placeholder="Profile name"
           value={profileLabel}
           onChange={e => setProfileLabel(e.target.value)}
         />

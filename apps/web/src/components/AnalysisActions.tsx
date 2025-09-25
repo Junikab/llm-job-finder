@@ -3,6 +3,10 @@ import type { CVAnalysis } from '@shared/types';
 import { ProfileControls } from './ProfileControls';
 import '../styles/AnalysisActions.css';
 
+/**
+ * Props for AnalysisActions.
+ * Contains edit state, callbacks, and the current draft analysis.
+ */
 export type AnalysisActionsProps = {
   isEditing: boolean;
   rescoring: boolean;
@@ -14,7 +18,12 @@ export type AnalysisActionsProps = {
   onProfileLoadMeta: (meta: { id: string; label: string | null }) => void;
 };
 
-export function AnalysisActions({
+/**
+ * Action bar for the Analysis section.
+ * - View mode: shows a single "Edit analysis" button aligned to the right.
+ * - Edit mode: shows ProfileControls, Cancel, and Rescore buttons.
+ */
+export const AnalysisActions = React.memo(function AnalysisActionsComponent({
   isEditing,
   rescoring,
   draft,
@@ -24,27 +33,28 @@ export function AnalysisActions({
   onChangeDraft,
   onProfileLoadMeta,
 }: AnalysisActionsProps) {
-  if (!isEditing) {
-    return (
-      <div className="analysisActions analysisActions--right">
-        <button type="button" onClick={onStartEdit} className="btn btnSecondary">Edit analysis</button>
-      </div>
-    );
-  }
-
   return (
     <div className="analysisActions">
-      <ProfileControls
-        draft={draft}
-        isEditing={true}
-        onApplyProfile={(a) => onChangeDraft({ ...a })}
-        onProfileLoadMeta={onProfileLoadMeta}
-      />
-      <button type="button" onClick={onCancelEdit} disabled={rescoring} className="btn btnSecondary">Cancel edits</button>
-      <button type="button" onClick={onRescore} disabled={rescoring} className="btn btnPrimary btnBold">
-        {rescoring ? 'Rescoring…' : 'Rescore'}
-      </button>
-      
+      <div className="analysisActions__left">
+        <ProfileControls
+          draft={draft}
+          isEditing={isEditing}
+          onApplyProfile={(a) => onChangeDraft({ ...a })}
+          onProfileLoadMeta={onProfileLoadMeta}
+        />
+      </div>
+      <div className="analysisActions__right">
+        {!isEditing ? (
+          <button type="button" onClick={onStartEdit} className="btn btnSecondary">Edit analysis</button>
+        ) : (
+          <>
+            <button type="button" onClick={onCancelEdit} disabled={rescoring} className="btn btnSecondary">Cancel edits</button>
+            <button type="button" onClick={onRescore} disabled={rescoring} className="btn btnPrimary btnBold">
+              {rescoring ? 'Rescoring…' : 'Rescore'}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
-}
+});
