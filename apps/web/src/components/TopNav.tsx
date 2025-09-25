@@ -1,37 +1,47 @@
 import React from 'react';
 
-export default function TopNav(props: {
+const NAV_LINKS: Array<{ key: 'live' | 'saved'; label: string }> = [
+  { key: 'live', label: 'Live' },
+  { key: 'saved', label: 'Saved' },
+];
+
+type TopNavProps = {
   tab: 'live' | 'saved';
-  onChange: (tab: 'live' | 'saved') => void;
-  onAbout?: () => void;
-}) {
-  const { tab, onChange, onAbout } = props;
+  currentPage: 'home' | 'about';
+  onChangeTab: (tab: 'live' | 'saved') => void;
+  onNavigatePage: (page: 'home' | 'about') => void;
+};
+
+export default function TopNav({ tab, currentPage, onChangeTab, onNavigatePage }: TopNavProps) {
   return (
     <div className="topnav">
       <div className="topnav__title">LLM Job Finder</div>
       <div className="topnav__links">
-        <button
-          type="button"
-          onClick={() => onChange('live')}
-          className={`topnav__btn ${tab === 'live' ? 'topnav__btn--active' : ''}`}
-        >
-          Live
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange('saved')}
-          className={`topnav__btn ${tab === 'saved' ? 'topnav__btn--active' : ''}`}
-        >
-          Saved
-        </button>
-        <button
-          type="button"
-          onClick={() => onAbout?.()}
-          className="topnav__btn"
-          aria-label="About"
+        {NAV_LINKS.map(link => (
+          <button
+            key={link.key}
+            type="button"
+            onClick={() => {
+              onNavigatePage('home');
+              onChangeTab(link.key);
+            }}
+            className={`topnav__btn ${currentPage === 'home' && tab === link.key ? 'topnav__btn--active' : ''}`}
+            aria-current={currentPage === 'home' && tab === link.key ? 'page' : undefined}
+          >
+            {link.label}
+          </button>
+        ))}
+        <a
+          href="/about"
+          className={`topnav__btn topnav__link ${currentPage === 'about' ? 'topnav__btn--active' : ''}`}
+          aria-current={currentPage === 'about' ? 'page' : undefined}
+          onClick={event => {
+            event.preventDefault();
+            onNavigatePage('about');
+          }}
         >
           About
-        </button>
+        </a>
       </div>
     </div>
   );

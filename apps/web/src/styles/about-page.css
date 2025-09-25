@@ -1,0 +1,215 @@
+.aboutPage {
+  max-width: 1080px;
+  margin: 120px auto 80px;
+  padding: 0 24px;
+  display: grid;
+  gap: 56px;
+}
+
+.aboutPage__hero {
+  background: linear-gradient(135deg, rgba(52, 78, 65, 0.12), rgba(101, 109, 74, 0.12));
+  border-radius: 20px;
+  padding: 40px 32px;
+  display: grid;
+  gap: 18px;
+  text-align: center;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+}
+
+.aboutPage__title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  color: #1f2937;
+  font-weight: 800;
+}
+
+.aboutPage__subtitle {
+  margin: 0 auto;
+  max-width: 620px;
+  font-size: 1.05rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.aboutPage__cta {
+  justify-self: center;
+  padding: 14px 24px;
+  border-radius: 10px;
+  border: none;
+  background: #344e41;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(52, 78, 65, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.aboutPage__cta:hover,
+.aboutPage__cta:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(52, 78, 65, 0.28);
+  opacity: 0.92;
+}
+
+.aboutPage__section {
+  display: grid;
+  gap: 24px;
+}
+
+.aboutPage__sectionHeader {
+  display: grid;
+  gap: 8px;
+  max-width: 620px;
+}
+
+.aboutPage__sectionTitle {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.aboutPage__sectionLead {
+  margin: 0;
+  color: #4b5563;
+  font-size: 1rem;
+}
+
+.aboutPage__cards {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.aboutPage__card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(52, 78, 65, 0.08);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.aboutPage__card:hover,
+.aboutPage__card:focus-within {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+}
+
+.aboutPage__iconWrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  background: rgba(101, 109, 74, 0.15);
+  color: #344e41;
+}
+
+.aboutPage__cardTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.aboutPage__cardBody {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.aboutPage__detailsButton {
+  justify-self: flex-start;
+  background: transparent;
+  border: none;
+  color: #344e41;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.aboutPage__detailsButton:focus-visible {
+  outline: 2px solid rgba(52, 78, 65, 0.35);
+  outline-offset: 3px;
+}
+
+.aboutPage__details {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.aboutPage__twoColumn {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.aboutPage__listBlock {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  padding: 24px 28px;
+  border: 1px solid rgba(52, 78, 65, 0.12);
+  display: grid;
+  gap: 18px;
+}
+
+.aboutPage__listTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.aboutPage__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.aboutPage__listItem {
+  position: relative;
+  padding-left: 24px;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.aboutPage__listItem::before {
+  content: '•';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  color: #344e41;
+  font-size: 1.2rem;
+}
+
+.aboutPage__footerNote {
+  margin: 0;
+  font-weight: 650;
+  font-size: 1rem;
+  text-align: center;
+  color: #1f2937;
+}
+
+@media (max-width: 720px) {
+  .aboutPage {
+    margin-top: 100px;
+    gap: 40px;
+    padding: 0 16px;
+  }
+
+  .aboutPage__hero {
+    padding: 32px 24px;
+  }
+}

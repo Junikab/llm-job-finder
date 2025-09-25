@@ -1,0 +1,78 @@
+.aboutModal__backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.aboutModal__dialog {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 720px;
+  width: 100%;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.aboutModal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aboutModal__title {
+  margin: 0;
+  font-size: 20px;
+  color: #1f2937;
+}
+
+.aboutModal__closeButton {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 4px 10px;
+  background: #f3f4f6;
+  color: #111827;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.aboutModal__closeButton:hover,
+.aboutModal__closeButton:focus-visible {
+  background: #e5e7eb;
+  box-shadow: 0 0 0 3px rgba(52, 78, 65, 0.25);
+}
+
+.aboutModal__content {
+  display: grid;
+  gap: 18px;
+  color: #1f2937;
+}
+
+.aboutModal__sectionHeading {
+  margin: 0;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.aboutModal__list {
+  margin: 6px 0 0 18px;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  color: #1f2937;
+}
+
+.aboutModal__highlight {
+  margin: 0;
+  font-weight: 600;
+  color: #1f2937;
+}

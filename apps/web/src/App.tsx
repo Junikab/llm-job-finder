@@ -13,9 +13,9 @@ import Toast from './components/Toast';
 import HeroSection from './components/HeroSection';
 import { useTab } from './hooks/useTab';
 import { useToast } from './hooks/useToast';
-import AboutModal from './components/AboutModal';
 import { useAnalysisEditor } from './hooks/useAnalysisEditor';
 import { useActiveProfileMeta } from './hooks/useActiveProfileMeta';
+import AboutPage from './pages/AboutPage';
 
 export default function App() {
   // Tabs and UI state
@@ -30,10 +30,34 @@ export default function App() {
   const [llmPromptUserPreview, setLlmPromptUserPreview] = useState<string | undefined>();
   const [llmPromptSystem, setLlmPromptSystem] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
-  const [aboutOpen, setAboutOpen] = useState(false);
+  const [page, setPage] = useState<'home' | 'about'>(() => {
+    if (typeof window === 'undefined') return 'home';
+    return window.location.pathname.startsWith('/about') ? 'about' : 'home';
+  });
   // Toast
   const { toast, showToast } = useToast(1600);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const navigatePage = useCallback((nextPage: 'home' | 'about') => {
+    setPage(nextPage);
+    if (typeof window !== 'undefined') {
+      const targetPath = nextPage === 'about' ? '/about' : '/';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ page: nextPage }, '', targetPath);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handlePopState = () => {
+      setPage(window.location.pathname.startsWith('/about') ? 'about' : 'home');
+    }; 
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   // Analysis editor (extracted logic: edit + rescore)
   const {
@@ -177,79 +201,100 @@ export default function App() {
   return (
     <div className="app-root">
       {/* Simple navbar */}
-      <TopNav tab={tab} onChange={setTab} onAbout={() => setAboutOpen(true)} />
-
-      {/* Hero section */}
-      <HeroSection
-        resultsCount={results.length}
-        error={error}
-        onSubmit={onSubmit}
-        onFileChange={onFileChange}
-        searchUrlSelectValue={searchUrlSelectValue}
-        searchUrlHistory={searchUrlHistory}
-        searchUrlCustomMode={searchUrlCustomMode}
-        setSearchUrlCustomMode={setSearchUrlCustomMode}
-        searchUrl={searchUrl}
-        onSearchUrlSelectChange={onSearchUrlSelectChange}
-        onChangeSearchUrl={setSearchUrl}
-        canSubmit={canSubmit}
-        loading={loading}
-        fileInputRef={fileInputRef}
+      <TopNav
+        tab={tab}
+        currentPage={page}
+        onChangeTab={setTab}
+        onNavigatePage={(nextPage) => {
+          navigatePage(nextPage);
+          if (nextPage === 'home') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
       />
 
-      {/* Main content container */}
-      <div className="content-container">
-      {tab === 'live' && (
+      {page === 'about' ? (
+        <AboutPage
+          onNavigateHome={() => {
+            navigatePage('home');
+            setTab('live');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      ) : (
         <>
-          {/* Profiles: always visible above the analysis container */}
-          <div style={{ marginTop: 8, marginBottom: 8 }}>
-            <ProfileControls
-              draft={draftAnalysis || analysis}
-              isEditing={isEditingAnalysis}
-              onApplyProfile={(a) => onChangeDraft({ ...a })}
-              onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
-            />
-          </div>
-
-          <AnalysisHeader
-            analysis={analysis}
-            searchUrls={searchUrls}
-            llmGoodTraits={llmGoodTraits}
-            llmBadTraits={llmBadTraits}
-            llmPromptUserPreview={llmPromptUserPreview}
-            llmPromptSystem={llmPromptSystem}
-            draft={draftAnalysis}
-            isEditing={isEditingAnalysis}
-            onStartEdit={startEditAnalysis}
-            onCancelEdit={cancelEditAnalysis}
-            onChangeDraft={onChangeDraft}
-            onRescore={onRescore}
-            rescoring={rescoring}
-            activeProfileMeta={activeProfileMeta}
+          {/* Hero section */}
+          <HeroSection
+            resultsCount={results.length}
+            error={error}
+            onSubmit={onSubmit}
+            onFileChange={onFileChange}
+            searchUrlSelectValue={searchUrlSelectValue}
+            searchUrlHistory={searchUrlHistory}
+            searchUrlCustomMode={searchUrlCustomMode}
+            setSearchUrlCustomMode={setSearchUrlCustomMode}
+            searchUrl={searchUrl}
+            onSearchUrlSelectChange={onSearchUrlSelectChange}
+            onChangeSearchUrl={setSearchUrl}
+            canSubmit={canSubmit}
+            loading={loading}
+            fileInputRef={fileInputRef}
           />
 
-          {/* Sort By between CV summary and job cards */}
-          <SortSelect sortBy={sortBy} onChange={setSortBy} />
+          {/* Main content container */}
+          <div className="content-container">
+            {tab === 'live' && (
+              <>
+                {/* Profiles: always visible above the analysis container */}
+                <div style={{ marginTop: 8, marginBottom: 8 }}>
+                  <ProfileControls
+                    draft={draftAnalysis || analysis}
+                    isEditing={isEditingAnalysis}
+                    onApplyProfile={(a) => onChangeDraft({ ...a })}
+                    onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
+                  />
+                </div>
 
-          <LiveResults results={results} loading={loading} sortBy={sortBy} />
+                <AnalysisHeader
+                  analysis={analysis}
+                  searchUrls={searchUrls}
+                  llmGoodTraits={llmGoodTraits}
+                  llmBadTraits={llmBadTraits}
+                  llmPromptUserPreview={llmPromptUserPreview}
+                  llmPromptSystem={llmPromptSystem}
+                  draft={draftAnalysis}
+                  isEditing={isEditingAnalysis}
+                  onStartEdit={startEditAnalysis}
+                  onCancelEdit={cancelEditAnalysis}
+                  onChangeDraft={onChangeDraft}
+                  onRescore={onRescore}
+                  rescoring={rescoring}
+                  activeProfileMeta={activeProfileMeta}
+                />
+
+                {/* Sort By between CV summary and job cards */}
+                <SortSelect sortBy={sortBy} onChange={setSortBy} />
+
+                <LiveResults results={results} loading={loading} sortBy={sortBy} />
+              </>
+            )}
+
+            {tab === 'saved' && (
+              <div className="saved-section">
+                {/* Fetch on enter Saved tab */}
+                <SavedList
+                  items={saved}
+                  loading={savedLoading}
+                  error={savedError}
+                  onRefresh={handleRefreshSaved}
+                  onRate={handleRate}
+                />
+              </div>
+            )}
+          </div>
         </>
       )}
-
-      {tab === 'saved' && (
-        <div className="saved-section">
-          {/* Fetch on enter Saved tab */}
-          <SavedList
-            items={saved}
-            loading={savedLoading}
-            error={savedError}
-            onRefresh={handleRefreshSaved}
-            onRate={handleRate}
-          />
-        </div>
-      )}
-      </div>
       <Toast message={toast} />
-      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   );
 }
