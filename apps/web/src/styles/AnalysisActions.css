@@ -31,10 +31,6 @@
   transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
 }
 
-.btn:hover {
-  background: #f9fafb; /* gray-50 */
-}
-
 .btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25); /* blue-600 ring */
@@ -58,9 +54,12 @@
 }
 
 .btnSecondary {
-  background: #f3f4f6; /* gray-100 */
-  color: #111827;
-  border-color: #e5e7eb; /* gray-200 */
+  background: #3a5a40; /* gray-100 */
+  color: #fff;
+}
+
+.btnSecondary:hover{
+  opacity: 0.9;
 }
 
 .btnBold {

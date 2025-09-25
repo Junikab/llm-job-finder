@@ -35,8 +35,8 @@
   padding: 0 12px;
   border-radius: 8px;
   border: 1px solid #e5e7eb; /* gray-200 */
-  background: #f3f4f6; /* gray-100 */
-  color: #111827; /* gray-900 */
+  background: #3a5a40; /* gray-100 */
+  color: #fff; /* gray-900 */
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -44,7 +44,7 @@
 }
 
 .pc-button:hover {
-  background: #e5e7eb; /* gray-200 */
+   opacity: 0.9;
 }
 
 .pc-select:focus-visible,
