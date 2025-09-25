@@ -1,4 +1,7 @@
 /* Base stylesheet for the web app */
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+html, body, #root { 
+  height: 100%;
+  /* background-color: #eaf7f2;  */
+}
 body { margin: 0; }

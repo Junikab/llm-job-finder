@@ -3,11 +3,11 @@
 /* Layout */
 .lf-grid { display: grid; gap: 12px; align-items: start; grid-template-columns: 1fr 1fr; margin-bottom: 24px; }
 @media (max-width: 720px) { .lf-grid { grid-template-columns: 1fr; } }
-.lf-col { display: grid; gap: 10px; }
+.lf-col { display: grid; gap: 10px; padding-bottom: 20px;}
 .lf-field { display: grid; gap: 6px; text-align: left; }
 
 /* Controls */
-.lf-label { color: #334155; font-weight: 600; }
+.lf-label { color: #334155; font-weight: 500; }
 .lf-input, .lf-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; box-sizing: border-box; }
 
 /* File bar */

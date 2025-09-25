@@ -21,37 +21,37 @@ export default function SavedJobCard(props: SavedJobCardProps) {
   const modelScoreText = job.modelScore != null ? Math.round(job.modelScore) : '–';
 
   return (
-    <li style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
+    <li className="job-card">
       {/* Header: title + big model score */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+      <div className="job-card__header">
         {job.url
-          ? <a href={job.url} target="_blank" style={{ fontWeight: 600, color: '#0b5' }}>{title}</a>
-          : <span style={{ fontWeight: 600 }}>{title}</span>
+          ? <a href={job.url} target="_blank" rel="noopener noreferrer" className="job-card__titleLink">{title}</a>
+          : <span className="job-card__titleLink">{title}</span>
         }
-        <div style={{ fontWeight: 700 }}>Model score: {modelScoreText}/100</div>
+        <div className="job-card__score">Model score: {modelScoreText}/100</div>
       </div>
 
       {/* Meta row: company · location · listedAgo + applied toggle */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#555', marginTop: 4, gap: 8 }}>
+      <div className="job-card__metaRow">
         <div>{job.company || 'Unknown'} · {location || '—'} · {job.listedAgo || '—'}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="job-card__appliedGroup">
           <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => onAppliedChange(e.target.checked)} />
-          <div style={{ display: 'flex', flexDirection: 'column', marginTop: 10 }}>
-            <label htmlFor={checkboxId} style={{ fontSize: 12, color: '#222' }}>Applied</label>
+          <div className="job-card__appliedText">
+            <label htmlFor={checkboxId} className="job-card__appliedLabel">Applied</label>
             {applied && appliedAtText && (
-              <span style={{ fontSize: 11, color: '#777' }}>{appliedAtText}</span>
+              <span className="job-card__appliedDate">{appliedAtText}</span>
             )}
           </div>
         </div>
       </div>
 
       {/* Reason (when available) */}
-      {!!reason && <div style={{ marginTop: 8, color: '#333' }}>{reason}</div>}
+      {!!reason && <div className="job-card__reason">{reason}</div>}
 
       {/* Rating control */}
-      <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 90, color: '#333' }}>Your score:</span>
+      <div className="job-card__ratingRow">
+        <label className="job-card__ratingLabel">
+          <span className="job-card__ratingLabelText">Your score:</span>
           <input
             type="range"
             min={0}
@@ -62,7 +62,7 @@ export default function SavedJobCard(props: SavedJobCardProps) {
             onBlur={onCommitScore}
             style={{ width: 160 }}
           />
-          <span style={{ width: 36, textAlign: 'right', color: '#333' }}>{draftScore}</span>
+          <span className="job-card__ratingValue">{draftScore}</span>
         </label>
       </div>
     </li>

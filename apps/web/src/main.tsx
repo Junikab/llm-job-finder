@@ -4,5 +4,6 @@ import App from './App';
 import './styles/base.css';
 import './styles/form.css';
 import './styles/components.css';
+import './styles/job-cards.css';
 
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);

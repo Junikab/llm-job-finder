@@ -26,31 +26,31 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
     <>
       {/* filters are now moved to the hero section */}
 
-      <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+      <ol className="job-list">
         {filtered.map(r => {
           const k = (r as any).key ?? r.id;
           const applied = isApplied(k);
           const appliedAtText = formatAppliedDate(getAppliedAt(k));
           const checkboxId = `applied-${k}`;
           return (
-          <li key={k} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <a href={r.url} target="_blank" style={{ fontWeight: 600, color: '#0b5' }}>{r.title}</a>
-              <div style={{ fontWeight: 700 }}>{Math.round(r.score)}/100</div>
+          <li key={k} className="job-card">
+            <div className="job-card__header">
+              <a href={r.url} target="_blank" rel="noopener noreferrer" className="job-card__titleLink">{r.title}</a>
+              <div className="job-card__score">{Math.round(r.score)}/100</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#555', marginTop: 4, gap: 8 }}>
+            <div className="job-card__metaRow">
               <div>{r.company} · {r.location} · {r.listedAgo}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="job-card__appliedGroup">
                 <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => setApplied(k, e.target.checked)} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <label htmlFor={checkboxId} style={{ fontSize: 12, color: '#222' }}>Applied</label>
+                <div className="job-card__appliedText">
+                  <label htmlFor={checkboxId} className="job-card__appliedLabel">Applied</label>
                   {applied && appliedAtText && (
-                    <span style={{ fontSize: 11, color: '#777' }}>{appliedAtText}</span>
+                    <span className="job-card__appliedDate">{appliedAtText}</span>
                   )}
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: 8, color: '#333' }}>{r.reason}</div>
+            <div className="job-card__reason">{r.reason}</div>
           </li>
         );})}
       </ol>

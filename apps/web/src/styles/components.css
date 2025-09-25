@@ -4,12 +4,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid #eee;
+  /* Overlay nav on top of the hero background */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background-color: transparent;
+  border-bottom: none;
 }
 .topnav__title {
   font-weight: 800;
-  font-size: 20px;
-  color: #2a62ff;
+  font-size: 30px;
+  color: #00303F ;
 }
 .topnav__links {
   display: flex;
@@ -20,12 +27,12 @@
 .topnav__btn {
   background: transparent;
   border: none;
-  color: #455;
-  font-weight: 500;
+  color: #00303F ;
+  font-weight: 600;
   cursor: pointer;
 }
 .topnav__btn--active {
-  color: #2a62ff;
+  color: #d4a91c;
   font-weight: 700;
 }
 .topnav__about {
@@ -36,12 +43,13 @@
 .hero {
   position: relative;
   background-image:
-    linear-gradient( to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.45) ),
-    url(https://images.unsplash.com/photo-1522120692533-91be08007f30?q=80&w=1800&auto=format&fit=crop);
+    linear-gradient( to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.20) ),
+    url(https://images.unsplash.com/photo-1643142326312-1e1726dd3e8b?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D);
   background-size: cover;
   background-position: center;
   color: white;
-  padding: 50px 15px;
+  /* Add extra top padding so hero content sits below the overlaid navbar */
+  padding: 96px 15px 50px;
   text-align: center;
 }
 .hero__inner {
@@ -53,6 +61,8 @@
   font-size: 42px;
   font-weight: 800;
   margin: 0 0;
+  padding: 20px;
+
 }
 .hero__hint {
   margin-top: 10px;

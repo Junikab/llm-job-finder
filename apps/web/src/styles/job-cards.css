@@ -1,0 +1,78 @@
+/* Shared styles for job result and saved job cards */
+
+.job-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.job-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.job-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.job-card__titleLink {
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.job-card__titleLink:hover { text-decoration: underline; }
+
+.job-card__score {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.job-card__metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-muted-text);
+  margin-top: 4px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.job-card__appliedGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.job-card__appliedText {
+  display: flex;
+  flex-direction: column;
+}
+
+.job-card__appliedLabel {
+  font-size: 12px;
+  color: var(--color-text);
+}
+
+.job-card__appliedDate {
+  font-size: 11px;
+  color: #777;
+}
+
+.job-card__reason {
+  margin-top: 8px;
+  color: var(--color-text);
+}
+
+/* Saved list rating row */
+.job-card__ratingRow { margin-top: 8px; display: grid; gap: 6px; }
+.job-card__ratingLabel { display: flex; align-items: center; gap: 8px; }
+.job-card__ratingLabelText { width: 90px; color: var(--color-text); }
+.job-card__ratingValue { width: 36px; text-align: right; color: var(--color-text); }
