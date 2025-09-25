@@ -9,15 +9,17 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
   const [rescoring, setRescoring] = useState(false);
 
   const startEdit = useCallback(() => {
-    if (!analysis) return;
-    setDraft({
-      summary: analysis.summary || '',
-      titles: [...(analysis.titles || [])],
-      topSkills: [...(analysis.topSkills || [])],
-      locationHints: [...(analysis.locationHints || [])],
+    // If a draft already exists (e.g., loaded from ProfileControls), keep it.
+    // Otherwise, initialize from current analysis.
+    if (!draft && !analysis) return;
+    setDraft(prev => prev ?? {
+      summary: analysis?.summary || '',
+      titles: [...(analysis?.titles || [])],
+      topSkills: [...(analysis?.topSkills || [])],
+      locationHints: [...(analysis?.locationHints || [])],
     });
     setIsEditing(true);
-  }, [analysis]);
+  }, [analysis, draft]);
 
   const cancelEdit = useCallback(() => {
     setIsEditing(false);

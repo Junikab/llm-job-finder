@@ -50,7 +50,7 @@ export default function LiveForm(props: {
       {/* Left column: File input + Recent CVs */}
       <div className="lf-col">
         <div className="lf-field">
-          <label className="lf-label" htmlFor="lf-upload-cv">Upload CV <span style={{fontSize:"0.7rem"}}>(PDF/DOCX/TXT)</span></label>
+          <label className="lf-label" htmlFor="lf-upload-cv">Upload CV <span style={{fontSize:"0.6rem"}}>(PDF/DOCX/TXT)</span></label>
           <div className="lf-filebar">
             <button
               type="button"

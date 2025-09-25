@@ -3,7 +3,6 @@ import '../styles/AnalysisHeader.css';
 import type { CVAnalysis } from '@shared/types';
 import { AnalysisDetails } from './AnalysisDetails';
 import { AnalysisActions } from './AnalysisActions';
-import { useActiveProfileMeta } from '../hooks/useActiveProfileMeta';
 import { useCandidatePreview } from '../hooks/useCandidatePreview';
 
 /**
@@ -26,6 +25,7 @@ export default function AnalysisHeader({
   onChangeDraft,
   onRescore,
   rescoring,
+  activeProfileMeta,
 }: {
   analysis: CVAnalysis | null;
   searchUrls: string[];
@@ -40,12 +40,12 @@ export default function AnalysisHeader({
   onChangeDraft: (next: CVAnalysis) => void;
   onRescore: () => void;
   rescoring: boolean;
+  activeProfileMeta?: { id: string; label: string | null } | null;
 }) {
   if (!analysis) return null;
 
   const d = draft || analysis;
   const candidatePreview = useCandidatePreview({ analysis, draft, userPreview: llmPromptUserPreview, llmGoodTraits, llmBadTraits });
-  const { activeProfileMeta, setActiveProfileMeta } = useActiveProfileMeta();
  
 
   return (
@@ -65,9 +65,6 @@ export default function AnalysisHeader({
           onCancelEdit={onCancelEdit}
           onRescore={onRescore}
           onChangeDraft={onChangeDraft}
-          onProfileLoadMeta={(meta) => {
-            setActiveProfileMeta(meta);
-          }}
         />
       </div>
       {/* System prompt hidden intentionally to show only the <candidate> section */}

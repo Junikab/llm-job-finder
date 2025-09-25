@@ -7,6 +7,7 @@ import LiveResults from './components/LiveResults';
 import { useSearchUrl } from './hooks/useSearchUrl';
 import { useSavedJobs } from './hooks/useSavedJobs';
 import TopNav from './components/TopNav';
+import { ProfileControls } from './components/ProfileControls';
 import SortSelect from './components/SortSelect';
 import Toast from './components/Toast';
 import HeroSection from './components/HeroSection';
@@ -14,6 +15,7 @@ import { useTab } from './hooks/useTab';
 import { useToast } from './hooks/useToast';
 import AboutModal from './components/AboutModal';
 import { useAnalysisEditor } from './hooks/useAnalysisEditor';
+import { useActiveProfileMeta } from './hooks/useActiveProfileMeta';
 
 export default function App() {
   // Tabs and UI state
@@ -43,6 +45,9 @@ export default function App() {
     onChangeDraft,
     handleRescore,
   } = useAnalysisEditor({ analysis, onToast: showToast });
+
+  // Active profile meta (for display); managed at App-level now
+  const { activeProfileMeta, setActiveProfileMeta } = useActiveProfileMeta();
 
   // Simplified file upload state (Recent CVs removed)
   const [file, setFile] = useState<File | null>(null);
@@ -196,6 +201,16 @@ export default function App() {
       <div className="content-container">
       {tab === 'live' && (
         <>
+          {/* Profiles: always visible above the analysis container */}
+          <div style={{ marginTop: 8, marginBottom: 8 }}>
+            <ProfileControls
+              draft={draftAnalysis || analysis}
+              isEditing={isEditingAnalysis}
+              onApplyProfile={(a) => onChangeDraft({ ...a })}
+              onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
+            />
+          </div>
+
           <AnalysisHeader
             analysis={analysis}
             searchUrls={searchUrls}
@@ -210,6 +225,7 @@ export default function App() {
             onChangeDraft={onChangeDraft}
             onRescore={onRescore}
             rescoring={rescoring}
+            activeProfileMeta={activeProfileMeta}
           />
 
           {/* Sort By between CV summary and job cards */}
