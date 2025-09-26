@@ -7,7 +7,7 @@
 }
 
 .aboutPage__hero {
-  background: linear-gradient(135deg, rgba(224, 159, 62, 0.5), rgba(134, 159, 62, 0.5));
+  background: linear-gradient(135deg, rgba(224, 159, 62, 0.84), rgba(135, 159, 62, 0.621));
   border-radius: 20px;
   padding: 40px 32px;
   display: grid;
@@ -195,7 +195,7 @@
 }
 
 .aboutPage__footerNote {
-  margin: 0;
+  margin: 0 0 50PX 0;
   font-weight: 650;
   font-size: 1rem;
   text-align: center;
