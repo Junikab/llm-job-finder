@@ -30,6 +30,11 @@ beforeEach(() => {
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       ) as any;
     }
+    if (url.includes('/api/profiles')) {
+      // Profiles list (and allow id GET to be empty for now)
+      const body = { results: [] };
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } }) as any;
+    }
     if (url.includes('/api/db/jobs')) {
       return new Response(
         JSON.stringify({
