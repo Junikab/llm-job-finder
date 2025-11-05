@@ -149,13 +149,13 @@ export default function App() {
 
     try {
       const form = new FormData();
-      form.append('cv', file);
-      // Location decision
+      // Important: append location BEFORE file so server's req.file().fields sees it reliably
       if (worldwide) {
         form.append('location', ''); // server treats empty as worldwide
       } else {
         form.append('location', loc);
       }
+      form.append('cv', file);
 
       const json = await findJobs(form);
       setAnalysis(json.analysis);
