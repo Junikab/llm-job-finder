@@ -27,8 +27,11 @@ export default function SavedList(props: {
     const comp = company.trim().toLowerCase();
     const loc = location.trim().toLowerCase();
     const arr = items.filter((j: SavedJob) => {
-      // applied filter
-      if (appliedOnly && j.applied !== true) return false;
+      // applied filter (mirror local toggle state)
+      if (appliedOnly) {
+        const k = j.key || j.id;
+        if (!isApplied(k)) return false;
+      }
       // min model score
       if (typeof minScore === 'number' && minScore > 0) {
         if (j.modelScore == null || j.modelScore < minScore) return false;
@@ -59,12 +62,17 @@ export default function SavedList(props: {
       };
       copy.sort((a, b) => ad(a) - ad(b));
     } else if (sortBy === 'applied') {
-      const ts = (x: SavedJob) => (x.appliedAt ? Date.parse(x.appliedAt) : -Infinity);
+      const ts = (x: SavedJob) => {
+        const k = x.key || x.id;
+        const localAt = getAppliedAt(k);
+        const effective = localAt || x.appliedAt;
+        return effective ? Date.parse(effective) : -Infinity;
+      };
       // Newest applied first
       copy.sort((a, b) => ts(b) - ts(a));
     }
     return copy;
-  }, [items, minScore, company, location, maxDays, sortBy]);
+  }, [items, minScore, company, location, maxDays, sortBy, isApplied, getAppliedAt]);
 
   const commitScore = (jobId: string) => {
     const current = draftScores[jobId];
