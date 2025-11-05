@@ -100,7 +100,6 @@ export async function scoreJob(
         s: _analysis.summary || '',
         t: Array.isArray(_analysis.titles) ? _analysis.titles : [],
         k: Array.isArray(_analysis.topSkills) ? _analysis.topSkills : [],
-        l: Array.isArray(_analysis.locationHints) ? _analysis.locationHints : [],
       })
     );
     const cacheKey = [
@@ -124,7 +123,6 @@ export async function scoreJob(
         summary: _analysis.summary ?? '',
         titles: Array.isArray(_analysis.titles) ? _analysis.titles : [],
         topSkills: Array.isArray(_analysis.topSkills) ? _analysis.topSkills : [],
-        locationHints: Array.isArray(_analysis.locationHints) ? _analysis.locationHints : [],
       },
       _job
     );

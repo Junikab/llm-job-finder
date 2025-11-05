@@ -4,7 +4,6 @@ import type { RankedJob, CVAnalysis } from '@shared/types';
 import SavedList from './components/SavedList';
 import AnalysisHeader from './components/AnalysisHeader';
 import LiveResults from './components/LiveResults';
-import { useSearchUrl } from './hooks/useSearchUrl';
 import { useSavedJobs } from './hooks/useSavedJobs';
 import TopNav from './components/TopNav';
 import { ProfileControls } from './components/ProfileControls';
@@ -80,17 +79,9 @@ export default function App() {
     setFile(f);
   }, []);
 
-  // Search URL selection/history via hook
-  const {
-    searchUrl,
-    setSearchUrl,
-    history: searchUrlHistory,
-    customMode: searchUrlCustomMode,
-    setCustomMode: setSearchUrlCustomMode,
-    selectValue: searchUrlSelectValue,
-    onSelectChange: onSearchUrlSelectChange,
-    updateHistory: updateSearchUrlHistory,
-  } = useSearchUrl();
+  // Landing location controls
+  const [location, setLocation] = useState<string>('');
+  const [worldwide, setWorldwide] = useState<boolean>(false);
 
   // Saved jobs via hook
   const { saved, savedLoading, savedError, refreshSaved: handleRefreshSaved, rate: handleRate } = useSavedJobs((msg) => showToast(msg));
@@ -145,6 +136,12 @@ export default function App() {
       showToast('Please upload CV or choose from recent CVs');
       return;
     }
+    // Gentle validation for location/worldwide
+    const loc = (location || '').trim();
+    if (!worldwide && !loc) {
+      setError('Location or Worldwide is required');
+      return;
+    }
     if (loading) return;
     setLoading(true);
     setError(null);
@@ -153,12 +150,12 @@ export default function App() {
     try {
       const form = new FormData();
       form.append('cv', file);
-      // Optional manual search URL
-      const su = (searchUrl || '').trim();
-      if (su) form.append('searchUrl', su);
-
-      // Update history if using a manual URL
-      if (su) updateSearchUrlHistory(su);
+      // Location decision
+      if (worldwide) {
+        form.append('location', ''); // server treats empty as worldwide
+      } else {
+        form.append('location', loc);
+      }
 
       const json = await findJobs(form);
       setAnalysis(json.analysis);
@@ -176,7 +173,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [file, searchUrl, loading, updateSearchUrlHistory]);
+  }, [file, loading, location, worldwide]);
 
   // (Rescore handler provided by the hook; we just adapt it to our state setters)
   const onRescore = useCallback(() => {
@@ -191,8 +188,11 @@ export default function App() {
       onSearchUrlsUpdated: (urls: string[]) => {
         setSearchUrls(urls);
       },
+      // Centralized location control from landing
+      location: worldwide ? '' : ((location || '').trim()),
+      worldwide,
     });
-  }, [handleRescore, results]);
+  }, [handleRescore, results, location, worldwide]);
 
   // Recent CVs removed – no extra effects needed
 
@@ -229,13 +229,10 @@ export default function App() {
             error={error}
             onSubmit={onSubmit}
             onFileChange={onFileChange}
-            searchUrlSelectValue={searchUrlSelectValue}
-            searchUrlHistory={searchUrlHistory}
-            searchUrlCustomMode={searchUrlCustomMode}
-            setSearchUrlCustomMode={setSearchUrlCustomMode}
-            searchUrl={searchUrl}
-            onSearchUrlSelectChange={onSearchUrlSelectChange}
-            onChangeSearchUrl={setSearchUrl}
+            location={location}
+            worldwide={worldwide}
+            onChangeLocation={setLocation}
+            onChangeWorldwide={setWorldwide}
             canSubmit={canSubmit}
             loading={loading}
             fileInputRef={fileInputRef}

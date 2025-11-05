@@ -6,13 +6,10 @@ export default function HeroSection(props: {
   error: string | null;
   onSubmit: (e: FormEvent) => void;
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  searchUrlSelectValue: string;
-  searchUrlHistory: string[];
-  searchUrlCustomMode: boolean;
-  setSearchUrlCustomMode?: (v: boolean) => void;
-  searchUrl: string;
-  onSearchUrlSelectChange: (value: string) => void;
-  onChangeSearchUrl: (value: string) => void;
+  location: string;
+  worldwide: boolean;
+  onChangeLocation: (value: string) => void;
+  onChangeWorldwide: (value: boolean) => void;
   canSubmit: boolean;
   loading: boolean;
   fileInputRef?: RefObject<HTMLInputElement>;
@@ -22,13 +19,10 @@ export default function HeroSection(props: {
     error,
     onSubmit,
     onFileChange,
-    searchUrlSelectValue,
-    searchUrlHistory,
-    searchUrlCustomMode,
-    setSearchUrlCustomMode,
-    searchUrl,
-    onSearchUrlSelectChange,
-    onChangeSearchUrl,
+    location,
+    worldwide,
+    onChangeLocation,
+    onChangeWorldwide,
     canSubmit,
     loading,
     fileInputRef,
@@ -41,13 +35,10 @@ export default function HeroSection(props: {
         <LiveForm
           onSubmit={onSubmit}
           onFileChange={onFileChange}
-          searchUrlSelectValue={searchUrlSelectValue}
-          searchUrlHistory={searchUrlHistory}
-          searchUrlCustomMode={searchUrlCustomMode}
-          setSearchUrlCustomMode={setSearchUrlCustomMode}
-          searchUrl={searchUrl}
-          onSearchUrlSelectChange={onSearchUrlSelectChange}
-          onChangeSearchUrl={onChangeSearchUrl}
+          location={location}
+          noLocation={worldwide}
+          onChangeLocation={onChangeLocation}
+          onChangeNoLocation={onChangeWorldwide}
           canSubmit={canSubmit}
           loading={loading}
           error={error}
@@ -55,7 +46,7 @@ export default function HeroSection(props: {
           showInlineError={false}
         />
         <div className="hero__hint">
-          {resultsCount > 0 ? `We have ${resultsCount} job offers for you!` : 'Upload your CV and optionally paste a custom job search URL.'}
+          {resultsCount > 0 ? `We have ${resultsCount} job offers for you!` : 'Upload your CV and add a location or choose Worldwide.'}
         </div>
         {!!error && (
           <div className="hero__error">

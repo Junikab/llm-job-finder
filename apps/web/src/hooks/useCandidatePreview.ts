@@ -28,7 +28,6 @@ export function useCandidatePreview({ analysis, draft, userPreview, llmGoodTrait
       lines.push('Structured profile hints (optional):');
       if (Array.isArray(a.titles) && a.titles.length) lines.push(`Titles: ${a.titles.join(', ')}`);
       if (Array.isArray(a.topSkills) && a.topSkills.length) lines.push(`Top skills: ${a.topSkills.join(', ')}`);
-      if (Array.isArray(a.locationHints) && a.locationHints.length) lines.push(`Location hints: ${a.locationHints.join(', ')}`);
       const goodT = (llmGoodTraits || good || '').trim();
       const badT = (llmBadTraits || bad || '').trim();
       if (goodT || badT) {

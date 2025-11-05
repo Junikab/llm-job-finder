@@ -67,15 +67,23 @@ export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ an
           className="editInput"
         />
       </label>
-      <label className="editLabel">
-        <span className="editLabelTitle">Location hints (comma-separated)</span>
-        <input
-          type="text"
-          value={toList(d.locationHints)}
-          onChange={e => onChangeDraft({ ...d, locationHints: fromList(e.target.value) })}
-          className="editInput"
-        />
-      </label>
+      {/* Location is controlled on the landing form (Hero section). */}
+
+      <details className="editLabel" style={{ marginTop: 8 }}>
+        <summary className="editLabelTitle">Search URLs (Advanced)</summary>
+        <div style={{ marginTop: 8 }}>
+          <label className="editLabel">
+            <span className="editLabelTitle">Manual URL (optional)</span>
+            <input
+              type="text"
+              value={d.manualSearchUrl || ''}
+              onChange={e => onChangeDraft({ ...d, manualSearchUrl: e.target.value })}
+              className="editInput"
+              placeholder="https://au.jora.com/j?q=..."
+            />
+          </label>
+        </div>
+      </details>
     </div>
   );
 });

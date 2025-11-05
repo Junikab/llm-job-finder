@@ -82,7 +82,7 @@ export type RescoreResponse = {
 export async function rescoreJobs(
   analysis: CVAnalysis,
   jobs: JobItem[],
-  opts?: { refreshSearch?: boolean; location?: string; days?: number }
+  opts?: { refreshSearch?: boolean; location?: string; days?: number; searchUrl?: string }
 ): Promise<RescoreResponse> {
   const data = await fetchJson('/api/jobs/rescore', {
     method: 'POST',

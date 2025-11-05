@@ -6,6 +6,10 @@ export type CVAnalysis = {
   topSkills: string[];
   niceToHave?: string[];
   locationHints?: string[];
+  /** When true, search should omit any explicit location filter (worldwide). */
+  worldwide?: boolean;
+  /** Optional manual search URL for advanced users (used during rescore). */
+  manualSearchUrl?: string;
 };
 
 export type JobItem = {

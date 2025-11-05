@@ -16,7 +16,10 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
       summary: analysis?.summary || '',
       titles: [...(analysis?.titles || [])],
       topSkills: [...(analysis?.topSkills || [])],
+      // location/worldwide are controlled on the landing form; keep any existing values for round-trip only
       locationHints: [...(analysis?.locationHints || [])],
+      worldwide: !!analysis?.worldwide,
+      manualSearchUrl: analysis?.manualSearchUrl || '',
     });
     setIsEditing(true);
   }, [analysis, draft]);
@@ -39,6 +42,9 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
         onEditingDone?: () => void;
         onPromptUpdated?: (p: { user?: string; system?: string }) => void;
         onSearchUrlsUpdated?: (urls: string[]) => void;
+        // Location control comes from landing (HeroSection)
+        location?: string; // if provided, overrides search location
+        worldwide?: boolean; // if true, overrides to worldwide (omit &l)
       }
     ) => {
       if (!draft) return;
@@ -49,16 +55,19 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
       try {
         setRescoring(true);
         const jobs: JobItem[] = results.map(mapRankedToJobItem);
-        // If location hints changed, ask server to rebuild search URLs and re-scrape
-        const normalize = (arr?: readonly string[]) => (arr || []).map(s => s.trim().toLowerCase()).filter(Boolean).sort();
-        const prevLoc = normalize(analysis?.locationHints);
-        const nextLoc = normalize(draft.locationHints);
-        const locationChanged = prevLoc.length !== nextLoc.length || prevLoc.some((v, i) => v !== nextLoc[i]);
+        const prevManual = (analysis?.manualSearchUrl || '').trim();
+        const nextManual = (draft.manualSearchUrl || '').trim();
+        const manualChanged = prevManual !== nextManual;
+        const overrideFromLanding = (typeof opts.location === 'string') ? opts.location : (opts.worldwide ? '' : undefined);
         const resp = await rescoreJobs(
           draft,
           jobs,
-          locationChanged
-            ? { refreshSearch: true, location: (draft.locationHints && draft.locationHints[0]) || undefined }
+          (manualChanged || typeof overrideFromLanding === 'string')
+            ? {
+                refreshSearch: true,
+                searchUrl: nextManual || undefined,
+                location: nextManual ? undefined : overrideFromLanding,
+              }
             : undefined
         );
         opts.onResults(resp.results);
@@ -77,7 +86,7 @@ export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis 
         opts.onEditingDone?.();
       }
     },
-    [draft, onToast]
+    [draft, onToast, analysis]
   );
 
   return { draft, isEditing, rescoring, startEdit, cancelEdit, onChangeDraft, handleRescore } as const;

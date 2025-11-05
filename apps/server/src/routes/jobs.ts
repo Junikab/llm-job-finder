@@ -119,6 +119,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
       const analysis = body.analysis as CVAnalysis | undefined;
       const jobs = Array.isArray(body.jobs) ? (body.jobs as JobItem[]) : [];
       const refreshSearch = body && (body.refreshSearch === true);
+      const manualSearchUrl = typeof body.searchUrl === 'string' ? body.searchUrl.trim() : '';
       if (!analysis) {
         return reply.code(400).send({ error: 'analysis is required' });
       }
@@ -129,7 +130,7 @@ export default async function registerJobsRoutes(app: FastifyInstance) {
         const daysRaw = body.days != null ? Number(body.days) : undefined;
         const days = daysRaw ? Math.max(1, Math.min(60, Number(daysRaw))) : undefined;
         const maxJobs = Math.max(1, Math.min(200, Number(process.env.LLM_MAX_SCORE_JOBS || 30)));
-        const manualUrls: string[] = [];
+        const manualUrls: string[] = (manualSearchUrl && manualSearchUrl.length > 0) ? [manualSearchUrl] : [];
         const searchUrls = manualUrls.length > 0
           ? manualUrls
           : toJoraSearchUrls(analysis, { location: locationOverride });

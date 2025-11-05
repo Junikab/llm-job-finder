@@ -6,11 +6,17 @@ export function toJoraSearchUrls(analysis: CVAnalysis, opts: { location?: string
   const titlesRaw = (analysis.titles && analysis.titles.length ? analysis.titles : ['software developer', 'frontend developer']).slice(0, 3);
   const queryMode = (process.env.SEARCH_QUERY_MODE || 'rich').toLowerCase(); // 'rich' | 'simple'
 
-  const l = encodeURIComponent(opts.location || (analysis.locationHints?.[0] || 'Sydney NSW'));
+  // Determine effective location strictly from user choice:
+  // - If opts.location is an empty string, treat as "no location" (omit &l param)
+  // - Else use explicit opts.location if provided
+  // - Else if analysis.worldwide is true, omit &l
+  // - Else omit &l (no fallback or hints)
+  const locRaw = (opts.location !== undefined) ? opts.location : (analysis.worldwide ? '' : undefined);
+  const locParam = (typeof locRaw === 'string' && locRaw !== '') ? `&l=${encodeURIComponent(locRaw)}` : '';
 
   const makeUrl = (query: string) => {
     const q = encodeURIComponent(query.trim());
-    return `${base}?q=${q}&l=${l}`;
+    return `${base}?q=${q}${locParam}`;
   };
 
   if (queryMode === 'simple') {

@@ -1,16 +1,12 @@
 import React, { useState, type FormEvent, type ChangeEvent, type RefObject } from 'react';
-import SearchUrlPicker from './SearchUrlPicker';
 
 export default function LiveForm(props: {
   onSubmit: (e: FormEvent) => void;
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  searchUrlSelectValue: string;
-  searchUrlHistory: string[];
-  searchUrlCustomMode: boolean;
-  setSearchUrlCustomMode?: (v: boolean) => void;
-  searchUrl: string;
-  onSearchUrlSelectChange: (value: string) => void;
-  onChangeSearchUrl: (value: string) => void;
+  location: string;
+  noLocation: boolean;
+  onChangeLocation: (value: string) => void;
+  onChangeNoLocation: (value: boolean) => void;
   canSubmit: boolean;
   loading: boolean;
   error: string | null;
@@ -20,13 +16,10 @@ export default function LiveForm(props: {
   const {
     onSubmit,
     onFileChange,
-    searchUrlSelectValue,
-    searchUrlHistory,
-    searchUrlCustomMode,
-    setSearchUrlCustomMode,
-    searchUrl,
-    onSearchUrlSelectChange,
-    onChangeSearchUrl,
+    location,
+    noLocation,
+    onChangeLocation,
+    onChangeNoLocation,
     canSubmit,
     loading,
     error,
@@ -80,17 +73,29 @@ export default function LiveForm(props: {
         </div>
       </div>
 
-      {/* Right column: URL picker */}
+      {/* Right column: Location controls */}
       <div className="lf-col">
-        <SearchUrlPicker
-          selectValue={searchUrlSelectValue}
-          history={searchUrlHistory}
-          customMode={searchUrlCustomMode}
-          searchUrl={searchUrl}
-          onSelectChange={onSearchUrlSelectChange}
-          onChangeCustom={onChangeSearchUrl}
-          setCustomMode={setSearchUrlCustomMode}
-        />
+        <div className="lf-field">
+          <label className="lf-label" htmlFor="lf-location">Location</label>
+          <input
+            id="lf-location"
+            className="lf-input lf-control"
+            type="text"
+            value={location}
+            onChange={e => onChangeLocation(e.target.value)}
+            placeholder="e.g. Melbourne VIC"
+            disabled={noLocation}
+          />
+          <label className="lf-label" htmlFor="lf-no-location" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <input
+              id="lf-no-location"
+              type="checkbox"
+              checked={noLocation}
+              onChange={e => onChangeNoLocation(e.target.checked)}
+            />
+            <span>Worldwide (no location filter)</span>
+          </label>
+        </div>
       </div>
 
       <div className="lf-button-row">
