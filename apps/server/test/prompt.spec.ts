@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildJobRelevancePrompt, formatJobForPrompt, parseRelevanceScore } from '../src/services/prompt.js';
-import type { JobItem } from '../src/types.js';
+import type { JobItem } from '@shared/types';
 
 function makeJob(): JobItem {
   return {
