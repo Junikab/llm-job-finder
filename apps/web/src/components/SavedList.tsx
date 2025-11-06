@@ -5,6 +5,8 @@ import { includeTracked, matchesText, sortJobs } from '../lib/job-filters';
 import { parseListedDays, formatAppliedDate } from '../utils/date';
 import SavedJobCard from './SavedJobCard';
 import SavedFilters from './SavedFilters';
+import { useSavedFilters } from '../hooks/useSavedFilters';
+import { SavedEmptyState } from './SavedEmptyState';
 import '../styles/about-page.css';
 import '../styles/SavedPage.css';
 
@@ -22,11 +24,8 @@ export default function SavedList(props: {
   const [minScore, setMinScore] = useState<number>(0);
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
-  const [query, setQuery] = useState('');
   const [maxDays, setMaxDays] = useState<number | ''>('');
-  const [sortBy, setSortBy] = useState<'model' | 'user' | 'recency' | 'applied'>('model');
-  const [appliedOnly, setAppliedOnly] = useState(false);
-  const [savedOnly, setSavedOnly] = useState(false);
+  const { sortBy, setSortBy, query, setQuery, appliedOnly, setAppliedOnly, savedOnly, setSavedOnly, clear } = useSavedFilters();
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
   const anyTracked = useMemo(() => {
@@ -87,11 +86,7 @@ export default function SavedList(props: {
       {loading && <div className="savedPage__muted">Loading…</div>}
       {!!error && <div className="savedPage__error">{error}</div>}
       {!loading && !error && !anyTracked ? (
-        <div className="savedPage__empty">
-          <h3 className="savedPage__emptyTitle">No saved jobs yet.</h3>
-          <p className="savedPage__emptyText">Save jobs from Live to track them here.</p>
-          <button type="button" onClick={onGoLive} className="aboutPage__cta">Find jobs</button>
-        </div>
+        <SavedEmptyState onGoLive={onGoLive} />
       ) : (
         <>
           <SavedFilters
@@ -103,7 +98,7 @@ export default function SavedList(props: {
             onAppliedOnlyChange={setAppliedOnly}
             savedOnly={savedOnly}
             onSavedOnlyChange={setSavedOnly}
-            onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setQuery(''); setMaxDays(''); setAppliedOnly(false); setSavedOnly(false); }}
+            onClear={() => { clear(); setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
             onRefresh={onRefresh}
           />
           {!loading && !error && filtered.length === 0 && <div className="savedPage__muted">No results.</div>}
