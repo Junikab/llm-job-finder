@@ -69,9 +69,9 @@ export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ an
       </label>
       {/* Location is controlled on the landing form (Hero section). */}
 
-      <details className="editLabel" style={{ marginTop: 8 }}>
+      <details className="editLabel editLabelSpaced">
         <summary className="editLabelTitle">Search URLs (Advanced)</summary>
-        <div style={{ marginTop: 8 }}>
+        <div className="editSectionSpacer">
           <label className="editLabel">
             <span className="editLabelTitle">Manual URL (optional)</span>
             <input

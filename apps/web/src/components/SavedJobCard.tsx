@@ -38,7 +38,7 @@ export default function SavedJobCard(props: SavedJobCardProps) {
       {/* Meta row: company · location · listedAgo + applied/saved toggles */}
       <div className="job-card__metaRow">
         <div>{job.company || 'Unknown'} · {location || '—'} · {job.listedAgo || '—'}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+        <div className="job-card__togglesCol">
           <div className="job-card__appliedGroup">
             <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => onAppliedChange(e.target.checked)} />
             <div className="job-card__appliedText">
@@ -75,7 +75,7 @@ export default function SavedJobCard(props: SavedJobCardProps) {
             onChange={e => onDraftScoreChange(Number(e.target.value))}
             onPointerUp={onCommitScore}
             onBlur={onCommitScore}
-            style={{ width: 160 }}
+            className="job-card__ratingRange"
           />
           <span className="job-card__ratingValue">{draftScore}</span>
         </label>

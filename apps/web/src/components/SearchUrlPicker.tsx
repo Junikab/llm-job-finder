@@ -14,7 +14,7 @@ export default function SearchUrlPicker(props: {
   return (
     <>
       <div className="lf-field">
-        <label className="lf-label" htmlFor="lf-custom-url">Paste custom URL <span style={{fontSize:"0.6rem"}}>(Optional)</span></label>
+        <label className="lf-label" htmlFor="lf-custom-url">Paste custom URL <span className="lf-labelHint">(Optional)</span></label>
         <input
           id="lf-custom-url"
           className="lf-input lf-control"

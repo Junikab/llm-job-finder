@@ -45,7 +45,7 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
             </div>
             <div className="job-card__metaRow">
               <div>{r.company} · {r.location} · {r.listedAgo}</div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div className="job-card__togglesRow">
                 <div className="job-card__appliedGroup">
                   <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => setApplied(k, e.target.checked)} />
                   <div className="job-card__appliedText">
@@ -72,7 +72,7 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
       </ol>
 
       {!loading && filtered.length === 0 && (
-        <div style={{ marginTop: 16, color: '#666' }}>No results yet. Try adjusting location or days, or upload a different CV.</div>
+        <div className="liveResults__empty">No results yet. Try adjusting location or days, or upload a different CV.</div>
       )}
     </>
   );

@@ -54,6 +54,21 @@
   flex-wrap: wrap;
 }
 
+/* Live results toggle group (Applied / Save) aligned in a row */
+.job-card__togglesRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Saved list toggle column (align to end) */
+.job-card__togglesCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
 .job-card__appliedGroup {
   display: flex;
   align-items: center;
@@ -85,3 +100,5 @@
 .job-card__ratingLabel { display: flex; align-items: center; gap: 8px; }
 .job-card__ratingLabelText { width: 90px; color: var(--color-text); }
 .job-card__ratingValue { width: 36px; text-align: right; color: var(--color-text); }
+/* Width for the range input */
+.job-card__ratingRange { width: 160px; }

@@ -8,6 +8,7 @@
 
 /* Controls */
 .lf-label { color: #334155; font-weight: 500; }
+.lf-labelHint { font-size: 0.6rem; }
 .lf-input, .lf-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; box-sizing: border-box; }
 
 /* File bar */
@@ -44,6 +45,9 @@ select.lf-select::-ms-expand { display: none; }
     display: flex; 
     justify-content: center; 
 }
+
+/* Checkbox row alignment */
+.lf-checkboxRow { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
 
 .lf-btn-row {
   height: 44px;

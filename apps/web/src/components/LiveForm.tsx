@@ -43,7 +43,7 @@ export default function LiveForm(props: {
       {/* Left column: File input + Recent CVs */}
       <div className="lf-col">
         <div className="lf-field">
-          <label className="lf-label" htmlFor="lf-upload-cv">Upload CV <span style={{fontSize:"0.6rem"}}>(PDF/DOCX/TXT)</span></label>
+          <label className="lf-label" htmlFor="lf-upload-cv">Upload CV <span className="lf-labelHint">(PDF/DOCX/TXT)</span></label>
           <div className="lf-filebar">
             <button
               type="button"
@@ -86,7 +86,7 @@ export default function LiveForm(props: {
             placeholder="e.g. Melbourne VIC"
             disabled={noLocation}
           />
-          <label className="lf-label" htmlFor="lf-no-location" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+          <label className="lf-label lf-checkboxRow" htmlFor="lf-no-location">
             <input
               id="lf-no-location"
               type="checkbox"

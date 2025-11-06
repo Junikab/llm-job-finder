@@ -83,6 +83,10 @@
   margin-top: 8px;
 }
 
+/* Spacing helpers for edit sections */
+.editLabelSpaced { margin-top: 8px; }
+.editSectionSpacer { margin-top: 8px; }
+
 .editLabel {
   display: grid;
   gap: 4px;
