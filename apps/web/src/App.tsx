@@ -1,25 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { findJobs } from './api';
 import type { RankedJob, CVAnalysis } from '@shared/types';
-import SavedList from './components/SavedList';
-import AnalysisHeader from './components/AnalysisHeader';
-import LiveResults from './components/LiveResults';
+import LivePage from './pages/LivePage';
+import SavedPage from './pages/SavedPage';
 import { useSavedJobs } from './hooks/useSavedJobs';
 import TopNav from './components/TopNav';
-import { ProfileControls } from './components/ProfileControls';
-import SortSelect from './components/SortSelect';
 import Toast from './components/Toast';
-import HeroSection from './components/HeroSection';
-import { SavedHeader } from './components/SavedHeader';
-import { useTab } from './hooks/useTab';
 import { useToast } from './hooks/useToast';
 import { useAnalysisEditor } from './hooks/useAnalysisEditor';
 import { useActiveProfileMeta } from './hooks/useActiveProfileMeta';
 import AboutPage from './pages/AboutPage';
 
 export default function App() {
-  // Tabs and UI state
-  const { tab, setTab } = useTab();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RankedJob[]>([]);
@@ -30,37 +22,46 @@ export default function App() {
   const [llmPromptUserPreview, setLlmPromptUserPreview] = useState<string | undefined>();
   const [llmPromptSystem, setLlmPromptSystem] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
-  const [page, setPage] = useState<'home' | 'about'>(() => {
+  const [page, setPage] = useState<'about' | 'live' | 'saved'>(() => {
     if (typeof window === 'undefined') return 'about';
+    const p = window.location.pathname;
+    if (p.startsWith('/live')) return 'live';
+    if (p.startsWith('/saved')) return 'saved';
     return 'about';
   });
   // Toast
   const { toast, showToast } = useToast(1600);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const navigatePage = useCallback((nextPage: 'home' | 'about') => {
+  const navigatePage = useCallback((nextPage: 'about' | 'live' | 'saved') => {
     setPage(nextPage);
     if (typeof window === 'undefined') {
       return;
     }
-    const targetPath = nextPage === 'about' ? '/about' : '/';
+    const targetPath = nextPage === 'about' ? '/about' : (nextPage === 'live' ? '/live' : '/saved');
     if (window.location.pathname !== targetPath) {
       window.history.pushState({ page: nextPage }, '', targetPath);
     }
   }, []);
 
-  // Ensure first landing goes to About (and URL reflects it)
+  // Ensure first landing uses a known route and sync page state
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!window.location.pathname.startsWith('/about')) {
-      navigatePage('about');
-    }
+    const p = window.location.pathname;
+    if (p.startsWith('/about')) setPage('about');
+    else if (p.startsWith('/live')) setPage('live');
+    else if (p.startsWith('/saved')) setPage('saved');
+    else navigatePage('about');
   }, [navigatePage]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const handlePopState = () => {
-      setPage(window.location.pathname.startsWith('/about') ? 'about' : 'home');
+      const p = window.location.pathname;
+      if (p.startsWith('/about')) setPage('about');
+      else if (p.startsWith('/live')) setPage('live');
+      else if (p.startsWith('/saved')) setPage('saved');
+      else setPage('about');
     }; 
     window.addEventListener('popstate', handlePopState);
     return () => {
@@ -212,12 +213,10 @@ export default function App() {
     <div className="app-root">
       {/* Simple navbar */}
       <TopNav
-        tab={tab}
         currentPage={page}
-        onChangeTab={setTab}
         onNavigatePage={(nextPage) => {
           navigatePage(nextPage);
-          if (nextPage === 'home') {
+          if (nextPage === 'about' || nextPage === 'live') {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }
         }}
@@ -226,17 +225,18 @@ export default function App() {
       {page === 'about' ? (
         <AboutPage
           onNavigateHome={() => {
-            navigatePage('home');
-            setTab('live');
+            navigatePage('live');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         />
       ) : (
         <>
-          {/* Hero section (Live tab only) */}
-          {tab === 'live' && (
-            <HeroSection
-              resultsCount={results.length}
+          {page === 'live' && (
+            <LivePage
+              results={results}
+              loading={loading}
+              sortBy={sortBy}
+              onChangeSortBy={setSortBy}
               error={error}
               onSubmit={onSubmit}
               onFileChange={onFileChange}
@@ -245,68 +245,39 @@ export default function App() {
               onChangeLocation={setLocation}
               onChangeWorldwide={setWorldwide}
               canSubmit={canSubmit}
-              loading={loading}
               fileInputRef={fileInputRef}
+              draftAnalysis={draftAnalysis}
+              analysis={analysis}
+              isEditingAnalysis={isEditingAnalysis}
+              onApplyProfile={(a) => onChangeDraft({ ...a })}
+              onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
+              searchUrls={searchUrls}
+              llmGoodTraits={llmGoodTraits}
+              llmBadTraits={llmBadTraits}
+              llmPromptUserPreview={llmPromptUserPreview}
+              llmPromptSystem={llmPromptSystem}
+              onStartEdit={startEditAnalysis}
+              onCancelEdit={cancelEditAnalysis}
+              onChangeDraft={onChangeDraft}
+              onRescore={onRescore}
+              rescoring={rescoring}
+              activeProfileMeta={activeProfileMeta}
             />
           )}
 
-          {/* Main content container */}
-          <div className="content-container">
-            {tab === 'live' && (
-              <>
-                {/* Profiles: always visible above the analysis container */}
-                <div style={{ marginTop: 8, marginBottom: 8 }}>
-                  <ProfileControls
-                    draft={draftAnalysis || analysis}
-                    isEditing={isEditingAnalysis}
-                    onApplyProfile={(a) => onChangeDraft({ ...a })}
-                    onProfileLoadMeta={(meta) => setActiveProfileMeta(meta)}
-                  />
-                </div>
-
-                <AnalysisHeader
-                  analysis={analysis}
-                  searchUrls={searchUrls}
-                  llmGoodTraits={llmGoodTraits}
-                  llmBadTraits={llmBadTraits}
-                  llmPromptUserPreview={llmPromptUserPreview}
-                  llmPromptSystem={llmPromptSystem}
-                  draft={draftAnalysis}
-                  isEditing={isEditingAnalysis}
-                  onStartEdit={startEditAnalysis}
-                  onCancelEdit={cancelEditAnalysis}
-                  onChangeDraft={onChangeDraft}
-                  onRescore={onRescore}
-                  rescoring={rescoring}
-                  activeProfileMeta={activeProfileMeta}
-                />
-
-                {/* Sort By between CV summary and job cards */}
-                <SortSelect sortBy={sortBy} onChange={setSortBy} />
-
-                <LiveResults results={results} loading={loading} sortBy={sortBy} />
-              </>
-            )}
-
-            {tab === 'saved' && (
-              <div className="saved-section">
-                {/* Header for Saved page */}
-                <SavedHeader items={saved} />
-                {/* Fetch on enter Saved tab */}
-                <SavedList
-                  items={saved}
-                  loading={savedLoading}
-                  error={savedError}
-                  onRefresh={handleRefreshSaved}
-                  onRate={handleRate}
-                  onGoLive={() => {
-                    setTab('live');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          {page === 'saved' && (
+            <SavedPage
+              saved={saved}
+              loading={savedLoading}
+              error={savedError}
+              onRefresh={handleRefreshSaved}
+              onRate={handleRate}
+              onGoLive={() => {
+                navigatePage('live');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          )}
         </>
       )}
       <Toast message={toast} />

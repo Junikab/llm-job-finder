@@ -1,5 +1,6 @@
 import React from 'react';
 import '../styles/about-page.css';
+import '../styles/SavedPage.css';
 import type { SavedJob } from '@shared/types';
 import { useAppliedJobs } from '../hooks/useAppliedJobs';
 import { useSavedForLater } from '../hooks/useSavedForLater';
@@ -22,15 +23,15 @@ export function SavedHeader(props: SavedHeaderProps) {
   }
 
   return (
-      <div style={{ marginBottom: 16 }}>
-        <section className="aboutPage__hero" style={{ padding: '28px 24px', marginBottom:'50px'}}>
-          <h2 className="aboutPage__title" style={{ margin: 0 }}>Saved Jobs</h2>
-          <p className="aboutPage__subtitle" style={{ marginTop: 4 }}>Your saved jobs and applied status live here.</p>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', color: '#1f2937', fontWeight: 600 }}>
-            <span>Saved: {savedCount}</span>
-            <span>Applied: {appliedCount}</span>
-          </div>
-        </section>
-      </div>
+    <div className="savedHeader">
+      <section className="aboutPage__hero savedHeader__hero">
+        <h2 className="aboutPage__title">Saved Jobs</h2>
+        <p className="aboutPage__subtitle">Your saved jobs and applied status live here.</p>
+        <div className="savedHeader__counts">
+          <span>Saved: {savedCount}</span>
+          <span>Applied: {appliedCount}</span>
+        </div>
+      </section>
+    </div>
   );
 }

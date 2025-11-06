@@ -1,5 +1,6 @@
 import React from 'react';
 import '../styles/about-page.css';
+import '../styles/SavedPage.css';
 
 export type SavedFiltersProps = {
   sortBy: 'model' | 'user' | 'recency' | 'applied';
@@ -17,20 +18,19 @@ export type SavedFiltersProps = {
 export default function SavedFilters(props: SavedFiltersProps) {
   const { sortBy, onSortByChange, query, onQueryChange, appliedOnly, onAppliedOnlyChange, savedOnly, onSavedOnlyChange, onClear, onRefresh } = props;
   return (
-    <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <span style={{ color: '#333' }}>Search</span>
+    <div className="savedFilters">
+      <label className="savedFilters__label">
+        <span className="savedFilters__text">Search</span>
         <input
           type="text"
           value={query}
           onChange={e => onQueryChange(e.target.value)}
           placeholder="title, company, location"
-          className="editInput"
-          style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #ddd' }}
+          className="editInput savedFilters__input"
         />
       </label>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <span style={{ color: '#333' }}>Sort by</span>
+      <label className="savedFilters__label">
+        <span className="savedFilters__text">Sort by</span>
         <select value={sortBy} onChange={e => onSortByChange(e.target.value as any)}>
           <option value="model">Model score</option>
           <option value="user">Your score</option>
@@ -38,16 +38,15 @@ export default function SavedFilters(props: SavedFiltersProps) {
           <option value="applied">Applied date (newest)</option>
         </select>
       </label>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <label className="savedFilters__label">
         <input type="checkbox" checked={appliedOnly} onChange={e => onAppliedOnlyChange(e.target.checked)} />
-        <span style={{ color: '#333' }}>Applied only</span>
+        <span className="savedFilters__text">Applied only</span>
       </label>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <label className="savedFilters__label">
         <input type="checkbox" checked={savedOnly} onChange={e => onSavedOnlyChange(e.target.checked)} />
-        <span style={{ color: '#333' }}>Saved only</span>
+        <span className="savedFilters__text">Saved only</span>
       </label>
-      <button type="button" onClick={onClear}
-        style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
+      <button type="button" onClick={onClear} className="savedFilters__btnClear">Clear</button>
       <button type="button" onClick={onRefresh} className="aboutPage__cta">Refresh</button>
     </div>
   );

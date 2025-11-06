@@ -6,13 +6,11 @@ const NAV_LINKS: Array<{ key: 'live' | 'saved'; label: string }> = [
 ];
 
 type TopNavProps = {
-  tab: 'live' | 'saved';
-  currentPage: 'home' | 'about';
-  onChangeTab: (tab: 'live' | 'saved') => void;
-  onNavigatePage: (page: 'home' | 'about') => void;
+  currentPage: 'about' | 'live' | 'saved';
+  onNavigatePage: (page: 'about' | 'live' | 'saved') => void;
 };
 
-export default function TopNav({ tab, currentPage, onChangeTab, onNavigatePage }: TopNavProps) {
+export default function TopNav({ currentPage, onNavigatePage }: TopNavProps) {
   return (
     <div className="topnav">
       <div className="topnav__title">LLM Job Finder</div>
@@ -33,11 +31,10 @@ export default function TopNav({ tab, currentPage, onChangeTab, onNavigatePage }
             key={link.key}
             type="button"
             onClick={() => {
-              onNavigatePage('home');
-              onChangeTab(link.key);
+              onNavigatePage(link.key);
             }}
-            className={`topnav__btn ${currentPage === 'home' && tab === link.key ? 'topnav__btn--active' : ''}`}
-            aria-current={currentPage === 'home' && tab === link.key ? 'page' : undefined}
+            className={`topnav__btn ${currentPage === link.key ? 'topnav__btn--active' : ''}`}
+            aria-current={currentPage === link.key ? 'page' : undefined}
           >
             {link.label}
           </button>

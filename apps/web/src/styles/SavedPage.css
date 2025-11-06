@@ -1,0 +1,18 @@
+.savedHeader { margin-bottom: 16px;}
+.savedHeader__hero { padding: 28px 24px; margin-bottom: 50px; }
+.savedHeader__counts { display: flex; gap: 16px; justify-content: center; color: #1f2937; font-weight: 600; }
+
+.savedFilters { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.savedFilters__label { display: flex; gap: 6px; align-items: center; }
+.savedFilters__text { color: #333; }
+.savedFilters__input { padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; }
+.savedFilters__btnClear { padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #f7f7f7; }
+
+.savedPage__empty { text-align: center; padding: 40px 12px; color: #374151; }
+.savedPage__emptyTitle { margin: 0; font-size: 22px; font-weight: 700; }
+.savedPage__emptyText { margin: 10px 0 18px; color: #666; }
+
+.savedPage__list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+
+.savedPage__muted { color: #666; }
+.savedPage__error { color: #b00; }

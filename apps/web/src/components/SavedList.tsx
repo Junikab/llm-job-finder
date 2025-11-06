@@ -6,6 +6,7 @@ import { parseListedDays, formatAppliedDate } from '../utils/date';
 import SavedJobCard from './SavedJobCard';
 import SavedFilters from './SavedFilters';
 import '../styles/about-page.css';
+import '../styles/SavedPage.css';
 
 export default function SavedList(props: {
   items: SavedJob[];
@@ -126,32 +127,30 @@ export default function SavedList(props: {
 
   return (
     <div>
-      {loading && <div style={{ color: '#666' }}>Loading…</div>}
-      {!!error && <div style={{ color: '#b00' }}>{error}</div>}
+      {loading && <div className="savedPage__muted">Loading…</div>}
+      {!!error && <div className="savedPage__error">{error}</div>}
       {!loading && !error && !anyTracked ? (
-        <div style={{ textAlign: 'center', padding: '40px 12px', color: '#374151' }}>
-          <h3 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>No saved jobs yet.</h3>
-          <p style={{ margin: '10px 0 18px', color: '#666' }}>Save jobs from Live to track them here.</p>
+        <div className="savedPage__empty">
+          <h3 className="savedPage__emptyTitle">No saved jobs yet.</h3>
+          <p className="savedPage__emptyText">Save jobs from Live to track them here.</p>
           <button type="button" onClick={onGoLive} className="aboutPage__cta">Find jobs</button>
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-            <SavedFilters
-              sortBy={sortBy}
-              onSortByChange={(v) => setSortBy(v)}
-              query={query}
-              onQueryChange={setQuery}
-              appliedOnly={appliedOnly}
-              onAppliedOnlyChange={setAppliedOnly}
-              savedOnly={savedOnly}
-              onSavedOnlyChange={setSavedOnly}
-              onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setQuery(''); setMaxDays(''); setAppliedOnly(false); setSavedOnly(false); }}
-              onRefresh={onRefresh}
-            />
-          </div>
-          {!loading && !error && filtered.length === 0 && <div style={{ color: '#666' }}>No results.</div>}
-          <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+          <SavedFilters
+            sortBy={sortBy}
+            onSortByChange={(v) => setSortBy(v)}
+            query={query}
+            onQueryChange={setQuery}
+            appliedOnly={appliedOnly}
+            onAppliedOnlyChange={setAppliedOnly}
+            savedOnly={savedOnly}
+            onSavedOnlyChange={setSavedOnly}
+            onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setQuery(''); setMaxDays(''); setAppliedOnly(false); setSavedOnly(false); }}
+            onRefresh={onRefresh}
+          />
+          {!loading && !error && filtered.length === 0 && <div className="savedPage__muted">No results.</div>}
+          <ol className="savedPage__list">
             {filtered.map(j => {
               const k = j.key || j.id;
               const applied = isApplied(k);
