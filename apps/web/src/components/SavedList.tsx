@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { SavedJob } from '@shared/types';
 import { useTrackedJobs } from '../hooks/useTrackedJobs';
 import { includeTracked, matchesText, sortJobs } from '../lib/job-filters';
-import { parseListedDays, formatAppliedDate } from '../utils/date';
-import SavedJobCard from './SavedJobCard';
+import { parseListedDays } from '../utils/date';
+import { SavedJobList } from './SavedJobList';
 import SavedFilters from './SavedFilters';
 import { useSavedFilters } from '../hooks/useSavedFilters';
 import { SavedEmptyState } from './SavedEmptyState';
@@ -102,32 +102,18 @@ export default function SavedList(props: {
             onRefresh={onRefresh}
           />
           {!loading && !error && filtered.length === 0 && <div className="savedPage__muted">No results.</div>}
-          <ol className="savedPage__list">
-            {filtered.map(j => {
-              const k = j.key || j.id;
-              const applied = isApplied(k);
-              const appliedAtText = formatAppliedDate(getAppliedAt(k));
-              const saved = isSaved(k);
-              const savedAtText = formatAppliedDate(getSavedAt(k));
-              const draft = draftScores[j.id] ?? (j.userScore ?? 0);
-              return (
-                <SavedJobCard
-                  key={j.id}
-                  job={j}
-                  jobKey={k}
-                  applied={applied}
-                  appliedAtText={appliedAtText}
-                  onAppliedChange={(checked) => setApplied(k, checked)}
-                  saved={saved}
-                  savedAtText={savedAtText}
-                  onSavedChange={(checked) => setSaved(k, checked)}
-                  draftScore={draft}
-                  onDraftScoreChange={(value) => setDraftScores(prev => ({ ...prev, [j.id]: value }))}
-                  onCommitScore={() => commitScore(j.id)}
-                />
-              );
-            })}
-          </ol>
+          <SavedJobList
+            items={filtered}
+            isApplied={isApplied}
+            getAppliedAt={getAppliedAt}
+            setApplied={setApplied}
+            isSaved={isSaved}
+            getSavedAt={getSavedAt}
+            setSaved={setSaved}
+            draftScores={draftScores}
+            onDraftScoreChange={(jobId, value) => setDraftScores(prev => ({ ...prev, [jobId]: value }))}
+            onCommitScore={(jobId) => commitScore(jobId)}
+          />
         </>
       )}
     </div>

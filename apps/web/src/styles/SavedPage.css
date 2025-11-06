@@ -1,18 +1,74 @@
-.savedHeader { margin-bottom: 16px;}
-.savedHeader__hero { padding: 28px 24px; margin-bottom: 50px; }
-.savedHeader__counts { display: flex; gap: 16px; justify-content: center; color: #1f2937; font-weight: 600; }
+.savedPage{
+    max-width: 980px;
+  margin: 0 auto;
+  padding: 96px 16px 16px;
+  display: grid;
+  gap: 50px;
+}
+.savedHeader { 
+    margin-bottom: 16px;
+}
 
-.savedFilters { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
-.savedFilters__label { display: flex; gap: 6px; align-items: center; }
-.savedFilters__text { color: #333; }
-.savedFilters__input { padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; }
-.savedFilters__btnClear { padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #f7f7f7; }
+.savedHeader__hero { 
+    padding: 28px 24px; margin-bottom: 50px; 
+}
 
-.savedPage__empty { text-align: center; padding: 40px 12px; color: #374151; }
-.savedPage__emptyTitle { margin: 0; font-size: 22px; font-weight: 700; }
-.savedPage__emptyText { margin: 10px 0 18px; color: #666; }
+.savedHeader__counts { 
+    display: flex; gap: 16px; justify-content: center; color: #1f2937; font-weight: 600; 
+}
 
-.savedPage__list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.savedFilters { 
+    display: flex; gap: 28px; align-items: center; flex-wrap: wrap; 
+}
 
-.savedPage__muted { color: #666; }
-.savedPage__error { color: #b00; }
+.savedFilters__label { 
+    display: flex; gap: 6px; align-items: center; }
+
+.savedFilters__text { 
+    color: #333; }
+
+.savedFilters__input { 
+    padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; 
+}
+
+.savedFilters__btnClear { 
+    padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #f7f7f7; 
+}
+
+
+.savedPage__empty { 
+    text-align: center; padding: 40px 12px; color: #374151; 
+}
+
+.savedPage__emptyTitle { 
+    margin: 0; font-size: 22px; font-weight: 700; 
+}
+
+.savedPage__emptyText { 
+    margin: 10px 0 18px; color: #666; 
+}
+
+.savedPage__list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    display: grid; 
+    gap: 12px; 
+}
+
+.savedPage__muted { 
+    color: #666; 
+}
+
+.savedPage__error { 
+    color: #b00; 
+}
+
+@media (max-width: 720px) {
+  .savedPage {
+    margin-top: 100px;
+    gap: 40px;
+    padding: 0 16px;
+  }
+  .savedHeader__hero { padding: 32px 24px; }
+}
