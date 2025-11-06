@@ -108,5 +108,6 @@
 }
 
 .saved-section {
-  margin-top: 8px;
+  /* Offset absolute-positioned TopNav height so header doesn't overlap logo */
+  padding-top: 96px;
 }

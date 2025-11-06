@@ -20,27 +20,41 @@ export default function SavedList(props: {
   const [minScore, setMinScore] = useState<number>(0);
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
+  const [query, setQuery] = useState('');
   const [maxDays, setMaxDays] = useState<number | ''>('');
   const [sortBy, setSortBy] = useState<'model' | 'user' | 'recency' | 'applied'>('model');
   const [appliedOnly, setAppliedOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
   const filtered = useMemo<SavedJob[]>(() => {
     const comp = company.trim().toLowerCase();
     const loc = location.trim().toLowerCase();
+    const q = query.trim().toLowerCase();
     const arr = items.filter((j: SavedJob) => {
       // applied filter (mirror local toggle state)
       if (appliedOnly) {
         const k = j.key || j.id;
         if (!isApplied(k)) return false;
       }
+      // saved filter
+      if (savedOnly) {
+        const k = j.key || j.id;
+        if (!isSaved(k)) return false;
+      }
       // min model score
       if (typeof minScore === 'number' && minScore > 0) {
         if (j.modelScore == null || j.modelScore < minScore) return false;
       }
-      // company substring
+      // quick search across title/company/location (keeps existing company/location filters for now)
+      if (q) {
+        const t = (j.title || '').toLowerCase();
+        const c = (j.company || '').toLowerCase();
+        const jl = (j.location || '').toLowerCase();
+        if (!(t.includes(q) || c.includes(q) || jl.includes(q))) return false;
+      }
+      // legacy company/location substring filters (left in place; will be removed later)
       if (comp && !(j.company || '').toLowerCase().includes(comp)) return false;
-      // location substring
       if (loc) {
         const jl = (j.location || '').toLowerCase();
         if (!jl.includes(loc)) return false;
@@ -101,10 +115,14 @@ export default function SavedList(props: {
         <SavedFilters
           sortBy={sortBy}
           onSortByChange={(v) => setSortBy(v)}
+          query={query}
+          onQueryChange={setQuery}
           appliedOnly={appliedOnly}
           onAppliedOnlyChange={setAppliedOnly}
-          onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setMaxDays(''); }}
-          onReload={onRefresh}
+          savedOnly={savedOnly}
+          onSavedOnlyChange={setSavedOnly}
+          onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setQuery(''); setMaxDays(''); setAppliedOnly(false); setSavedOnly(false); }}
+          onRefresh={onRefresh}
         />
       </div>
       {loading && <div style={{ color: '#666' }}>Loading…</div>}

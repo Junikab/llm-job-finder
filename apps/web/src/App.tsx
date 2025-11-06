@@ -10,6 +10,7 @@ import { ProfileControls } from './components/ProfileControls';
 import SortSelect from './components/SortSelect';
 import Toast from './components/Toast';
 import HeroSection from './components/HeroSection';
+import { SavedHeader } from './components/SavedHeader';
 import { useTab } from './hooks/useTab';
 import { useToast } from './hooks/useToast';
 import { useAnalysisEditor } from './hooks/useAnalysisEditor';
@@ -223,20 +224,22 @@ export default function App() {
         />
       ) : (
         <>
-          {/* Hero section */}
-          <HeroSection
-            resultsCount={results.length}
-            error={error}
-            onSubmit={onSubmit}
-            onFileChange={onFileChange}
-            location={location}
-            worldwide={worldwide}
-            onChangeLocation={setLocation}
-            onChangeWorldwide={setWorldwide}
-            canSubmit={canSubmit}
-            loading={loading}
-            fileInputRef={fileInputRef}
-          />
+          {/* Hero section (Live tab only) */}
+          {tab === 'live' && (
+            <HeroSection
+              resultsCount={results.length}
+              error={error}
+              onSubmit={onSubmit}
+              onFileChange={onFileChange}
+              location={location}
+              worldwide={worldwide}
+              onChangeLocation={setLocation}
+              onChangeWorldwide={setWorldwide}
+              canSubmit={canSubmit}
+              loading={loading}
+              fileInputRef={fileInputRef}
+            />
+          )}
 
           {/* Main content container */}
           <div className="content-container">
@@ -278,6 +281,8 @@ export default function App() {
 
             {tab === 'saved' && (
               <div className="saved-section">
+                {/* Header for Saved page */}
+                <SavedHeader items={saved} />
                 {/* Fetch on enter Saved tab */}
                 <SavedList
                   items={saved}
