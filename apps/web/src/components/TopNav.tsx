@@ -17,6 +17,17 @@ export default function TopNav({ tab, currentPage, onChangeTab, onNavigatePage }
     <div className="topnav">
       <div className="topnav__title">LLM Job Finder</div>
       <div className="topnav__links">
+        <a
+          href="/about"
+          className={`topnav__btn topnav__link ${currentPage === 'about' ? 'topnav__btn--active' : ''}`}
+          aria-current={currentPage === 'about' ? 'page' : undefined}
+          onClick={event => {
+            event.preventDefault();
+            onNavigatePage('about');
+          }}
+        >
+          About
+        </a>
         {NAV_LINKS.map(link => (
           <button
             key={link.key}
@@ -31,17 +42,6 @@ export default function TopNav({ tab, currentPage, onChangeTab, onNavigatePage }
             {link.label}
           </button>
         ))}
-        <a
-          href="/about"
-          className={`topnav__btn topnav__link ${currentPage === 'about' ? 'topnav__btn--active' : ''}`}
-          aria-current={currentPage === 'about' ? 'page' : undefined}
-          onClick={event => {
-            event.preventDefault();
-            onNavigatePage('about');
-          }}
-        >
-          About
-        </a>
       </div>
     </div>
   );

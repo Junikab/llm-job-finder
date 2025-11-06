@@ -31,8 +31,8 @@ export default function App() {
   const [llmPromptSystem, setLlmPromptSystem] = useState<string | undefined>();
   const [sortBy, setSortBy] = useState<'model' | 'recency'>('model');
   const [page, setPage] = useState<'home' | 'about'>(() => {
-    if (typeof window === 'undefined') return 'home';
-    return window.location.pathname.startsWith('/about') ? 'about' : 'home';
+    if (typeof window === 'undefined') return 'about';
+    return 'about';
   });
   // Toast
   const { toast, showToast } = useToast(1600);
@@ -40,13 +40,22 @@ export default function App() {
 
   const navigatePage = useCallback((nextPage: 'home' | 'about') => {
     setPage(nextPage);
-    if (typeof window !== 'undefined') {
-      const targetPath = nextPage === 'about' ? '/about' : '/';
-      if (window.location.pathname !== targetPath) {
-        window.history.pushState({ page: nextPage }, '', targetPath);
-      }
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const targetPath = nextPage === 'about' ? '/about' : '/';
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ page: nextPage }, '', targetPath);
     }
   }, []);
+
+  // Ensure first landing goes to About (and URL reflects it)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!window.location.pathname.startsWith('/about')) {
+      navigatePage('about');
+    }
+  }, [navigatePage]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
