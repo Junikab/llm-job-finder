@@ -7,14 +7,18 @@ export type SavedJobCardProps = {
   applied: boolean;
   appliedAtText: string | null;
   onAppliedChange: (checked: boolean) => void;
+  saved: boolean;
+  savedAtText: string | null;
+  onSavedChange: (checked: boolean) => void;
   draftScore: number;
   onDraftScoreChange: (value: number) => void;
   onCommitScore: () => void;
 };
 
 export default function SavedJobCard(props: SavedJobCardProps) {
-  const { job, jobKey, applied, appliedAtText, onAppliedChange, draftScore, onDraftScoreChange, onCommitScore } = props;
+  const { job, jobKey, applied, appliedAtText, onAppliedChange, saved, savedAtText, onSavedChange, draftScore, onDraftScoreChange, onCommitScore } = props;
   const checkboxId = `applied-${jobKey}`;
+  const savedCheckboxId = `saved-${jobKey}`;
   const location = job.location || '';
   const reason = job.reason || '';
   const title = job.title || job.id;
@@ -31,16 +35,27 @@ export default function SavedJobCard(props: SavedJobCardProps) {
         <div className="job-card__score">Model score: {modelScoreText}/100</div>
       </div>
 
-      {/* Meta row: company · location · listedAgo + applied toggle */}
+      {/* Meta row: company · location · listedAgo + applied/saved toggles */}
       <div className="job-card__metaRow">
         <div>{job.company || 'Unknown'} · {location || '—'} · {job.listedAgo || '—'}</div>
-        <div className="job-card__appliedGroup">
-          <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => onAppliedChange(e.target.checked)} />
-          <div className="job-card__appliedText">
-            <label htmlFor={checkboxId} className="job-card__appliedLabel">Applied</label>
-            {applied && appliedAtText && (
-              <span className="job-card__appliedDate">{appliedAtText}</span>
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <div className="job-card__appliedGroup">
+            <input id={checkboxId} type="checkbox" checked={applied} onChange={(e) => onAppliedChange(e.target.checked)} />
+            <div className="job-card__appliedText">
+              <label htmlFor={checkboxId} className="job-card__appliedLabel">Applied</label>
+              {applied && appliedAtText && (
+                <span className="job-card__appliedDate">{appliedAtText}</span>
+              )}
+            </div>
+          </div>
+          <div className="job-card__savedGroup">
+            <input id={savedCheckboxId} type="checkbox" checked={saved} onChange={(e) => onSavedChange(e.target.checked)} />
+            <div className="job-card__savedText">
+              <label htmlFor={savedCheckboxId} className="job-card__savedLabel">Saved</label>
+              {saved && savedAtText && (
+                <span className="job-card__savedDate">{savedAtText}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { SavedJob } from '@shared/types';
 import { useAppliedJobs } from '../hooks/useAppliedJobs';
+import { useSavedForLater } from '../hooks/useSavedForLater';
 import { parseListedDays, formatAppliedDate } from '../utils/date';
 import SavedJobCard from './SavedJobCard';
 import SavedFilters from './SavedFilters';
@@ -15,6 +16,7 @@ export default function SavedList(props: {
   const { items, loading, error, onRefresh, onRate } = props;
   useEffect(() => { onRefresh(); /* fetch when mounted */ }, []);
   const { isApplied, setApplied, getAppliedAt } = useAppliedJobs();
+  const { isSaved, setSaved, getSavedAt } = useSavedForLater();
   const [minScore, setMinScore] = useState<number>(0);
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
@@ -113,6 +115,8 @@ export default function SavedList(props: {
           const k = j.key || j.id;
           const applied = isApplied(k);
           const appliedAtText = formatAppliedDate(getAppliedAt(k));
+          const saved = isSaved(k);
+          const savedAtText = formatAppliedDate(getSavedAt(k));
           const draft = draftScores[j.id] ?? (j.userScore ?? 0);
           return (
             <SavedJobCard
@@ -122,6 +126,9 @@ export default function SavedList(props: {
               applied={applied}
               appliedAtText={appliedAtText}
               onAppliedChange={(checked) => setApplied(k, checked)}
+              saved={saved}
+              savedAtText={savedAtText}
+              onSavedChange={(checked) => setSaved(k, checked)}
               draftScore={draft}
               onDraftScoreChange={(value) => setDraftScores(prev => ({ ...prev, [j.id]: value }))}
               onCommitScore={() => commitScore(j.id)}
