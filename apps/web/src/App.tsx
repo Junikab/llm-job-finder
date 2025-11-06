@@ -139,7 +139,7 @@ export default function App() {
     // Gentle validation for location/worldwide
     const loc = (location || '').trim();
     if (!worldwide && !loc) {
-      setError('Location or Worldwide is required');
+      setError('Location or "Any" is required');
       return;
     }
     if (loading) return;

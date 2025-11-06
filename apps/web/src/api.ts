@@ -66,6 +66,14 @@ export async function sendApplied(jobId: string, applied: boolean): Promise<void
   });
 }
 
+export async function sendSaved(jobId: string, saved: boolean): Promise<void> {
+  await fetchJson('/api/db/saved', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId, saved }),
+  });
+}
+
 export { API_BASE };
 
 // New: rescore previously fetched jobs using a user-edited analysis

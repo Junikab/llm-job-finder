@@ -15,6 +15,8 @@ export type SnapshotRecord = {
   scoredAt?: string;  // scored snapshot timestamp
   applied?: boolean | null;
   appliedAt?: string | null;
+  saved?: boolean | null;
+  savedAt?: string | null;
   userScore?: number | null;
   userScoredAt?: string | null;
   reqId?: string;

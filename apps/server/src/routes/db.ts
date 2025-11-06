@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import path from 'path';
-import { listJobs, updateFeedback, updateApplied } from '../services/job-db.js';
+import { listJobs, updateFeedback, updateApplied, updateSaved } from '../services/job-db.js';
 
 export default async function registerDbRoutes(app: FastifyInstance) {
   // Aggregate latest jobs from JSON snapshots
@@ -12,6 +12,29 @@ export default async function registerDbRoutes(app: FastifyInstance) {
     } catch (err) {
       (req as any).log?.error?.({ err }, 'db list failed');
       return reply.code(500).send({ error: 'Failed to list db jobs' });
+    }
+  });
+
+  // Mark/unmark a job as saved-for-later and update existing job JSON (raw and scored)
+  app.post('/api/db/saved', async (req, reply) => {
+    try {
+      const body = (req as any).body || {};
+      const jobId = body.jobId?.toString();
+      const savedRaw = body.saved;
+      const saved = typeof savedRaw === 'string' ? savedRaw === 'true' : !!savedRaw;
+      if (!jobId || typeof saved === 'undefined') {
+        return reply.code(400).send({ error: 'jobId and saved (boolean) are required' });
+      }
+      const dir = process.env.JOB_DB_DIR || path.resolve(process.cwd(), 'db');
+      const result = await updateSaved((req as any).id, dir, jobId, saved);
+      if (!result.updated) {
+        return reply.code(404).send({ error: 'job record not found to update' });
+      }
+      (req as any).log?.info?.({ jobId, saved, file: result.file }, 'saved-for-later updated');
+      return reply.send({ ok: true });
+    } catch (err) {
+      (req as any).log?.error?.({ err }, 'saved-for-later failed');
+      return reply.code(500).send({ error: 'Failed to store saved-for-later state' });
     }
   });
 

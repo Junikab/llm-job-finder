@@ -93,7 +93,7 @@ export default function LiveForm(props: {
               checked={noLocation}
               onChange={e => onChangeNoLocation(e.target.checked)}
             />
-            <span>Worldwide (no location filter)</span>
+            <span>Any (no location filter)</span>
           </label>
         </div>
       </div>

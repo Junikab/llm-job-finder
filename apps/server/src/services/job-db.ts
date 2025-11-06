@@ -2,7 +2,7 @@ import path from 'path';
 import type { JobItem, SavedJob } from '@shared/types';
 import { normalizeJobKey, safeFileName, shortHash } from '../lib/job-keys.js';
 import { readJsonFiles, pickLatest } from '../lib/utils.js';
-import { ensureDbDirs, selectUpdateTarget, writeRecord, groupByKey, type SnapshotRecord, type SnapshotJobData } from './job-db-utils.js';
+import { ensureDbDirs, selectUpdateTarget, writeRecord, groupByKey, collectMatchesByKey, type SnapshotRecord, type SnapshotJobData } from './job-db-utils.js';
 
 export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]) {
   const { raw: rawDir } = await ensureDbDirs(dir);
@@ -17,6 +17,7 @@ export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]
       modelScore: null as number | null,
       userScore: null as number | null,
       applied: null as boolean | null,
+      saved: null as boolean | null,
       reqId,
       'job-description': (job as any).description ?? null,
       data: job,
@@ -28,14 +29,41 @@ export async function saveRawJobs(reqId: string, dir: string, rawJobs: JobItem[]
 export async function updateApplied(reqId: string, dir: string, jobId: string, applied: boolean) {
   const dirs = await ensureDbDirs(dir);
   const key = normalizeJobKey(jobId);
-  const target = await selectUpdateTarget(dirs, key);
-  if (!target) return { updated: false };
+  const matches = await collectMatchesByKey(dirs, key);
+  let targets = matches;
+  if (!targets || targets.length === 0) {
+    const fallback = await selectUpdateTarget(dirs, key);
+    if (!fallback) return { updated: false };
+    targets = [fallback];
+  }
+  const ts = new Date().toISOString();
+  for (const m of targets) {
+    m.rec.appliedAt = ts;
+    m.rec.applied = !!applied;
+    m.rec.reqId = reqId;
+    await writeRecord(m.path, m.rec);
+  }
+  return { updated: true, file: targets[0]?.path };
+}
 
-  target.rec.appliedAt = new Date().toISOString();
-  target.rec.applied = !!applied;
-  target.rec.reqId = reqId;
-  await writeRecord(target.path, target.rec);
-  return { updated: true, file: target.path };
+export async function updateSaved(reqId: string, dir: string, jobId: string, saved: boolean) {
+  const dirs = await ensureDbDirs(dir);
+  const key = normalizeJobKey(jobId);
+  const matches = await collectMatchesByKey(dirs, key);
+  let targets = matches;
+  if (!targets || targets.length === 0) {
+    const fallback = await selectUpdateTarget(dirs, key);
+    if (!fallback) return { updated: false };
+    targets = [fallback];
+  }
+  const ts = new Date().toISOString();
+  for (const m of targets) {
+    (m.rec as any).savedAt = ts;
+    (m.rec as any).saved = !!saved;
+    m.rec.reqId = reqId;
+    await writeRecord(m.path, m.rec);
+  }
+  return { updated: true, file: targets[0]?.path };
 }
 
 export async function saveScoredJobs(
@@ -55,6 +83,7 @@ export async function saveScoredJobs(
       modelScore: (job as any).score ?? null,
       userScore: null as number | null,
       applied: null as boolean | null,
+      saved: null as boolean | null,
       reqId,
       'job-description': (job as any).description ?? null,
       reason: (job as any).reason ?? null,
@@ -76,6 +105,7 @@ export async function listJobs(dir: string): Promise<SavedJob[]> {
     const scored = pickLatest(arr.filter(r => r.scoredAt), 'scoredAt');
     const feedback = pickLatest(arr.filter(r => r.userScoredAt), 'userScoredAt');
     const appliedRec = pickLatest(arr.filter(r => r.appliedAt), 'appliedAt');
+    const savedRec = pickLatest(arr.filter(r => (r as any).savedAt), 'savedAt' as any);
     const base = scored || raw || arr[0];
     const data = (base?.data ?? null) as SnapshotJobData | null;
     merged.push({
@@ -85,6 +115,8 @@ export async function listJobs(dir: string): Promise<SavedJob[]> {
       userScore: feedback?.userScore ?? null,
       applied: (appliedRec && typeof appliedRec.applied !== 'undefined') ? !!appliedRec.applied : (base?.applied ?? null),
       appliedAt: appliedRec?.appliedAt ?? (base?.appliedAt ?? null),
+      saved: (savedRec && typeof (savedRec as any).saved !== 'undefined') ? !!(savedRec as any).saved : ((base as any)?.saved ?? null),
+      savedAt: (savedRec as any)?.savedAt ?? ((base as any)?.savedAt ?? null),
       title: data?.title || data?.jobTitle || null,
       url: data?.url || null,
       company: data?.company || null,

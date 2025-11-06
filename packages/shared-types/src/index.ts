@@ -41,6 +41,8 @@ export type SavedJob = {
   userScore: number | null;
   applied: boolean | null;
   appliedAt: string | null;
+  saved?: boolean | null;
+  savedAt?: string | null;
   reason: string | null;
   source: string;
   data?: any;
