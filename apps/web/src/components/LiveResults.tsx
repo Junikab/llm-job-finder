@@ -1,28 +1,15 @@
 import React, { useMemo } from 'react';
 import type { RankedJob } from '@shared/types';
-import { useAppliedJobs } from '../hooks/useAppliedJobs';
-import { useSavedForLater } from '../hooks/useSavedForLater';
-import { parseListedDays, formatAppliedDate } from '../utils/date';
+import { useTrackedJobs } from '../hooks/useTrackedJobs';
+import { sortJobs } from '../lib/job-filters';
+import { formatAppliedDate } from '../utils/date';
 
 export default function LiveResults({ results, loading, sortBy }: { results: RankedJob[]; loading: boolean; sortBy: 'model' | 'recency' }) {
-  const { isApplied, setApplied, getAppliedAt } = useAppliedJobs();
-  const { isSaved, setSaved, getSavedAt } = useSavedForLater();
+  const { isApplied, setApplied, getAppliedAt, isSaved, setSaved, getSavedAt } = useTrackedJobs();
 
   // Date utilities are shared in ../utils/date
 
-  const filtered = useMemo(() => {
-    const copy = [...results];
-    if (sortBy === 'model') {
-      copy.sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
-    } else if (sortBy === 'recency') {
-      const ad = (x: RankedJob) => {
-        const d = parseListedDays(x.listedAgo);
-        return d == null ? Infinity : d;
-      };
-      copy.sort((a, b) => ad(a) - ad(b));
-    }
-    return copy;
-  }, [results, sortBy]);
+  const filtered = useMemo(() => sortJobs(results, sortBy), [results, sortBy]);
 
   return (
     <>

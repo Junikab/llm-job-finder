@@ -2,8 +2,7 @@ import React from 'react';
 import '../styles/about-page.css';
 import '../styles/SavedPage.css';
 import type { SavedJob } from '@shared/types';
-import { useAppliedJobs } from '../hooks/useAppliedJobs';
-import { useSavedForLater } from '../hooks/useSavedForLater';
+import { useTrackedJobs } from '../hooks/useTrackedJobs';
 
 export type SavedHeaderProps = {
   items: SavedJob[];
@@ -11,8 +10,7 @@ export type SavedHeaderProps = {
 
 export function SavedHeader(props: SavedHeaderProps) {
   const { items } = props;
-  const { isApplied } = useAppliedJobs();
-  const { isSaved } = useSavedForLater();
+  const { isApplied, isSaved } = useTrackedJobs();
 
   let appliedCount = 0;
   let savedCount = 0;
