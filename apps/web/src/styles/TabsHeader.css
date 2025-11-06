@@ -1,0 +1,18 @@
+.tabsHeader {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.tabsHeader__btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #f7f7f7;
+  color: #111;
+}
+
+.tabsHeader__btn--active {
+  background: #111;
+  color: #fff;
+}

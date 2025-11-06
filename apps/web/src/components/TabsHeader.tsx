@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/TabsHeader.css';
 
 export default function TabsHeader(props: {
   tab: 'live' | 'saved';
@@ -6,18 +7,18 @@ export default function TabsHeader(props: {
 }) {
   const { tab, onChange } = props;
   return (
-    <div style={{ display: 'flex', gap: 8, margin: '8px 0 16px' }}>
+    <div className="tabsHeader">
       <button
         type="button"
         onClick={() => onChange('live')}
-        style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: tab === 'live' ? '#111' : '#f7f7f7', color: tab === 'live' ? '#fff' : '#111' }}
+        className={`tabsHeader__btn ${tab === 'live' ? 'tabsHeader__btn--active' : ''}`}
       >
         Live
       </button>
       <button
         type="button"
         onClick={() => onChange('saved')}
-        style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: tab === 'saved' ? '#111' : '#f7f7f7', color: tab === 'saved' ? '#fff' : '#111' }}
+        className={`tabsHeader__btn ${tab === 'saved' ? 'tabsHeader__btn--active' : ''}`}
       >
         Saved
       </button>
