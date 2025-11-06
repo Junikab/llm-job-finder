@@ -1,4 +1,5 @@
 import React from 'react';
+import '../styles/about-page.css';
 
 export type SavedFiltersProps = {
   sortBy: 'model' | 'user' | 'recency' | 'applied';
@@ -47,8 +48,7 @@ export default function SavedFilters(props: SavedFiltersProps) {
       </label>
       <button type="button" onClick={onClear}
         style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Clear</button>
-      <button type="button" onClick={onRefresh}
-        style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#f7f7f7' }}>Refresh</button>
+      <button type="button" onClick={onRefresh} className="aboutPage__cta">Refresh</button>
     </div>
   );
 }
