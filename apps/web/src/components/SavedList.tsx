@@ -5,6 +5,7 @@ import { useSavedForLater } from '../hooks/useSavedForLater';
 import { parseListedDays, formatAppliedDate } from '../utils/date';
 import SavedJobCard from './SavedJobCard';
 import SavedFilters from './SavedFilters';
+import '../styles/about-page.css';
 
 export default function SavedList(props: {
   items: SavedJob[];
@@ -12,8 +13,9 @@ export default function SavedList(props: {
   error: string | null;
   onRefresh: () => void | Promise<void>;
   onRate: (jobId: string, score: number) => void | Promise<void>;
+  onGoLive: () => void;
 }) {
-  const { items, loading, error, onRefresh, onRate } = props;
+  const { items, loading, error, onRefresh, onRate, onGoLive } = props;
   useEffect(() => { onRefresh(); /* fetch when mounted */ }, []);
   const { isApplied, setApplied, getAppliedAt } = useAppliedJobs();
   const { isSaved, setSaved, getSavedAt } = useSavedForLater();
@@ -27,20 +29,33 @@ export default function SavedList(props: {
   const [savedOnly, setSavedOnly] = useState(false);
   const [draftScores, setDraftScores] = useState<Record<string, number>>({});
 
+  const anyTracked = useMemo(() => {
+    return items.some((j) => {
+      const k = j.key || j.id;
+      return isApplied(k) || isSaved(k);
+    });
+  }, [items, isApplied, isSaved]);
+
   const filtered = useMemo<SavedJob[]>(() => {
     const comp = company.trim().toLowerCase();
     const loc = location.trim().toLowerCase();
     const q = query.trim().toLowerCase();
     const arr = items.filter((j: SavedJob) => {
-      // applied filter (mirror local toggle state)
-      if (appliedOnly) {
-        const k = j.key || j.id;
-        if (!isApplied(k)) return false;
-      }
-      // saved filter
-      if (savedOnly) {
-        const k = j.key || j.id;
-        if (!isSaved(k)) return false;
+      const k = j.key || j.id;
+      const applied = isApplied(k);
+      const saved = isSaved(k);
+      // filtering semantics:
+      // - both checked => OR (tracked: applied OR saved)
+      // - one checked => respective filter
+      // - none checked => default tracked view (applied OR saved)
+      if (appliedOnly && savedOnly) {
+        if (!(applied || saved)) return false;
+      } else if (appliedOnly) {
+        if (!applied) return false;
+      } else if (savedOnly) {
+        if (!saved) return false;
+      } else {
+        if (!(applied || saved)) return false;
       }
       // min model score
       if (typeof minScore === 'number' && minScore > 0) {
@@ -88,7 +103,7 @@ export default function SavedList(props: {
       copy.sort((a, b) => ts(b) - ts(a));
     }
     return copy;
-  }, [items, minScore, company, location, maxDays, sortBy, isApplied, getAppliedAt]);
+  }, [items, minScore, company, location, maxDays, sortBy, isApplied, isSaved, appliedOnly, savedOnly, query, getAppliedAt]);
 
   const commitScore = (jobId: string) => {
     const current = draftScores[jobId];
@@ -111,49 +126,59 @@ export default function SavedList(props: {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <SavedFilters
-          sortBy={sortBy}
-          onSortByChange={(v) => setSortBy(v)}
-          query={query}
-          onQueryChange={setQuery}
-          appliedOnly={appliedOnly}
-          onAppliedOnlyChange={setAppliedOnly}
-          savedOnly={savedOnly}
-          onSavedOnlyChange={setSavedOnly}
-          onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setQuery(''); setMaxDays(''); setAppliedOnly(false); setSavedOnly(false); }}
-          onRefresh={onRefresh}
-        />
-      </div>
       {loading && <div style={{ color: '#666' }}>Loading…</div>}
       {!!error && <div style={{ color: '#b00' }}>{error}</div>}
-      {!loading && !error && filtered.length === 0 && <div style={{ color: '#666' }}>No saved jobs yet.</div>}
-      <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
-        {filtered.map(j => {
-          const k = j.key || j.id;
-          const applied = isApplied(k);
-          const appliedAtText = formatAppliedDate(getAppliedAt(k));
-          const saved = isSaved(k);
-          const savedAtText = formatAppliedDate(getSavedAt(k));
-          const draft = draftScores[j.id] ?? (j.userScore ?? 0);
-          return (
-            <SavedJobCard
-              key={j.id}
-              job={j}
-              jobKey={k}
-              applied={applied}
-              appliedAtText={appliedAtText}
-              onAppliedChange={(checked) => setApplied(k, checked)}
-              saved={saved}
-              savedAtText={savedAtText}
-              onSavedChange={(checked) => setSaved(k, checked)}
-              draftScore={draft}
-              onDraftScoreChange={(value) => setDraftScores(prev => ({ ...prev, [j.id]: value }))}
-              onCommitScore={() => commitScore(j.id)}
+      {!loading && !error && !anyTracked ? (
+        <div style={{ textAlign: 'center', padding: '40px 12px', color: '#374151' }}>
+          <h3 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>No saved jobs yet.</h3>
+          <p style={{ margin: '10px 0 18px', color: '#666' }}>Save jobs from Live to track them here.</p>
+          <button type="button" onClick={onGoLive} className="aboutPage__cta">Find jobs</button>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <SavedFilters
+              sortBy={sortBy}
+              onSortByChange={(v) => setSortBy(v)}
+              query={query}
+              onQueryChange={setQuery}
+              appliedOnly={appliedOnly}
+              onAppliedOnlyChange={setAppliedOnly}
+              savedOnly={savedOnly}
+              onSavedOnlyChange={setSavedOnly}
+              onClear={() => { setMinScore(0); setCompany(''); setLocation(''); setQuery(''); setMaxDays(''); setAppliedOnly(false); setSavedOnly(false); }}
+              onRefresh={onRefresh}
             />
-          );
-        })}
-      </ol>
+          </div>
+          {!loading && !error && filtered.length === 0 && <div style={{ color: '#666' }}>No results.</div>}
+          <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+            {filtered.map(j => {
+              const k = j.key || j.id;
+              const applied = isApplied(k);
+              const appliedAtText = formatAppliedDate(getAppliedAt(k));
+              const saved = isSaved(k);
+              const savedAtText = formatAppliedDate(getSavedAt(k));
+              const draft = draftScores[j.id] ?? (j.userScore ?? 0);
+              return (
+                <SavedJobCard
+                  key={j.id}
+                  job={j}
+                  jobKey={k}
+                  applied={applied}
+                  appliedAtText={appliedAtText}
+                  onAppliedChange={(checked) => setApplied(k, checked)}
+                  saved={saved}
+                  savedAtText={savedAtText}
+                  onSavedChange={(checked) => setSaved(k, checked)}
+                  draftScore={draft}
+                  onDraftScoreChange={(value) => setDraftScores(prev => ({ ...prev, [j.id]: value }))}
+                  onCommitScore={() => commitScore(j.id)}
+                />
+              );
+            })}
+          </ol>
+        </>
+      )}
     </div>
   );
 }

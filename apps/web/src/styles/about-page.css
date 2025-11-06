@@ -1,9 +1,9 @@
 .aboutPage {
-  max-width: 1080px;
-  margin: 120px auto 80px;
-  padding: 0 24px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 96px 16px 16px;
   display: grid;
-  gap: 56px;
+  gap: 50px;
 }
 
 .aboutPage__hero {

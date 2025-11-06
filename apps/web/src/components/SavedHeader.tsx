@@ -13,7 +13,6 @@ export function SavedHeader(props: SavedHeaderProps) {
   const { isApplied } = useAppliedJobs();
   const { isSaved } = useSavedForLater();
 
-  const total = items.length;
   let appliedCount = 0;
   let savedCount = 0;
   for (const j of items) {
@@ -28,7 +27,6 @@ export function SavedHeader(props: SavedHeaderProps) {
           <h2 className="aboutPage__title" style={{ margin: 0 }}>Saved Jobs</h2>
           <p className="aboutPage__subtitle" style={{ marginTop: 4 }}>Your saved jobs and applied status live here.</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', color: '#1f2937', fontWeight: 600 }}>
-            <span>Total: {total}</span>
             <span>Saved: {savedCount}</span>
             <span>Applied: {appliedCount}</span>
           </div>

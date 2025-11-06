@@ -290,6 +290,10 @@ export default function App() {
                   error={savedError}
                   onRefresh={handleRefreshSaved}
                   onRate={handleRate}
+                  onGoLive={() => {
+                    setTab('live');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                 />
               </div>
             )}
