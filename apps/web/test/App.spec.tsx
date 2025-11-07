@@ -65,12 +65,19 @@ function upload(file: File) {
 describe('App', () => {
   it('renders form and submits to find jobs, showing results', async () => {
     render(<App />);
+    // Navigate to Live page (App initially lands on About)
+    const liveTab = screen.getAllByRole('button', { name: /^Live$/i })[0];
+    await userEvent.click(liveTab);
 
     const submit = screen.getByRole('button', { name: /Find Jobs/i });
     expect(submit).toBeDisabled();
 
     const file = new File(['hello'], 'cv.txt', { type: 'text/plain' });
     upload(file);
+
+    // Allow worldwide to bypass location requirement
+    const anyCheckbox = screen.getByLabelText(/Any \(no location filter\)/i);
+    await userEvent.click(anyCheckbox);
 
     expect(submit).toBeEnabled();
 
@@ -82,6 +89,8 @@ describe('App', () => {
   });
 
   it('loads Saved tab and fetches saved jobs', async () => {
+    // Saved page defaults to tracked view (applied OR saved). Seed one saved key so item is shown.
+    localStorage.setItem('savedForLater:v1', JSON.stringify(['example.com/a']));
     render(<App />);
     const savedTab = screen.getAllByRole('button', { name: /^Saved$/i })[0];
     await userEvent.click(savedTab);

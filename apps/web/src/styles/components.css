@@ -107,11 +107,6 @@
   margin: 0 auto;
 }
 
-.saved-section {
-  /* Offset absolute-positioned TopNav height so header doesn't overlap logo */
-  padding-top: 96px;
-}
-
 /* Toast */
 .toast {
   position: fixed;

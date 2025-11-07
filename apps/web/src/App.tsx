@@ -97,8 +97,12 @@ export default function App() {
   // Saved jobs via hook
   const { saved, savedLoading, savedError, refreshSaved: handleRefreshSaved, rate: handleRate } = useSavedJobs((msg) => showToast(msg));
 
-  // Allow submit with CV only (auto-generate URLs) or with manual URL
-  const canSubmit = useMemo(() => !!file && !loading, [file, loading]);
+  // Enable submit only when CV is selected AND (location provided OR worldwide), and not loading
+  const canSubmit = useMemo(() => {
+    const hasFile = !!file;
+    const hasLocation = worldwide || ((location || '').trim().length > 0);
+    return hasFile && hasLocation && !loading;
+  }, [file, location, worldwide, loading]);
 
   // Persist latest live results in localStorage so they survive page refreshes
   const LIVE_CACHE_KEY = 'liveResults:v1';
