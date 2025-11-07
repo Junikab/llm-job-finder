@@ -34,7 +34,7 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
       </ol>
 
       {!loading && filtered.length === 0 && (
-        <div className="liveResults__empty">No results yet. Try adjusting location or days, or upload a different CV.</div>
+        <div className="liveResults__empty">No results yet. Try adjusting location or upload a different CV.</div>
       )}
     </>
   );

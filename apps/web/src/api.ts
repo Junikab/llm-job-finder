@@ -32,45 +32,49 @@ export async function getProfile(id: string): Promise<Profile | null> {
 /**
  * Create or update a profile. If id is omitted, creates a new profile.
  */
-export async function saveProfile(payload: { id?: string; label?: string; analysis: CVAnalysis }): Promise<Profile> {
+export async function saveProfile(payload: { id?: string; label?: string; analysis: CVAnalysis }, signal?: AbortSignal): Promise<Profile> {
   const data = await fetchJson('/api/profiles', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal,
   });
   return data as Profile;
 }
 
-export async function findJobs(form: FormData): Promise<any> {
-  return fetchJson('/api/jobs/find', { method: 'POST', body: form });
+export async function findJobs(form: FormData, signal?: AbortSignal): Promise<any> {
+  return fetchJson('/api/jobs/find', { method: 'POST', body: form, signal });
 }
 
-export async function listSavedJobs(): Promise<any[]> {
-  const data = await fetchJson('/api/db/jobs');
+export async function listSavedJobs(signal?: AbortSignal): Promise<any[]> {
+  const data = await fetchJson('/api/db/jobs', { signal });
   return Array.isArray(data?.results) ? data.results : [];
 }
 
-export async function sendFeedback(jobId: string, userScore: number): Promise<void> {
+export async function sendFeedback(jobId: string, userScore: number, signal?: AbortSignal): Promise<void> {
   await fetchJson('/api/db/feedback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jobId, userScore }),
+    signal,
   });
 }
 
-export async function sendApplied(jobId: string, applied: boolean): Promise<void> {
+export async function sendApplied(jobId: string, applied: boolean, signal?: AbortSignal): Promise<void> {
   await fetchJson('/api/db/applied', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jobId, applied }),
+    signal,
   });
 }
 
-export async function sendSaved(jobId: string, saved: boolean): Promise<void> {
+export async function sendSaved(jobId: string, saved: boolean, signal?: AbortSignal): Promise<void> {
   await fetchJson('/api/db/saved', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jobId, saved }),
+    signal,
   });
 }
 
@@ -90,12 +94,13 @@ export type RescoreResponse = {
 export async function rescoreJobs(
   analysis: CVAnalysis,
   jobs: JobItem[],
-  opts?: { refreshSearch?: boolean; location?: string; days?: number; searchUrl?: string }
+  opts?: { refreshSearch?: boolean; location?: string; days?: number; searchUrl?: string; signal?: AbortSignal }
 ): Promise<RescoreResponse> {
   const data = await fetchJson('/api/jobs/rescore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ analysis, jobs, ...(opts || {}) }),
+    signal: opts?.signal,
   });
   return {
     results: Array.isArray(data?.results) ? (data.results as RankedJob[]) : [],

@@ -32,6 +32,7 @@ export default function App() {
   // Toast
   const { toast, showToast } = useToast(1600);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const findCtlRef = useRef<AbortController | null>(null);
 
   const navigatePage = useCallback((nextPage: 'about' | 'live' | 'saved') => {
     setPage(nextPage);
@@ -66,6 +67,10 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      if (findCtlRef.current) {
+        findCtlRef.current.abort();
+        findCtlRef.current = null;
+      }
     };
   }, []);
 
@@ -158,6 +163,10 @@ export default function App() {
       return;
     }
     if (loading) return;
+    // abort previous find if any
+    if (findCtlRef.current) findCtlRef.current.abort();
+    const ctl = new AbortController();
+    findCtlRef.current = ctl;
     setLoading(true);
     setError(null);
     setResults([]);
@@ -172,7 +181,7 @@ export default function App() {
       }
       form.append('cv', file);
 
-      const json = await findJobs(form);
+      const json = await findJobs(form, ctl.signal);
       setAnalysis(json.analysis);
       setSearchUrls(json.searchUrls || []);
       setLlmGoodTraits(json.llmGoodTraits || '');
@@ -186,6 +195,7 @@ export default function App() {
       console.error(err);
       setError(err?.message || 'Something went wrong. Please try again.');
     } finally {
+      if (findCtlRef.current === ctl) findCtlRef.current = null;
       setLoading(false);
     }
   }, [file, loading, location, worldwide]);
