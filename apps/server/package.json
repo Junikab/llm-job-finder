@@ -14,19 +14,20 @@
     "@fastify/cors": "^8.0.0",
     "@fastify/formbody": "^7.4.0",
     "@fastify/multipart": "^8.3.0",
+    "@shared/types": "file:../../packages/shared-types",
     "dotenv": "^16.4.5",
     "fastify": "^4.27.0",
     "mammoth": "^1.7.1",
     "p-limit": "^5.0.0",
     "pdf-parse": "^1.1.1",
     "scraper": "file:../../packages/scraper",
-    "@shared/types": "file:../../packages/shared-types"
+    "vite": "7.2.2"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "concurrently": "^8.2.2",
     "tsx": "^4.19.0",
     "typescript": "^5.5.4",
-    "vitest": "^1.6.0"
+    "vitest": "^4.0.8"
   }
 }
