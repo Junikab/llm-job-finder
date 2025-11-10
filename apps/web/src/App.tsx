@@ -158,7 +158,7 @@ export default function App() {
   // After a successful fetch (not during loading) persist the latest results snapshot
   useEffect(() => {
     if (!loading && results.length > 0) {
-      saveLiveCache({ analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem });
+      saveLiveCache({ analysis: analysis ?? undefined, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem });
     }
   }, [loading, analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem, saveLiveCache]);
 
