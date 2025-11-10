@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { findJobs } from './api';
-import type { RankedJob, CVAnalysis } from '@shared/types';
+import Toast from './components/Toast';
+import TopNav from './components/TopNav';
+import { useActiveProfileMeta } from './hooks/useActiveProfileMeta';
+import { useAnalysisEditor } from './hooks/useAnalysisEditor';
+import { useSavedJobs } from './hooks/useSavedJobs';
+import { useToast } from './hooks/useToast';
+import AboutPage from './pages/AboutPage';
 import LivePage from './pages/LivePage';
 import SavedPage from './pages/SavedPage';
-import { useSavedJobs } from './hooks/useSavedJobs';
-import TopNav from './components/TopNav';
-import Toast from './components/Toast';
-import { useToast } from './hooks/useToast';
-import { useAnalysisEditor } from './hooks/useAnalysisEditor';
-import { useActiveProfileMeta } from './hooks/useActiveProfileMeta';
-import AboutPage from './pages/AboutPage';
+
+import type { CVAnalysis, RankedJob } from '@shared/types';
 
 export default function App() {
   const [loading, setLoading] = useState(false);
@@ -111,22 +113,32 @@ export default function App() {
 
   // Persist latest live results in localStorage so they survive page refreshes
   const LIVE_CACHE_KEY = 'liveResults:v1';
-  function loadLiveCache(): any | null {
+  type LiveCache = {
+    analysis?: CVAnalysis;
+    searchUrls?: string[];
+    results: RankedJob[];
+    llmGoodTraits?: string;
+    llmBadTraits?: string;
+    llmPromptUserPreview?: string;
+    llmPromptSystem?: string;
+    savedAt?: string;
+  };
+  function loadLiveCache(): LiveCache | null {
     try {
       const raw = localStorage.getItem(LIVE_CACHE_KEY);
       if (!raw) return null;
       const obj = JSON.parse(raw);
       if (!obj || !Array.isArray(obj.results)) return null;
-      return obj;
+      return obj as LiveCache;
     } catch {
       return null;
     }
   }
-  function saveLiveCache(payload: any) {
+  const saveLiveCache = useCallback((payload: LiveCache) => {
     try {
       localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({ ...payload, savedAt: new Date().toISOString() }));
-    } catch {}
-  }
+    } catch (_e) { void 0; }
+  }, []);
 
   // On first load, restore last successful results if present
   useEffect(() => {
@@ -148,7 +160,7 @@ export default function App() {
     if (!loading && results.length > 0) {
       saveLiveCache({ analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem });
     }
-  }, [loading, analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem]);
+  }, [loading, analysis, searchUrls, results, llmGoodTraits, llmBadTraits, llmPromptUserPreview, llmPromptSystem, saveLiveCache]);
 
   const onSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,14 +203,14 @@ export default function App() {
       setResults(json.results || []);
       // Reset edit state after a fresh search
       cancelEditAnalysis();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       if (findCtlRef.current === ctl) findCtlRef.current = null;
       setLoading(false);
     }
-  }, [file, loading, location, worldwide]);
+  }, [file, loading, location, worldwide, cancelEditAnalysis, showToast]);
 
   // (Rescore handler provided by the hook; we just adapt it to our state setters)
   const onRescore = useCallback(() => {

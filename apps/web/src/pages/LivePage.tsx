@@ -1,11 +1,13 @@
 import React from 'react';
+
 import '../styles/LivePage.css';
-import type { CVAnalysis, RankedJob } from '@shared/types';
-import HeroSection from '../components/HeroSection';
-import { ProfileControls } from '../components/ProfileControls';
 import AnalysisHeader from '../components/AnalysisHeader';
-import SortSelect from '../components/SortSelect';
+import HeroSection from '../components/HeroSection';
 import LiveResults from '../components/LiveResults';
+import { ProfileControls } from '../components/ProfileControls';
+import SortSelect from '../components/SortSelect';
+
+import type { CVAnalysis, RankedJob } from '@shared/types';
 
 export type LivePageProps = {
   results: RankedJob[];

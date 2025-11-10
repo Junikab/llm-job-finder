@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { sendSaved } from '../api';
 
 const STORAGE_KEY = 'savedForLater:v1';
@@ -21,7 +22,7 @@ function saveSet(s: Set<string>) {
   try {
     const arr = Array.from(s.values());
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-  } catch {}
+  } catch (_e) { void 0; }
 }
 
 function loadDates(): Record<string, string> {
@@ -45,7 +46,7 @@ function loadDates(): Record<string, string> {
 function saveDates(rec: Record<string, string>) {
   try {
     localStorage.setItem(STORAGE_KEY_AT, JSON.stringify(rec));
-  } catch {}
+  } catch (_e) { void 0; }
 }
 
 export function useSavedForLater() {

@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react';
-import type { CVAnalysis, RankedJob, JobItem } from '@shared/types';
+
 import { rescoreJobs } from '../api';
 import { mapRankedToJobItem } from '../utils/jobMapping';
+
+import type { CVAnalysis, RankedJob, JobItem } from '@shared/types';
 
 export function useAnalysisEditor({ analysis, onToast }: { analysis: CVAnalysis | null; onToast?: (msg: string) => void }) {
   const [draft, setDraft] = useState<CVAnalysis | null>(null);

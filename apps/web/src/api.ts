@@ -1,6 +1,19 @@
 // Simple API client wrappers to make App.tsx easier to test
+import {
+  ZFindJobsResponse,
+  ZSavedJobsResponse,
+  ZRescoreResponse,
+  ZProfile,
+  ZProfilesResponse,
+  type FindJobsResponse,
+  type RescoreResponseZ,
+} from './api-schemas';
 
-const API_BASE = (((import.meta as any).env?.VITE_API_BASE_URL) ?? '').trim();
+import type { CVAnalysis, JobItem, Profile, RankedJob, SavedJob } from '@shared/types';
+
+type FindJobsResponseUI = Omit<FindJobsResponse, 'results'> & { results: RankedJob[] };
+
+const API_BASE = (((import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL) ?? '').trim();
 
 async function fetchJson(input: string, init?: RequestInit) {
   const res = await fetch(`${API_BASE}${input}`, init);
@@ -14,7 +27,9 @@ async function fetchJson(input: string, init?: RequestInit) {
  */
 export async function listProfiles(): Promise<Profile[]> {
   const data = await fetchJson('/api/profiles');
-  return Array.isArray(data?.results) ? (data.results as Profile[]) : [];
+  const parsed = ZProfilesResponse.safeParse(data);
+  if (!parsed.success) return [];
+  return parsed.data.results as Profile[];
 }
 
 /**
@@ -23,7 +38,8 @@ export async function listProfiles(): Promise<Profile[]> {
 export async function getProfile(id: string): Promise<Profile | null> {
   try {
     const data = await fetchJson(`/api/profiles/${encodeURIComponent(id)}`);
-    return (data as Profile) || null;
+    const parsed = ZProfile.safeParse(data);
+    return parsed.success ? (parsed.data as Profile) : null;
   } catch {
     return null;
   }
@@ -39,16 +55,24 @@ export async function saveProfile(payload: { id?: string; label?: string; analys
     body: JSON.stringify(payload),
     signal,
   });
-  return data as Profile;
+  const parsed = ZProfile.safeParse(data);
+  if (!parsed.success) throw new Error('Invalid profile response');
+  return parsed.data as Profile;
 }
 
-export async function findJobs(form: FormData, signal?: AbortSignal): Promise<any> {
-  return fetchJson('/api/jobs/find', { method: 'POST', body: form, signal });
+export async function findJobs(form: FormData, signal?: AbortSignal): Promise<FindJobsResponseUI> {
+  const data = await fetchJson('/api/jobs/find', { method: 'POST', body: form, signal });
+  const parsed = ZFindJobsResponse.safeParse(data);
+  if (!parsed.success) throw new Error('Invalid findJobs response');
+  const r = parsed.data;
+  return { ...r, results: r.results.map(j => ({ ...j, key: j.key ?? j.id })) };
 }
 
-export async function listSavedJobs(signal?: AbortSignal): Promise<any[]> {
+export async function listSavedJobs(signal?: AbortSignal): Promise<SavedJob[]> {
   const data = await fetchJson('/api/db/jobs', { signal });
-  return Array.isArray(data?.results) ? data.results : [];
+  const parsed = ZSavedJobsResponse.safeParse(data);
+  if (!parsed.success) return [];
+  return parsed.data.results as SavedJob[];
 }
 
 export async function sendFeedback(jobId: string, userScore: number, signal?: AbortSignal): Promise<void> {
@@ -81,15 +105,7 @@ export async function sendSaved(jobId: string, saved: boolean, signal?: AbortSig
 export { API_BASE };
 
 // New: rescore previously fetched jobs using a user-edited analysis
-import type { CVAnalysis, JobItem, RankedJob, Profile } from '@shared/types';
-
-export type RescoreResponse = {
-  results: RankedJob[];
-  total: number;
-  llmPromptUserPreview?: string;
-  llmPromptSystem?: string;
-  searchUrls?: string[];
-};
+export type RescoreResponse = Omit<RescoreResponseZ, 'results'> & { results: RankedJob[] };
 
 export async function rescoreJobs(
   analysis: CVAnalysis,
@@ -102,11 +118,8 @@ export async function rescoreJobs(
     body: JSON.stringify({ analysis, jobs, ...(opts || {}) }),
     signal: opts?.signal,
   });
-  return {
-    results: Array.isArray(data?.results) ? (data.results as RankedJob[]) : [],
-    total: typeof data?.total === 'number' ? data.total : Number(data?.total || 0) || 0,
-    llmPromptUserPreview: typeof data?.llmPromptUserPreview === 'string' ? data.llmPromptUserPreview : undefined,
-    llmPromptSystem: typeof data?.llmPromptSystem === 'string' ? data.llmPromptSystem : undefined,
-    searchUrls: Array.isArray(data?.searchUrls) ? (data.searchUrls as string[]) : undefined,
-  };
+  const parsed = ZRescoreResponse.safeParse(data);
+  if (!parsed.success) throw new Error('Invalid rescoreJobs response');
+  const r = parsed.data;
+  return { ...r, results: r.results.map(j => ({ ...j, key: j.key ?? j.id })) };
 }

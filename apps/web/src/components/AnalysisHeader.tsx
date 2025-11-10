@@ -1,9 +1,13 @@
 import React from 'react';
+
 import '../styles/AnalysisHeader.css';
-import type { CVAnalysis } from '@shared/types';
-import { AnalysisDetails } from './AnalysisDetails';
-import { AnalysisActions } from './AnalysisActions';
 import { useCandidatePreview } from '../hooks/useCandidatePreview';
+
+import { AnalysisActions } from './AnalysisActions';
+import { AnalysisDetails } from './AnalysisDetails';
+
+import type { CVAnalysis } from '@shared/types';
+
 
 /**
  * AnalysisHeader
@@ -17,7 +21,7 @@ export default function AnalysisHeader({
   llmGoodTraits,
   llmBadTraits,
   llmPromptUserPreview,
-  llmPromptSystem,
+  llmPromptSystem: _llmPromptSystem,
   draft,
   isEditing,
   onStartEdit,
@@ -42,10 +46,13 @@ export default function AnalysisHeader({
   rescoring: boolean;
   activeProfileMeta?: { id: string; label: string | null } | null;
 }) {
+  // Always call hooks unconditionally to satisfy React rules-of-hooks
+  const safeAnalysis: CVAnalysis = analysis ?? { summary: '', titles: [], topSkills: [] };
+  const candidatePreview = useCandidatePreview({ analysis: safeAnalysis, draft, userPreview: llmPromptUserPreview, llmGoodTraits, llmBadTraits });
+
   if (!analysis) return null;
 
   const d = draft || analysis;
-  const candidatePreview = useCandidatePreview({ analysis, draft, userPreview: llmPromptUserPreview, llmGoodTraits, llmBadTraits });
  
 
   return (

@@ -1,8 +1,10 @@
 import React from 'react';
+
 import '../styles/about-page.css';
 import '../styles/SavedPage.css';
-import type { SavedJob } from '@shared/types';
 import { useTrackedJobs } from '../hooks/useTrackedJobs';
+
+import type { SavedJob } from '@shared/types';
 
 export type SavedHeaderProps = {
   items: SavedJob[];

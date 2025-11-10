@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { SavedJob } from '@shared/types';
+
+import { useSavedFilters } from '../hooks/useSavedFilters';
 import { useTrackedJobs } from '../hooks/useTrackedJobs';
 import { includeTracked, matchesText, sortJobs } from '../lib/job-filters';
 import { parseListedDays } from '../utils/date';
-import { SavedJobList } from './SavedJobList';
-import SavedFilters from './SavedFilters';
-import { useSavedFilters } from '../hooks/useSavedFilters';
+
 import { SavedEmptyState } from './SavedEmptyState';
+import SavedFilters from './SavedFilters';
+import { SavedJobList } from './SavedJobList';
+
+import type { SavedJob } from '@shared/types';
 import '../styles/about-page.css';
 import '../styles/SavedPage.css';
 
@@ -19,7 +22,7 @@ export default function SavedList(props: {
   onGoLive: () => void;
 }) {
   const { items, loading, error, onRefresh, onRate, onGoLive } = props;
-  useEffect(() => { onRefresh(); /* fetch when mounted */ }, []);
+  useEffect(() => { onRefresh(); /* fetch when mounted */ }, [onRefresh]);
   const { isApplied, setApplied, getAppliedAt, isSaved, setSaved, getSavedAt } = useTrackedJobs();
   const [minScore, setMinScore] = useState<number>(0);
   const [company, setCompany] = useState('');

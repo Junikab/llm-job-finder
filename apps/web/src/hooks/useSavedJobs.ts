@@ -1,6 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
+
 import { listSavedJobs, sendFeedback } from '../api';
+
 import type { SavedJob } from '@shared/types';
+
+function isAbortError(e: unknown): boolean {
+  return typeof e === 'object' && e !== null && 'name' in e && (e as { name?: unknown }).name === 'AbortError';
+}
 
 export function useSavedJobs(onToast?: (msg: string) => void) {
   const [saved, setSaved] = useState<SavedJob[]>([]);
@@ -18,9 +24,9 @@ export function useSavedJobs(onToast?: (msg: string) => void) {
     try {
       const results = await listSavedJobs(ctl.signal);
       setSaved(results);
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        setSavedError(err?.message || 'Failed to load saved jobs');
+    } catch (err: unknown) {
+      if (!isAbortError(err)) {
+        setSavedError(err instanceof Error ? err.message : 'Failed to load saved jobs');
       }
     } finally {
       if (currentFetch.current === ctl) currentFetch.current = null;
@@ -47,7 +53,7 @@ export function useSavedJobs(onToast?: (msg: string) => void) {
       } finally {
         setSavedLoading(false);
       }
-    } catch (err: any) {
+    } catch (_err: unknown) {
       onToast?.('Save failed');
       // revert
       setSaved(prev => prev.map(j => j.id === jobId ? { ...j, userScore: prevScore } : j));

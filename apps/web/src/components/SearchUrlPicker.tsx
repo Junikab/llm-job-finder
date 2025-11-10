@@ -10,7 +10,7 @@ export default function SearchUrlPicker(props: {
   fullWidth?: boolean;
   setCustomMode?: (v: boolean) => void;
 }) {
-  const { selectValue, history, customMode, searchUrl, onSelectChange, onChangeCustom, setCustomMode } = props;
+  const { selectValue: _selectValue, history: _history, customMode, searchUrl, onSelectChange: _onSelectChange, onChangeCustom, setCustomMode } = props;
   return (
     <>
       <div className="lf-field">

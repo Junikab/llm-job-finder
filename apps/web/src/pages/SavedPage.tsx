@@ -1,7 +1,9 @@
 import React from 'react';
-import type { SavedJob } from '@shared/types';
+
 import { SavedHeader } from '../components/SavedHeader';
 import SavedList from '../components/SavedList';
+
+import type { SavedJob } from '@shared/types';
 
 export type SavedPageProps = {
   saved: SavedJob[];

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+
 import type { CVAnalysis } from '@shared/types';
 
 export type CandidatePreviewParams = {
@@ -15,7 +16,7 @@ export type CandidatePreviewParams = {
  * extract the <candidate>...</candidate> block. Otherwise we reconstruct it
  * from the current draft (or analysis fallback), including optional traits.
  */
-export function useCandidatePreview({ analysis, draft, userPreview, llmGoodTraits, llmBadTraits }: CandidatePreviewParams): string {
+export function useCandidatePreview({ analysis, draft, userPreview: _userPreview, llmGoodTraits, llmBadTraits }: CandidatePreviewParams): string {
   return useMemo(() => {
     const d: CVAnalysis = (draft || analysis);
 

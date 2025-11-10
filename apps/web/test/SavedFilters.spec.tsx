@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import SavedList from '../src/components/SavedList';
+
 import type { SavedJob } from '@shared/types';
 
 function makeJob(id: string, key: string, title: string): SavedJob {

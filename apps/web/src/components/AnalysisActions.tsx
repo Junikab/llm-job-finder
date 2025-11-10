@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { CVAnalysis } from '@shared/types';
 import '../styles/AnalysisActions.css';
 
@@ -24,11 +25,11 @@ export type AnalysisActionsProps = {
 export const AnalysisActions = React.memo(function AnalysisActionsComponent({
   isEditing,
   rescoring,
-  draft,
+  draft: _draft,
   onStartEdit,
   onCancelEdit,
   onRescore,
-  onChangeDraft,
+  onChangeDraft: _onChangeDraft,
 }: AnalysisActionsProps) {
   return (
     <div className="analysisActions analysisActions--right">

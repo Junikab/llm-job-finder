@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { sendApplied } from '../api';
 
 const STORAGE_KEY = 'appliedJobs:v1';
@@ -21,7 +22,7 @@ function saveToStorage(set: Set<string>) {
   try {
     const arr = Array.from(set.values());
     localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-  } catch {}
+  } catch (_e) { void 0; }
 }
 
 function loadDatesFromStorage(): Record<string, string> {
@@ -45,7 +46,7 @@ function loadDatesFromStorage(): Record<string, string> {
 function saveDatesToStorage(rec: Record<string, string>) {
   try {
     localStorage.setItem(STORAGE_KEY_AT, JSON.stringify(rec));
-  } catch {}
+  } catch (_e) { void 0; }
 }
 
 export function useAppliedJobs() {
@@ -93,7 +94,7 @@ export function useAppliedJobs() {
       const { [id]: _omit, ...rest } = prev;
       return rest;
     });
-  }, []);
+  }, [appliedSet]);
 
   // Persist on change
   useEffect(() => {

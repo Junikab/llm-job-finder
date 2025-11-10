@@ -7,7 +7,12 @@
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview --port 5173 --open",
     "test": "vitest run --reporter=dot",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint --ext .ts,.tsx src test",
+    "lint:fix": "eslint --ext .ts,.tsx src test --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@shared/types": "file:../../packages/shared-types",
@@ -16,11 +21,19 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "@typescript-eslint/parser": "^6.20.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "prettier": "^3.2.5",
     "jsdom": "^24.1.0",
     "typescript": "^5.5.4",
     "vite": "^7.2.2",

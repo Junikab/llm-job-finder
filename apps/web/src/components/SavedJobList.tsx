@@ -1,7 +1,10 @@
 import React from 'react';
-import type { SavedJob } from '@shared/types';
+
 import { formatAppliedDate } from '../utils/date';
+
 import SavedJobCard from './SavedJobCard';
+
+import type { SavedJob } from '@shared/types';
 
 export type SavedJobListProps = {
   items: SavedJob[];

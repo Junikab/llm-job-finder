@@ -30,7 +30,7 @@ function load(): SavedFiltersState {
 function save(state: SavedFiltersState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+  } catch (_e) { void 0; }
 }
 
 export function useSavedFilters() {

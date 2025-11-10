@@ -1,6 +1,8 @@
 import React from 'react';
-import type { CVAnalysis, Profile } from '@shared/types';
+
 import { listProfiles, saveProfile } from '../api';
+
+import type { CVAnalysis, Profile } from '@shared/types';
 import '../styles/ProfileControls.css';
 
 export type ProfileControlsProps = {
@@ -15,7 +17,7 @@ export type ProfileControlsProps = {
  * - Save profile persists the current analysis with an optional label
  * - Load profile applies a saved analysis to the editor draft
  */
-export function ProfileControls({ draft, isEditing, onApplyProfile, onProfileLoadMeta }: ProfileControlsProps) {
+export function ProfileControls({ draft, isEditing: _isEditing, onApplyProfile, onProfileLoadMeta }: ProfileControlsProps) {
   const [profiles, setProfiles] = React.useState<Profile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = React.useState('');
   const [profileLabel, setProfileLabel] = React.useState('');

@@ -1,8 +1,11 @@
 import React, { useMemo } from 'react';
-import type { RankedJob } from '@shared/types';
+
 import { useTrackedJobs } from '../hooks/useTrackedJobs';
 import { sortJobs } from '../lib/job-filters';
+
 import { LiveJobCard } from './LiveJobCard';
+
+import type { RankedJob } from '@shared/types';
 
 export default function LiveResults({ results, loading, sortBy }: { results: RankedJob[]; loading: boolean; sortBy: 'model' | 'recency' }) {
   const { isApplied, setApplied, getAppliedAt, isSaved, setSaved, getSavedAt } = useTrackedJobs();
@@ -17,7 +20,7 @@ export default function LiveResults({ results, loading, sortBy }: { results: Ran
 
       <ol className="job-list">
         {filtered.map(r => {
-          const k = (r as any).key ?? r.id;
+          const k = r.key || r.id;
           return (
             <LiveJobCard
               key={k}

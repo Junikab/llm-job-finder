@@ -1,6 +1,8 @@
 import React from 'react';
-import type { RankedJob } from '@shared/types';
+
 import { formatAppliedDate } from '../utils/date';
+
+import type { RankedJob } from '@shared/types';
 
 export type LiveJobCardProps = {
   job: RankedJob;
@@ -15,7 +17,7 @@ export type LiveJobCardProps = {
 
 export function LiveJobCard(props: LiveJobCardProps) {
   const { job, jobKey, isApplied, getAppliedAt, setApplied, isSaved, getSavedAt, setSaved } = props;
-  const k = jobKey ?? ((job as any).key ?? job.id);
+  const k = jobKey ?? (job.key || job.id);
   const applied = isApplied(k);
   const appliedAtText = formatAppliedDate(getAppliedAt(k));
   const checkboxId = `applied-${k}`;

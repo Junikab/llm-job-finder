@@ -18,7 +18,7 @@ export function useActiveProfileMeta(storageKey: string = 'activeProfileMeta:v1'
       if (meta && typeof meta.id === 'string') {
         _setActiveProfileMeta({ id: meta.id, label: meta.label ?? null });
       }
-    } catch {}
+    } catch (_e) { void 0; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -26,7 +26,7 @@ export function useActiveProfileMeta(storageKey: string = 'activeProfileMeta:v1'
     _setActiveProfileMeta(meta);
     try {
       localStorage.setItem(storageKey, JSON.stringify(meta));
-    } catch {}
+    } catch (_e) { void 0; }
   };
 
   return { activeProfileMeta, setActiveProfileMeta } as const;

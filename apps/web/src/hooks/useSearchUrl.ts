@@ -7,17 +7,17 @@ export function useSearchUrl() {
     try {
       const raw = localStorage.getItem('searchUrlHistory');
       const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr.filter((x: any) => typeof x === 'string').slice(0, 5) : [];
+      return Array.isArray(arr) ? arr.filter((x: unknown): x is string => typeof x === 'string').slice(0, 5) : [];
     } catch { return []; }
   });
   const [customMode, setCustomMode] = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem('searchUrl', searchUrl); } catch {}
+    try { localStorage.setItem('searchUrl', searchUrl); } catch (_e) { void 0; }
   }, [searchUrl]);
 
   useEffect(() => {
-    try { localStorage.setItem('searchUrlHistory', JSON.stringify(history.slice(0, 5))); } catch {}
+    try { localStorage.setItem('searchUrlHistory', JSON.stringify(history.slice(0, 5))); } catch (_e) { void 0; }
   }, [history]);
 
   const updateHistory = useCallback((url: string) => {

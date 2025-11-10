@@ -14,6 +14,39 @@ A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads,
 - `packages/shared-types/` — Shared type definitions (`CVAnalysis`, `JobItem`, `RankedJob`, `SavedJob`) consumed by server and web
 - `PLAN.md` / `DESIGN.md` — project docs
 
+## Web app architecture (refactor)
+
+- **Pages & routing**
+  - Page-based routes: `/about`, `/live`, `/saved`.
+  - Lightweight history routing in `apps/web/src/App.tsx` (pushState + popstate).
+  - `TopNav` triggers `navigatePage('about'|'live'|'saved')`. No `useTab` remains.
+
+- **Components & styles**
+  - One React component per file under `src/components` and `src/pages`.
+  - No inline styles; CSS lives under `src/styles/`.
+  - Examples: `LiveResults`, `SavedList`, `SavedHeader`, `LiveJobCard`, `SavedJobCard`.
+
+- **Hooks & utilities**
+  - Tracked state: `useTrackedJobs()` unifies applied/saved with timestamps (localStorage-backed).
+  - Saved filters: `useSavedFilters()` with persistence.
+  - Pure utils in `src/lib/job-filters.ts` (filtering, sorting, text matching).
+
+- **Persistence**
+  - Tracked toggles: `appliedJobs:v1`, `appliedJobsAt:v1`, `savedForLater:v1`, `savedForLaterAt:v1`.
+  - Live cache: `liveResults:v1` stores last successful search snapshot.
+
+- **Network hygiene**
+  - `AbortController` used for in-flight request cancellation:
+    - Live search (`findJobs`) aborts on new submit/unmount.
+    - Saved list refresh aborts previous fetch.
+  - Response validation at the web boundary using `zod` schemas (see `apps/web/src/api-schemas.ts`).
+
+- **Tests (Vitest + RTL)**
+  - Routing: landing on About; navigating to Live/Saved.
+  - Saved filters: OR semantics when both toggles are on.
+  - Empty states: Live (no results), Saved (no tracked).
+  - Persistence: tracked toggles survive reload.
+
 
 ## Prerequisites
 - Node.js 18+

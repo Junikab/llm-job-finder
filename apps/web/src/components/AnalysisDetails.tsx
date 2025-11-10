@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { CVAnalysis } from '@shared/types';
 import '../styles/AnalysisHeader.css';
 
@@ -29,7 +30,7 @@ function fromList(s: string): string[] {
  * - View mode: hidden (the <candidate> preview shows this info already)
  * - Edit mode: shows inputs bound to the provided draft, emitting changes via onChangeDraft
  */
-export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ analysis, draft, isEditing, onChangeDraft }: AnalysisDetailsProps) {
+export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ analysis: _analysis, draft, isEditing, onChangeDraft }: AnalysisDetailsProps) {
   if (!isEditing) {
     // In view mode, the <candidate> block already shows summary and hints.
     // Hide these duplicate fields until the user enters edit mode.

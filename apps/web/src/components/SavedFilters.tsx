@@ -31,7 +31,7 @@ export default function SavedFilters(props: SavedFiltersProps) {
       </label>
       <label className="savedFilters__label">
         <span className="savedFilters__text">Sort by</span>
-        <select value={sortBy} onChange={e => onSortByChange(e.target.value as any)}>
+        <select value={sortBy} onChange={e => onSortByChange(e.target.value as 'model' | 'user' | 'recency' | 'applied')}>
           <option value="model">Model score</option>
           <option value="user">Your score</option>
           <option value="recency">Recency</option>
