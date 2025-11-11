@@ -5,6 +5,7 @@ import { useCandidatePreview } from '../hooks/useCandidatePreview';
 
 import { AnalysisActions } from './AnalysisActions';
 import { AnalysisDetails } from './AnalysisDetails';
+import { SearchUrlsAdvanced } from './SearchUrlsAdvanced';
 
 import type { CVAnalysis } from '@shared/types';
 
@@ -53,6 +54,24 @@ export default function AnalysisHeader({
   if (!analysis) return null;
 
   const d = draft || analysis;
+  const [showSearchInfo, setShowSearchInfo] = React.useState(false);
+  const infoRef = React.useRef<HTMLSpanElement | null>(null);
+
+  React.useEffect(() => {
+    function onDocPointer(e: Event) {
+      if (!showSearchInfo) return;
+      const t = e.target as Node | null;
+      if (infoRef.current && t && !infoRef.current.contains(t)) {
+        setShowSearchInfo(false);
+      }
+    }
+    document.addEventListener('mousedown', onDocPointer);
+    document.addEventListener('touchstart', onDocPointer);
+    return () => {
+      document.removeEventListener('mousedown', onDocPointer);
+      document.removeEventListener('touchstart', onDocPointer);
+    };
+  }, [showSearchInfo]);
  
 
   return (
@@ -83,7 +102,25 @@ export default function AnalysisHeader({
 
       {!!(searchUrls?.length) && (
         <div className="linksRow">
-          <strong>Search URLs:</strong> {searchUrls.map((u: string) => {
+          <span className="linksRow__infoWrap" ref={infoRef}>
+            <button
+              type="button"
+              className="infoBubbleBtn"
+              aria-label="About search URLs"
+              aria-expanded={showSearchInfo}
+              aria-controls="search-url-info"
+              onClick={() => setShowSearchInfo(v => !v)}
+            >
+              i
+            </button>
+            {showSearchInfo && (
+              <div id="search-url-info" className="infoBubble" role="dialog">
+                We build these from your CV titles/skills and chosen location. You can paste your own Jora search URL via “Edit analysis” → “Search URLs (Advanced)”.
+              </div>
+            )}
+          </span>
+          <strong>Search URLs:</strong>
+          {searchUrls.map((u: string) => {
             try {
               const q = new URL(u).searchParams.get('q') || u;
               return (<a key={u} href={u} target="_blank" rel="noopener noreferrer">{q}</a>);
@@ -91,6 +128,12 @@ export default function AnalysisHeader({
               return null;
             }
           })}
+        </div>
+      )}
+
+      {isEditing && (
+        <div className="editSectionSpacer">
+          <SearchUrlsAdvanced draft={d} onChangeDraft={onChangeDraft} />
         </div>
       )}
     </div>

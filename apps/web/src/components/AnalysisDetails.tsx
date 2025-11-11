@@ -69,22 +69,6 @@ export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ an
         />
       </label>
       {/* Location is controlled on the landing form (Hero section). */}
-
-      <details className="editLabel editLabelSpaced">
-        <summary className="editLabelTitle">Search URLs (Advanced)</summary>
-        <div className="editSectionSpacer">
-          <label className="editLabel">
-            <span className="editLabelTitle">Manual URL (optional)</span>
-            <input
-              type="text"
-              value={d.manualSearchUrl || ''}
-              onChange={e => onChangeDraft({ ...d, manualSearchUrl: e.target.value })}
-              className="editInput"
-              placeholder="https://au.jora.com/j?q=..."
-            />
-          </label>
-        </div>
-      </details>
     </div>
   );
 });

@@ -117,6 +117,49 @@
   margin-left: 8px;
 }
 
+.linksRow__infoWrap {
+  position: relative;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.infoBubbleBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 9999px;
+  border: 1px solid #2d7ad7;
+  background: #f8fafc;
+  color: #113467;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.infoBubbleBtn:hover {
+  background: #eef2f7;
+  border-color: #94a3b8;
+}
+
+.infoBubble {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  transform: translateY(6px);
+  background: #c1cde2;
+  color: #111;
+  border: 1px solid #4d564c;
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  max-width: 420px;
+  width: 280px;
+  z-index: 10;
+}
+
 .toggleButton {
   position: absolute;
   right: 16px;

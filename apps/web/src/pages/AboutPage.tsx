@@ -14,45 +14,38 @@ const HOW_IT_WORKS_STEPS: Array<{
 }> = [
   {
     id: 1,
-    icon: '📤',
-    title: 'Upload your CV',
-    body: 'Drop in a PDF, DOCX, or TXT and we instantly read the skills inside.',
-    details: 'We extract text securely on the server, then discard the file—nothing is stored.',
+    icon: '📍',
+    title: 'Upload CV & choose location',
+    body: 'Drop a PDF, DOCX, or TXT and pick where to search (or choose Any).',
+    details: 'We read your CV on the server to extract skills, then discard the file. Location guides which listings we fetch.',
   },
   {
     id: 2,
-    icon: '🎯',
-    title: 'Tune your search',
-    body: 'Pick a location and how recent the roles should be to match your goals.',
-    details: 'Prefer fresh openings or remote-friendly gigs? Adjust filters to steer the ranking.',
+    icon: '🤖',
+    title: 'AI ranks your matches',
+    body: 'We compare jobs to your profile so the best ones rise to the top.',
+    details: 'The model scores each listing against your skills and titles to explain why it fits.',
   },
   {
     id: 3,
-    icon: '⚙️',
-    title: 'Let AI rank for you',
-    body: 'We score each job against your profile so the best matches float to the top.',
-    details: 'Advanced LLM re-ranking highlights roles that align with your experience and keywords.',
-  },
-  {
-    id: 4,
-    icon: '🚀',
-    title: 'Apply with confidence',
-    body: 'Open the original listing and keep track of saved roles in one place.',
-    details: 'Mark jobs as applied, add personal scores, and revisit them anytime from the Saved tab.',
+    icon: '✅',
+    title: 'Apply and stay organised',
+    body: 'Open listings, save favourites, and mark applied — all in one place.',
+    details: 'Your saved/applied status is easy to manage so you can follow up later.',
   },
 ];
 
 const WHY_ITEMS: string[] = [
-  'Smarter search: skip endless scrolling and see the relevant roles first.',
-  'Privacy first: your CV text is processed temporarily and never stored.',
-  'Instant productivity: works out-of-the-box with optional AI boosts.',
-  'Stay organised: recent CVs and saved jobs are always within reach.',
+  'See relevant roles first — skip endless scrolling.',
+  'Privacy first — your CV text is processed briefly and not stored.',
+  'Works out of the box — optional AI extras when you want them.',
+  'Stay organised — save jobs and track what you’ve applied to.',
 ];
 
 const NEXT_ITEMS: string[] = [
-  'AI-powered re-ranking for even sharper matches.',
-  'Editable CV summaries so you control your profile story.',
-  'Richer job details including pay ranges, location trends, and remote policies.',
+  'Sharper matching and explanations.',
+  'Editable profile summaries.',
+  'Richer job details and insights.',
 ];
 
 export default function AboutPage({ onNavigateHome }: AboutPageProps) {
@@ -77,7 +70,7 @@ export default function AboutPage({ onNavigateHome }: AboutPageProps) {
       <section className="aboutPage__section" aria-labelledby="about-how-it-works">
         <div className="aboutPage__sectionHeader">
           <h2 id="about-how-it-works" className="aboutPage__sectionTitle">How it works</h2>
-          <p className="aboutPage__sectionLead">Four quick steps from CV upload to your next interview.</p>
+          <p className="aboutPage__sectionLead">Three quick steps from CV upload to your next interview.</p>
         </div>
         <div className="aboutPage__cards">
           {HOW_IT_WORKS_STEPS.map(step => {
