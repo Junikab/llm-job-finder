@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { CVAnalysis } from '@shared/types';
 import '../styles/AnalysisHeader.css';
+import { InfoBubble } from './InfoBubble';
 
 /**
  * Props for AnalysisDetails.
@@ -39,10 +40,17 @@ export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ an
 
   const d = draft;
 
+  
+
   return (
     <div className="editGrid">
       <label className="editLabel">
-        <span className="editLabelTitle">Summary</span>
+        <div>
+          <InfoBubble ariaLabel="About summary" bubbleId="summary-info">
+            Generated from your CV. Used to build search queries and score jobs. You can edit it here to influence results.
+          </InfoBubble>
+          <span className="editLabelTitle">Summary</span>
+        </div>
         <textarea
           value={d.summary || ''}
           onChange={e => onChangeDraft({ ...d, summary: e.target.value })}
