@@ -65,7 +65,12 @@ export default function AnalysisHeader({
         </div>
       )}
       <div className="analysisHeaderRow">
-        <strong>LLM prompt (candidate section):</strong>
+        <div>
+          <InfoBubble ariaLabel="About candidate prompt" bubbleId="llm-prompt-info">
+            This is the LLM prompt used to score jobs. You can edit it via “Edit analysis” to influence results.
+          </InfoBubble>
+          <strong>LLM prompt (candidate section):</strong>
+        </div>
         <AnalysisActions
           isEditing={isEditing}
           rescoring={rescoring}

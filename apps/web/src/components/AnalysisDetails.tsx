@@ -59,7 +59,12 @@ export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ an
         />
       </label>
       <label className="editLabel">
-        <span className="editLabelTitle">Titles (comma-separated)</span>
+        <div>
+          <InfoBubble ariaLabel="About titles" bubbleId="titles-info">
+            Job titles used to build searches and match jobs. Edit to add variants.
+          </InfoBubble>
+          <span className="editLabelTitle">Titles (comma-separated)</span>
+        </div>
         <input
           type="text"
           value={toList(d.titles)}
@@ -68,7 +73,12 @@ export const AnalysisDetails = React.memo(function AnalysisDetailsComponent({ an
         />
       </label>
       <label className="editLabel">
-        <span className="editLabelTitle">Top skills (comma-separated)</span>
+        <div>
+          <InfoBubble ariaLabel="About top skills" bubbleId="skills-info">
+            Your main skills. We use these to build searches and rank jobs. Edit to add or remove items.
+          </InfoBubble>
+          <span className="editLabelTitle">Top skills (comma-separated)</span>
+        </div>
         <input
           type="text"
           value={toList(d.topSkills)}
