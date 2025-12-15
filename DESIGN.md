@@ -2,6 +2,14 @@
 
 Last updated: 2025-09-05
 
+## At a glance
+
+- Monorepo: Fastify API (TypeScript), React/Vite web, Playwright+Cheerio scraper, shared types.
+- Default scoring: random (fast). Optional LLM scoring behind env flags.
+- Flow: upload CV → extract text → build Jora query → scrape → pre-sort → score → return ranked jobs.
+- Edit & Rescore: user edits analysis (summary/titles/skills/locationHints) and requests rescoring for current jobs.
+- Run locally: `npm run dev` (API 5174, Web 5173; Vite proxies `/api/*`).
+
 ## 1. Purpose and Scope
 This document describes the architecture, design decisions, data flow, and operational details of the Jora LLM Job Finder monorepo. It is written for contributors and maintainers to quickly understand how the system works, how to run it locally, and where to extend it.
 

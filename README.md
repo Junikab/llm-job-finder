@@ -7,6 +7,22 @@ A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads,
 - Scraper: Playwright + Cheerio (in `packages/scraper`)
 
 
+## Quick start
+
+- Install deps: `npm install`
+- Dev (API + Web): `npm run dev`
+- Open the app: http://localhost:5173
+- Healthcheck: `curl -sf http://localhost:5174/health`
+- Use it: upload a CV (PDF/DOCX/TXT), set location/days, click Find Jobs
+
+## Scripts
+
+- Dev (API + Web): `npm run dev`
+- Build all: `npm run build`
+- API only (watch): `npm --workspace apps/server run dev`
+- Web only (dev): `npm --workspace apps/web run dev`
+- Web preview (built): `npm --workspace apps/web run preview`
+
 ## Repository layout
 - `apps/server/` — Fastify API
 - `apps/web/` — React web app
@@ -14,39 +30,9 @@ A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads,
 - `packages/shared-types/` — Shared type definitions (`CVAnalysis`, `JobItem`, `RankedJob`, `SavedJob`) consumed by server and web
 - `PLAN.md` / `DESIGN.md` — project docs
 
-## Web app architecture (refactor)
+## Architecture
 
-- **Pages & routing**
-  - Page-based routes: `/about`, `/live`, `/saved`.
-  - Lightweight history routing in `apps/web/src/App.tsx` (pushState + popstate).
-  - `TopNav` triggers `navigatePage('about'|'live'|'saved')`. No `useTab` remains.
-
-- **Components & styles**
-  - One React component per file under `src/components` and `src/pages`.
-  - No inline styles; CSS lives under `src/styles/`.
-  - Examples: `LiveResults`, `SavedList`, `SavedHeader`, `LiveJobCard`, `SavedJobCard`.
-
-- **Hooks & utilities**
-  - Tracked state: `useTrackedJobs()` unifies applied/saved with timestamps (localStorage-backed).
-  - Saved filters: `useSavedFilters()` with persistence.
-  - Pure utils in `src/lib/job-filters.ts` (filtering, sorting, text matching).
-
-- **Persistence**
-  - Tracked toggles: `appliedJobs:v1`, `appliedJobsAt:v1`, `savedForLater:v1`, `savedForLaterAt:v1`.
-  - Live cache: `liveResults:v1` stores last successful search snapshot.
-
-- **Network hygiene**
-  - `AbortController` used for in-flight request cancellation:
-    - Live search (`findJobs`) aborts on new submit/unmount.
-    - Saved list refresh aborts previous fetch.
-  - Response validation at the web boundary using `zod` schemas (see `apps/web/src/api-schemas.ts`).
-
-- **Tests (Vitest + RTL)**
-  - Routing: landing on About; navigating to Live/Saved.
-  - Saved filters: OR semantics when both toggles are on.
-  - Empty states: Live (no results), Saved (no tracked).
-  - Persistence: tracked toggles survive reload.
-
+See DESIGN.md for the full architecture, data flow, and component structure.
 
 ## Prerequisites
 - Node.js 18+
@@ -83,113 +69,34 @@ Use the app at http://localhost:5173
 
 
 ## How it works (high level)
-1) Web uploads your CV to `POST /api/jobs/find` (multipart) — see `apps/server/src/routes/jobs.ts`.
-2) Server extracts text (`pdf-parse` for PDF, `mammoth` for DOCX, plain for TXT) and picks simple titles/skills.
-3) It builds Jora URLs (e.g., `https://au.jora.com/j?...`).
-4) Scraper visits those pages and collects jobs (bounded by env limits).
-5) Jobs are scored based on SCORE_MODE and returned to the web app. Default is random (reason: `random`). When SCORE_MODE=llm with a valid OPENAI_API_KEY, the server calls OpenAI per job using a detailed prompt; on failures it gracefully falls back to random and annotates the reason.
-6) Optional: server can save JSON snapshots of raw and scored jobs to disk (see Job DB below).
-
+1) Upload CV → server extracts text → builds Jora search URLs.
+2) Scraper collects jobs → pre-sort → score (random by default; LLM optional) → return ranked results.
+Full details in DESIGN.md.
 
 ## API (dev)
-- `POST /api/jobs/find` — form-data fields
-  - `cv` (file, required): .pdf/.docx/.txt, ≤ 5MB
-  - `location` (string, optional)
-  - `days` (number, optional)
-  - Response: `{ analysis, searchUrls, total, results: RankedJob[] }`
-
-- `POST /api/jobs/rescore` — rescore existing jobs using a user-edited analysis
-  - JSON body: `{ analysis: CVAnalysis, jobs: JobItem[] }`
-  - Optional: `{ refreshSearch: boolean, location?: string, days?: number }`
-    - When `refreshSearch=true`, the server rebuilds search URLs from the edited analysis (and optional `location`/`days`), re-scrapes, then rescroes.
-  - Response: `{ total, results: RankedJob[], llmPromptUserPreview?: string, llmPromptSystem?: string, searchUrls?: string[] }`
-
-- `GET /api/db/jobs` — list merged jobs from on-disk JSON snapshots
-  - Response: `{ total, results: SavedJob[] }`
-
-- `POST /api/db/feedback` — update `userScore` for a job (in-place in the JSON file)
-  - JSON body: `{ jobId: string, userScore: number }`
-  - Response: `{ ok: true }`
-
-See code: `apps/server/src/routes/jobs.ts`, `apps/server/src/routes/db.ts`, `apps/server/src/services/job-db.ts`.
-
-### Profiles API
-- `GET /api/profiles` — list saved profiles.
-  - Response: `{ total, results: Profile[] }`
-- `GET /api/profiles/:id` — fetch a profile by id.
-  - Response: `Profile`
-- `POST /api/profiles` — create or update a profile.
-  - JSON body: `{ id?: string, label?: string, analysis: CVAnalysis }`
-  - Response: `Profile`
-
+- POST /api/jobs/find — upload CV; returns analysis, searchUrls, results.
+- POST /api/jobs/rescore — rescore current jobs using edited analysis (optional refreshSearch).
+- GET /api/db/jobs — list merged jobs from snapshots.
+- POST /api/db/feedback — store a user rating.
+- GET /api/profiles, GET /api/profiles/:id, POST /api/profiles — save/load profiles.
+Full request/response details are in DESIGN.md (API section).
 
 ## cURL examples
 
 - Healthcheck:
-```bash
-curl -sf http://localhost:5174/health | jq
-# remove '| jq' if you don't have jq installed
-```
+  curl -sf http://localhost:5174/health | jq
+  # remove '| jq' if you don't have jq installed
 
 - Find jobs (PDF/DOCX/TXT upload):
-```bash
-curl -X POST http://localhost:5174/api/jobs/find \
-  -F "cv=@/absolute/path/to/your-cv.pdf" \
-  -F "location=Sydney NSW" \
-  -F "days=7" | jq '.total, .searchUrls, .results[0]'
-```
+  curl -X POST http://localhost:5174/api/jobs/find \
+    -F "cv=@/absolute/path/to/your-cv.pdf" \
+    -F "location=Sydney NSW" \
+    -F "days=7" | jq '.total, .searchUrls, .results[0]'
 
-- List saved/merged jobs from Job DB snapshots:
-```bash
-curl -s http://localhost:5174/api/db/jobs | jq '.total, .results[0]'
-```
-
-- Submit feedback (rate a job):
-```bash
-curl -X POST http://localhost:5174/api/db/feedback \
-  -H 'Content-Type: application/json' \
-  -d '{"jobId":"<copy-from-results-id>","userScore":5}' | jq
-```
-
-- Rescore (send edited analysis + original jobs):
-```bash
-curl -X POST http://localhost:5174/api/jobs/rescore \
-  -H 'Content-Type: application/json' \
-  -d '{
-        "analysis": {
-          "summary": "Frontend engineer focusing on React/TS",
-          "titles": ["Frontend Developer", "React Developer"],
-          "topSkills": ["React", "TypeScript", "Testing"],
-          "locationHints": ["Sydney NSW"]
-        },
-        "jobs": [
-          { "id": "job-1", "title": "Frontend Dev", "company": "Acme", "location": "Sydney", "url": "https://...", "listedAgo": "3 days ago", "description": "..." }
-        ]
-      }' | jq '.total, .results[0]'
-```
-
+More examples are in DESIGN.md.
 
 ## Environment variables
-From `.env.example` (root):
-- `PORT=5174` — API port
-- `SCRAPER_HEADLESS=true` — run Playwright headless
-- `MAX_JOBS=40` — cap total jobs
-- `MAX_PAGES=3` — cap pages per search URL
-- `JORA_REGION=au` — Jora region prefix (domain)
-- `SCORE_MODE=random` — scoring mode: `random` | `llm`
-- `SEARCH_QUERY_MODE=rich|simple` — query builder mode; `rich` uses quoted titles + top skills; `simple` uses only the top detected title (no quotes/skills)
-- `OPENAI_API_KEY=` — required when LLM is enabled
-
-- `OPENAI_MODEL=gpt-4o-mini` — model used for LLM calls (default shown)
-- `OPENAI_BASE_URL=` — optional API base override (e.g., Azure/OpenRouter/proxy). Defaults to `https://api.openai.com/v1`.
-- `LLM_LOG=debug` — enable verbose LLM logs (prints constructed prompt and a truncated body for review)
-- `LLM_RETRIES=2` — retry attempts for OpenAI calls (applies to 429, 5xx, and timeouts). Reasonable range: 1–5.
-- `LLM_MAX_SCORE_JOBS=30` — per-request cap on how many jobs are scored by the LLM (limits cost).
-
-Additional (supported by server code):
-- `SCRAPE_TOTAL_TIMEOUT_MS` — max total scrape time (optional)
-- `JOB_DB_WRITE=false|true` — controls JSON snapshot writes; note: current code writes when the value is `'false'` (temporary dev inversion)
-- `JOB_DB_DIR` — base directory to write/read job JSON (default: `<cwd>/db`)
+Use .env.example as your reference. For explanations and defaults, see DESIGN.md (Configuration & LLM sections).
 
 ## Scoring modes
 Default: random (see `.env.example`).
@@ -236,85 +143,11 @@ if ((process.env.JOB_DB_WRITE || 'false') === 'false') {
 If you prefer the normal semantics (write when `JOB_DB_WRITE=true`), switch the check to `=== 'true'` in both raw and scored write blocks.
 
 
-## LLM mode
-When `SCORE_MODE=llm`, per-job prompts are sent to OpenAI and a single numeric score (0–100) is parsed. If an LLM call fails or is disabled, the server falls back to random and annotates the reason.
+## LLM mode & logging
+See DESIGN.md for LLM configuration, logging, and privacy notes.
 
-- Relevant envs:
-  - `LLM_CONCURRENCY`: e.g. `2` (max parallel LLM calls)
-  - `LLM_TIMEOUT_MS`: e.g. `8000` (per-call timeout in ms)
-  - `LLM_CACHE_TTL_MS`: e.g. `900000` (TTL for in-memory LLM scoring cache)
-  - `LLM_CACHE_MAX`: e.g. `200` (max entries in the in-memory cache; LRU eviction)
-  - `OPENAI_API_KEY`: required when LLM is enabled
-  - `OPENAI_MODEL`: e.g. `gpt-4o-mini`
-  - `OPENAI_BASE_URL`: override API base (defaults to `https://api.openai.com/v1`)
-  - `LLM_GOOD_TRAITS` / `LLM_BAD_TRAITS`: optional compact guidance strings injected into the prompt
-  - `LLM_LOG=debug`: optional verbose logging of LLM requests/results (includes constructed prompt and truncated body for inspection)
-  - `LLM_RETRIES`: retry attempts for OpenAI calls (applies to 429, 5xx, and timeouts; default 2)
-  - `LLM_MAX_SCORE_JOBS`: per-request cap on how many jobs are scored by the LLM (default 30)
-
-Privacy note: When LLM mode is enabled, extracted CV text and job snippets are sent to the provider for scoring.
-
-### Compact prompt customization + structured profile hints
-To guide the model without pasting long examples, set concise traits in `.env`:
-
-```
-LLM_GOOD_TRAITS=junior, React/TypeScript, mentorship, remote, Sydney/NSW
-LLM_BAD_TRAITS=senior-only, backend-only Java, no UI, on-site far away
-```
-
-These appear in the prompt after the CV summary and before the rubric, keeping token usage low.
-
-When present, the structured fields from the current analysis (`titles`, `topSkills`, `locationHints`) are also included as short hints in the prompt. Editing these in the web UI and clicking Rescore will influence model scoring.
-
-
-## LLM logging & debugging
-
-Follow these steps to see the actual prompts and responses used by the LLM in LLM mode:
-
-1) Enable LLM scoring in `.env` (root):
-```
-SCORE_MODE=llm
-LLM_LOG=debug
-OPENAI_API_KEY=sk-...   # ensure this has no stray quotes or parentheses
-```
-
-Optional controls:
-- `LLM_RETRIES=2` — capped retries with exponential backoff for 429/5xx/timeouts
-- `LLM_MAX_SCORE_JOBS=30` — limits how many jobs are scored per request
-
-2) Fully restart the API server after changing `.env` so variables are reloaded.
-
-3) Run a job search (via the web app or cURL). In the API terminal you should see log entries like:
-```
-[llm] score prompt { jobKey: '...', model: 'gpt-4o-mini', userLen: 12345 }
-[llm] score prompt user <first 8000 characters of the user prompt>
-[llm] openai ok { ms: 1234, contentLen: 42, attempt: 1 }
-```
-If a call fails, logs include detailed HTTP errors and retry attempts.
-
-Privacy reminder: Prompt logs include slices of CV text and job snippets; use them only for local debugging.
-
-## Prompt builder (dev utility)
-- Code: `apps/server/src/services/prompt.ts`
-  - `formatJobForPrompt(job)`
-  - `buildJobRelevancePrompt(analysis, job)` — includes candidate summary and structured hints (titles/topSkills/locationHints)
-  - `parseRelevanceScore(text)`
-- Demo:
-  ```bash
-  npm --workspace apps/server run prompt:demo
-  ```
-  Prints a sample prompt and demonstrates score parsing.
-- Tests: `apps/server/test/prompt.spec.ts`
-
-## Edit & Rescore (Web UI)
-- After the initial search, the web app shows an `AnalysisHeader` summarizing the candidate profile and the exact LLM prompt header.
-- Click `Edit analysis` to adjust `summary`, `titles`, `topSkills`, and `locationHints`.
-- Click `Rescore` to send the edited analysis and the currently displayed jobs to `POST /api/jobs/rescore`. New scores replace the list.
-- Implementation:
-  - Component: `apps/web/src/components/AnalysisHeader.tsx`
-  - Hook (logic): `apps/web/src/hooks/useAnalysisEditor.ts`
-  - Mapping util: `apps/web/src/utils/jobMapping.ts` (converts `RankedJob` → `JobItem` for rescoring)
-
+## Developer references
+- Prompt builder, Edit & Rescore UI, and detailed flows are documented in DESIGN.md.
 
 ## Testing
 - Web tests:
