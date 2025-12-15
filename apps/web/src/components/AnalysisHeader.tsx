@@ -59,11 +59,9 @@ export default function AnalysisHeader({
 
   return (
     <div className="analysisCard">
-      {activeProfileMeta && (
-        <div className="profileLine">
-          <strong>Profile: </strong> {activeProfileMeta.label || activeProfileMeta.id}
-        </div>
-      )}
+      <div className="profileLine">
+        <strong>Profile name: </strong> {(activeProfileMeta?.label || activeProfileMeta?.id || '')}
+      </div>
       <div className="analysisHeaderRow">
         <div>
           <InfoBubble ariaLabel="About candidate prompt" bubbleId="llm-prompt-info">

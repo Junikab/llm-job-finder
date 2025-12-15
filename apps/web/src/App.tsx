@@ -10,6 +10,7 @@ import { usePageRouter } from './hooks/usePageRouter';
 import { useLiveCache } from './hooks/useLiveCache';
 import { useLandingForm } from './hooks/useLandingForm';
 import { useFindJobsController } from './hooks/useFindJobsController';
+import { listProfiles } from './api';
 import AboutPage from './pages/AboutPage';
 import LivePage from './pages/LivePage';
 import SavedPage from './pages/SavedPage';
@@ -99,6 +100,20 @@ export function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoreLatest]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const items = await listProfiles();
+        if (cancelled) return;
+        if (!Array.isArray(items) || items.length === 0) {
+          setActiveProfileMeta({ id: '', label: null });
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [setActiveProfileMeta]);
 
   // After a successful fetch (not during loading) persist the latest results snapshot
   useEffect(() => {
