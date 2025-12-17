@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { findJobs } from '../api';
+import { showGlobalLoader, hideGlobalLoader } from '../utils/loader';
 
 import type { CVAnalysis, RankedJob } from '@shared/types';
 
@@ -47,6 +48,7 @@ export function useFindJobsController(params: {
         ctlRef.current.abort();
         ctlRef.current = null;
       }
+      hideGlobalLoader();
     };
   }, []);
 
@@ -66,6 +68,7 @@ export function useFindJobsController(params: {
     if (ctlRef.current) ctlRef.current.abort();
     const ctl = new AbortController();
     ctlRef.current = ctl;
+    showGlobalLoader('Finding jobs…');
     setLoading(true);
     setError(null);
     setResults([]);
@@ -98,6 +101,7 @@ export function useFindJobsController(params: {
       setError(msg);
     } finally {
       if (ctlRef.current === ctl) ctlRef.current = null;
+      hideGlobalLoader();
       setLoading(false);
     }
   }, [file, location, worldwide, loading, showToast, setError, setLoading, setResults, setAnalysis, setSearchUrls, setLlmGoodTraits, setLlmBadTraits, setLlmPromptUserPreview, setLlmPromptSystem, cancelEditAnalysis]);

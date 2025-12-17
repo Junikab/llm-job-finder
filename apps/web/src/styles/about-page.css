@@ -32,25 +32,64 @@
 }
 
 .aboutPage__cta {
-  justify-self: center;
-  padding: 14px 24px;
-  border-radius: 10px;
-  border: none;
-  background: #344e41;
-  color: #fff;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 8px 18px rgba(52, 78, 65, 0.22);
-  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+   justify-self: center;
+  position: relative;
+      overflow: hidden;
+      color: #fff;
+      background: linear-gradient(45deg,
+                 #064f2a, rgb(201, 128, 1));
+      border: none;
+      border-radius: 10px;
+      padding: 14px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      transition: transform 0.2s ease-in-out;
+      box-shadow: 0 0 15px rgba(205, 248, 187, 0.829);
 }
 
 .aboutPage__cta:hover,
 .aboutPage__cta:focus-visible {
-  transform: translateY(-1px);
+  /* transform: translateY(-1px);
   box-shadow: 0 12px 24px rgba(52, 78, 65, 0.28);
-  opacity: 0.92;
+  opacity: 0.92; */
+   transform: scale(1.08);
+      box-shadow: 0 0 25px rgba(205, 248, 187, 0.9);
 }
+
+.aboutPage__cta::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle,
+                 rgba(255,255,255,0.4) 20%,
+                  transparent 60%);
+      transform: rotate(25deg);
+      animation: shine 3s infinite linear;
+    }
+
+    @keyframes shine {
+      from { transform: translateX(-100%)
+                         rotate(25deg); }
+      to { transform: translateX(100%) 
+                      rotate(25deg); }
+    }
+
+    /* Heading styling */
+    h1 {
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+
+
+
+
 
 .aboutPage__section {
   display: grid;
@@ -158,9 +197,11 @@
   border-radius: 16px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
   padding: 24px 28px;
-  border: 1px solid rgba(52, 78, 65, 0.12);
+  border: 0;
   display: grid;
   gap: 18px;
+  position: relative;
+  background-clip: padding-box;
 }
 
 .aboutPage__listTitle {
@@ -212,4 +253,28 @@
   .aboutPage__hero {
     padding: 32px 24px;
   }
+}
+/* Animated gradient border for list cards (hover/focus) */
+.aboutPage__listBlock::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  padding: 5px; /* border width */
+  border-radius: calc(16px + 2px); /* overscan to avoid outer seam */
+  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82);
+  background-size: 300% 300%;
+  animation: about-gradient-border 4s ease infinite;
+  /* Mask out the middle so only the border shows */
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+@keyframes about-gradient-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aboutPage__listBlock::before { animation: none; }
 }
