@@ -1,5 +1,4 @@
 import React from 'react';
-import '../styles/about-page.css';
 import '../styles/SavedPage.css';
 
 export type SavedFiltersProps = {
@@ -47,7 +46,7 @@ export default function SavedFilters(props: SavedFiltersProps) {
         <span className="savedFilters__text">Saved only</span>
       </label>
       <button type="button" onClick={onClear} className="savedFilters__btnClear">Clear</button>
-      <button type="button" onClick={onRefresh} className="aboutPage__cta">Refresh</button>
+      <button type="button" onClick={onRefresh} className="savedCta">Refresh</button>
     </div>
   );
 }

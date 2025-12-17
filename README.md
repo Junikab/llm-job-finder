@@ -30,6 +30,15 @@ A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads,
 - `packages/shared-types/` — Shared type definitions (`CVAnalysis`, `JobItem`, `RankedJob`, `SavedJob`) consumed by server and web
 - `PLAN.md` / `DESIGN.md` — project docs
 
+## Web styles
+
+- About page CSS is split for clarity and isolation:
+  - `apps/web/src/styles/about/hero.css` — layout, hero, CTA, mobile tweaks
+  - `apps/web/src/styles/about/steps.css` — "How it works" section (wavy full-bleed bg, steps)
+  - `apps/web/src/styles/about/lists.css` — two-column lists and footer
+- Saved page styles are self-contained in `apps/web/src/styles/SavedPage.css` and do not reuse About classes.
+- Prefer page-scoped class names (e.g., `aboutPage__*`, `saved*`) to prevent cross-page style bleed.
+
 ## Architecture
 
 See DESIGN.md for the full architecture, data flow, and component structure.

@@ -1,0 +1,89 @@
+/* About Page — container and hero */
+.aboutPage {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 70px 16px 16px;
+  display: grid;
+}
+
+/* Hero — full-bleed background via ::before; content stays centered */
+.aboutPage__hero {
+  position: relative;
+  isolation: isolate; /* local stacking context for full-bleed bg */
+  background: transparent;
+  padding: 40px 32px;
+  display: grid;
+  gap: 40px 120px;
+  text-align: center;
+}
+
+/* Full-bleed gradient background for hero */
+.aboutPage__hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw; /* full screen width */
+  min-height: 100vw;
+  background: linear-gradient(135deg, rgba(224, 159, 62, 0.84), rgba(135, 159, 62, 0.621));
+}
+
+.aboutPage__title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.aboutPage__subtitle {
+  margin: 0 auto;
+  max-width: 620px;
+  font-size: 1.05rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* Primary CTA — scoped to About only */
+.aboutPage__cta {
+  justify-self: center;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(45deg, #064f2a, rgb(201, 128, 1));
+  border: none;
+  border-radius: 10px;
+  padding: 14px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 0 0 15px rgba(205, 248, 187, 0.829);
+}
+.aboutPage__cta:hover,
+.aboutPage__cta:focus-visible {
+  transform: scale(1.08);
+  box-shadow: 0 0 25px rgba(205, 248, 187, 0.9);
+}
+.aboutPage__cta::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.4) 20%, transparent 60%);
+  transform: rotate(25deg);
+  animation: shine 3s infinite linear;
+}
+@keyframes shine {
+  from { transform: translateX(-100%) rotate(25deg); }
+  to { transform: translateX(100%) rotate(25deg); }
+}
+
+/* Mobile adjustments (About hero + container) */
+@media (max-width: 720px) {
+  .aboutPage { margin-top: 100px; gap: 40px; padding: 0 16px; }
+  .aboutPage__hero { padding: 32px 24px; }
+}

@@ -11,7 +11,12 @@
 
 .savedHeader__hero { 
     padding: 28px 24px; margin-bottom: 50px; 
+    text-align: center; /* saved header should center content */
 }
+
+/* Saved header title/subtitle (decoupled from About page styles) */
+.savedHeader__title { margin: 0; font-size: 1.75rem; font-weight: 700; color: #1f2937; }
+.savedHeader__subtitle { margin: 0; color: #4b5563; }
 
 .savedHeader__counts { 
     display: flex; gap: 16px; justify-content: center; color: #1f2937; font-weight: 600; 
@@ -34,6 +39,38 @@
 .savedFilters__btnClear { 
     padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: #f7f7f7; 
 }
+
+/* Saved page CTA (independent from About page cta) */
+.savedCta {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(45deg, #064f2a, rgb(201, 128, 1));
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  box-shadow: 0 0 10px rgba(205, 248, 187, 0.55);
+}
+.savedCta:hover,
+.savedCta:focus-visible {
+  transform: scale(1.04);
+  box-shadow: 0 0 18px rgba(205, 248, 187, 0.7);
+}
+.savedCta::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.35) 20%, transparent 60%);
+  transform: rotate(25deg);
+  animation: saved-shine 3s infinite linear;
+}
+@keyframes saved-shine { from { transform: translateX(-100%) rotate(25deg);} to { transform: translateX(100%) rotate(25deg);} }
 
 
 .savedPage__empty { 

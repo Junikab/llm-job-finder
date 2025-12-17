@@ -1,5 +1,8 @@
 import React from 'react';
-import '../styles/about-page.css';
+// about page styles are split to keep files focused and avoid bleed
+import '../styles/about/hero.css';
+import '../styles/about/steps.css';
+import '../styles/about/lists.css';
 
 type AboutPageProps = {
   onNavigateHome: () => void;
@@ -49,11 +52,6 @@ const NEXT_ITEMS: string[] = [
 ];
 
 export default function AboutPage({ onNavigateHome }: AboutPageProps) {
-  const [expandedStep, setExpandedStep] = React.useState<number | null>(null);
-
-  const toggleStep = (id: number) => {
-    setExpandedStep(prev => (prev === id ? null : id));
-  };
 
   return (
     <main className="aboutPage">
@@ -67,39 +65,25 @@ export default function AboutPage({ onNavigateHome }: AboutPageProps) {
         </button>
       </section>
 
-      <section className="aboutPage__section" aria-labelledby="about-how-it-works">
+      <section className="aboutPage__section aboutPage__section--steps" aria-labelledby="about-how-it-works">
         <div className="aboutPage__sectionHeader">
           <h2 id="about-how-it-works" className="aboutPage__sectionTitle">How it works</h2>
           <p className="aboutPage__sectionLead">Three quick steps from CV upload to your next interview.</p>
         </div>
-        <div className="aboutPage__cards">
-          {HOW_IT_WORKS_STEPS.map(step => {
-            const isExpanded = expandedStep === step.id;
-            const detailsId = `about-step-details-${step.id}`;
-            return (
-              <article key={step.id} className="aboutPage__card">
-                <div className="aboutPage__iconWrapper" aria-hidden="true">{step.icon}</div>
-                <h3 className="aboutPage__cardTitle">{step.title}</h3>
-                <p className="aboutPage__cardBody">{step.body}</p>
-                <button
-                  type="button"
-                  className="aboutPage__detailsButton"
-                  onClick={() => toggleStep(step.id)}
-                  aria-expanded={isExpanded}
-                  aria-controls={detailsId}
-                >
-                  {isExpanded ? 'Hide details' : 'Learn more'}
-                  <span aria-hidden="true">↗</span>
-                </button>
-                {isExpanded && (
-                  <p id={detailsId} className="aboutPage__details">
-                    {step.details}
-                  </p>
-                )}
-              </article>
-            );
-          })}
-        </div>
+        <ol className="aboutPage__steps" role="list">
+          {HOW_IT_WORKS_STEPS.map((step, idx) => (
+            <React.Fragment key={step.id}>
+              <li className="aboutPage__step">
+                <div className="aboutPage__stepNumber" aria-hidden="true">{step.id}</div>
+                <h3 className="aboutPage__stepTitle">{step.title}</h3>
+                <p className="aboutPage__stepBody">{step.body}</p>
+              </li>
+              {idx < HOW_IT_WORKS_STEPS.length - 1 && (
+                <li className="aboutPage__connector" aria-hidden="true" />
+              )}
+            </React.Fragment>
+          ))}
+        </ol>
       </section>
 
       <section className="aboutPage__twoColumn" aria-labelledby="about-why-section about-next-section">

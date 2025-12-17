@@ -1,6 +1,5 @@
 import React from 'react';
 
-import '../styles/about-page.css';
 import '../styles/SavedPage.css';
 import { useTrackedJobs } from '../hooks/useTrackedJobs';
 
@@ -24,9 +23,9 @@ export function SavedHeader(props: SavedHeaderProps) {
 
   return (
     <div className="savedHeader">
-      <section className="aboutPage__hero savedHeader__hero">
-        <h2 className="aboutPage__title">Saved Jobs</h2>
-        <p className="aboutPage__subtitle">Your saved jobs and applied status live here.</p>
+      <section className="savedHeader__hero">
+        <h2 className="savedHeader__title">Saved Jobs</h2>
+        <p className="savedHeader__subtitle">Your saved jobs and applied status live here.</p>
         <div className="savedHeader__counts">
           <span>Saved: {savedCount}</span>
           <span>Applied: {appliedCount}</span>

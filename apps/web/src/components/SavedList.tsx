@@ -10,7 +10,6 @@ import SavedFilters from './SavedFilters';
 import { SavedJobList } from './SavedJobList';
 
 import type { SavedJob } from '@shared/types';
-import '../styles/about-page.css';
 import '../styles/SavedPage.css';
 
 export default function SavedList(props: {
