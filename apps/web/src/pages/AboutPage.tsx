@@ -60,9 +60,17 @@ export default function AboutPage({ onNavigateHome }: AboutPageProps) {
         <p className="aboutPage__subtitle">
           LLM Job Finder analyses your CV, ranks new openings in seconds, and keeps everything organised so you can apply with confidence.
         </p>
-        <button type="button" className="aboutPage__cta" onClick={onNavigateHome}>
+        <a
+          href="/live"
+          className="aboutPage__cta"
+          role="button"
+          onClick={(e) => {
+            e.preventDefault();
+            onNavigateHome();
+          }}
+        >
           Start finding jobs
-        </button>
+        </a>
       </section>
 
       <section className="aboutPage__section aboutPage__section--steps" aria-labelledby="about-how-it-works">

@@ -1,93 +1,98 @@
 /* About Page — container and hero */
 .aboutPage {
-  max-width: 980px;
+  width: 100%;
   margin: 0 auto;
-  padding: 70px 16px 16px;
   display: grid;
+  /* Full-bleed background behind all About content */
+  background: linear-gradient(135deg, rgba(224, 159, 62, 0.84), rgba(135, 159, 62, 0.621));
+  /* Avoid horizontal scrollbars from 100vw on platforms with scrollbars */
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 
-/* Hero — full-bleed background via ::before; content stays centered */
 .aboutPage__hero {
   position: relative;
-  isolation: isolate; /* local stacking context for full-bleed bg */
-  background: transparent;
-  padding: 40px 32px;
   display: grid;
-  gap: 40px 120px;
   text-align: center;
-}
-
-/* Full-bleed gradient background for hero */
-.aboutPage__hero::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100vw; /* full screen width */
-  min-height: 100vw;
-  background: linear-gradient(135deg, rgba(224, 159, 62, 0.84), rgba(135, 159, 62, 0.621));
+  width: 100%;
+  padding-bottom: 70px;
+  max-width: 980px;
+  justify-self: center;
 }
 
 .aboutPage__title {
-  margin: 0;
+  margin-top: 6rem;
   font-size: clamp(2rem, 4vw, 2.75rem);
   color: #1f2937;
   font-family: "Cabin Sketch", sans-serif;
   font-weight: 700;
   font-style: normal;
-  font-size:90px;
+  font-size: 60px;
 }
 
 .aboutPage__subtitle {
-  margin: 0 auto;
+  margin-top: 0;
+  margin-bottom: 50px;
   max-width: 620px;
   font-size: 1.05rem;
   color: #374151;
   line-height: 1.6;
-  
+justify-self: center;
 }
 
 /* Primary CTA — scoped to About only */
 .aboutPage__cta {
   justify-self: center;
   position: relative;
-  overflow: hidden;
   color: #fff;
-  background: linear-gradient(45deg, #064f2a, rgb(201, 128, 1));
   border: none;
   border-radius: 10px;
   padding: 14px 24px;
   font-size: 1.1rem;
   font-weight: bold;
-  transition: transform 0.2s ease-in-out;
   box-shadow: 0 0 15px rgba(205, 248, 187, 0.829);
+  background-image: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0.75) 50%, rgba(255, 255, 255, 0.1) 58%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(45deg, #064f2a, rgb(201, 128, 1));
+  background-size: 350% 100%, 100% 100%;
+  background-position: -250% 0, center;
+  background-repeat: no-repeat, no-repeat;
+  will-change: background-position;
+  animation: aboutCtaShine 3s linear infinite;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  text-decoration: none;
 }
-.aboutPage__cta:hover,
-.aboutPage__cta:focus-visible {
+
+.aboutPage__cta:hover {
   transform: scale(1.08);
   box-shadow: 0 0 25px rgba(205, 248, 187, 0.9);
+  cursor: pointer;
 }
-.aboutPage__cta::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.4) 20%, transparent 60%);
-  transform: rotate(25deg);
-  animation: shine 3s infinite linear;
+
+@keyframes aboutCtaShine {
+  0% {
+    background-position: -250% 0, center;
+  }
+
+  100% {
+    background-position: 250% 0, center;
+  }
 }
-@keyframes shine {
-  from { transform: translateX(-100%) rotate(25deg); }
-  to { transform: translateX(100%) rotate(25deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .aboutPage__cta {
+    animation: none;
+  }
 }
+
 
 /* Mobile adjustments (About hero + container) */
 @media (max-width: 720px) {
-  .aboutPage { margin-top: 100px; gap: 40px; padding: 0 16px; }
-  .aboutPage__hero { padding: 32px 24px; }
+  .aboutPage {
+    gap: 40px;
+    padding: 100px 16px 0;
+  }
+
+  .aboutPage__hero {
+    padding: 32px 24px;
+  }
 }

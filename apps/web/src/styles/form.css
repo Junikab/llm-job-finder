@@ -1,7 +1,14 @@
 /* Shared form styles for the Live page */
 
 /* Layout */
-.lf-grid { display: grid; gap: 12px; align-items: start; grid-template-columns: 1fr 1fr; margin-bottom: 24px; }
+.lf-grid { 
+  display: grid; 
+  gap: 12px; 
+  align-items: start; 
+  grid-template-columns: 1fr 1fr; 
+  margin-bottom: 24px; 
+}
+
 @media (max-width: 720px) { .lf-grid { grid-template-columns: 1fr; } }
 .lf-col { display: grid; gap: 10px; padding-bottom: 20px;}
 .lf-field { display: grid; gap: 6px; text-align: left; }

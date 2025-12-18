@@ -6,19 +6,25 @@
   gap: 24px;
   padding-top: 50px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  max-width: 980px;
+  justify-self: center;
 }
 
 /* List block card styling */
 .aboutPage__listBlock {
-  background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
   padding: 24px 28px;
-  border: 0;
   display: grid;
   gap: 18px;
   position: relative;
-  background-clip: padding-box;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82) border-box;
+  background-clip: padding-box, border-box;
+  background-size: 300% 300%, 300% 300%;
+  animation: about-gradient-border 4s ease infinite;
 }
 
 .aboutPage__listTitle {
@@ -28,21 +34,11 @@
   color: #1f2937;
 }
 
-.aboutPage__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.aboutPage__list { margin: 0; padding-left: 1.2rem; list-style: disc; display: grid; gap: 10px; }
 
 .aboutPage__listItem {
-  position: relative;
-  padding-left: 24px;
   color: #4b5563;
   line-height: 1.6;
-}
-.aboutPage__listItem::before {
-  content: '•';
-  position: absolute;
-  left: 8px;
-  top: 0;
-  color: #344e41;
-  font-size: 1.2rem;
 }
 
 .aboutPage__footerNote {
@@ -55,28 +51,12 @@
   z-index: 1;
 }
 
-/* Animated gradient border for list cards (hover/focus) */
-.aboutPage__listBlock::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  padding: 5px; /* border width */
-  border-radius: calc(16px + 2px); /* overscan to avoid outer seam */
-  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82);
-  background-size: 300% 300%;
-  animation: about-gradient-border 4s ease infinite;
-  /* Mask out the middle so only the border shows */
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
+/* Animated gradient border for list cards (hover/focus) handled via element background */
 @keyframes about-gradient-border {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .aboutPage__listBlock::before { animation: none; }
+  .aboutPage__listBlock { animation: none; }
 }
