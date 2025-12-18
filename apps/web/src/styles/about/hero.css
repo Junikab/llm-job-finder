@@ -35,7 +35,10 @@
   margin: 0;
   font-size: clamp(2rem, 4vw, 2.75rem);
   color: #1f2937;
+  font-family: "Cabin Sketch", sans-serif;
   font-weight: 700;
+  font-style: normal;
+  font-size:90px;
 }
 
 .aboutPage__subtitle {
@@ -44,6 +47,7 @@
   font-size: 1.05rem;
   color: #374151;
   line-height: 1.6;
+  
 }
 
 /* Primary CTA — scoped to About only */

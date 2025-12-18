@@ -7,13 +7,29 @@
   justify-content: center;
 }
 
-.aboutPage__sectionHeader { display: grid; gap: 8px; max-width: 620px; }
-.aboutPage__sectionTitle { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); color: #1f2937; font-weight: 700; }
-.aboutPage__sectionLead { margin: 0; color: #4b5563; font-size: 1rem; }
+.aboutPage__sectionHeader {
+  display: grid;
+  gap: 8px;
+  max-width: 620px;
+}
+
+.aboutPage__sectionTitle {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.aboutPage__sectionLead {
+  margin: 0;
+  color: #4b5563;
+  font-size: 1rem;
+}
 
 /* Steps (How it works) — landing style */
 .aboutPage__section--steps {
-  isolation: isolate; /* full-bleed pseudo element */
+  isolation: isolate;
+  /* full-bleed pseudo element */
   padding-block: 24px;
   background: transparent;
   color: #f8fafc;
@@ -25,24 +41,41 @@
   content: '';
   position: absolute;
   z-index: -1;
-  top: -50px; /* overlap the hero so the wavy edge covers the seam */
+  top: -50px;
+  /* overlap the hero so the wavy edge covers the seam */
   bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
   width: 100vw;
   min-height: 100vw;
   background: radial-gradient(120% 120% at 50% -10%, rgba(6, 79, 42, 0.25) 0%, rgba(6, 79, 42, 0) 60%),
-              linear-gradient(135deg, rgba(6, 79, 42, 0.9) 0%, rgba(201, 128, 1, 0.9) 100%);
+    linear-gradient(135deg, rgba(6, 79, 42, 0.9) 0%, rgba(201, 128, 1, 0.9) 100%);
   mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 200" preserveAspectRatio="none"><path fill="white" d="M0,120 C240,60 480,180 720,120 C960,60 1200,180 1440,120 L1440,200 L0,200 Z"/></svg>') top center / 180% 100% no-repeat;
 }
 
-.aboutPage__section--steps .aboutPage__sectionTitle { color: #ffffff; }
-.aboutPage__section--steps .aboutPage__sectionLead { color: #f1f5f9; }
+.aboutPage__section--steps .aboutPage__sectionTitle {
+  color: #ffffff;
+}
+
+.aboutPage__section--steps .aboutPage__sectionLead {
+  color: #f1f5f9;
+}
 
 /* Steps layout grid */
-.aboutPage__steps { display: grid; grid-template-columns: 1fr; gap: 45px; text-align: center; position: relative; }
+.aboutPage__steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 45px;
+  text-align: center;
+  position: relative;
+}
 
-.aboutPage__step { display: grid; gap: 10px; justify-items: center; position: relative; }
+.aboutPage__step {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  position: relative;
+}
 
 .aboutPage__stepNumber {
   font-weight: 800;
@@ -53,17 +86,32 @@
   text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.aboutPage__stepTitle { margin: 0; font-size: clamp(1rem, 2.2vw, 1.125rem); font-weight: 700; color: #ffffff; }
-.aboutPage__stepBody { margin: 0; max-width: 360px; color: #e5e7eb; line-height: 1.6; }
+.aboutPage__stepTitle {
+  margin: 0;
+  font-size: clamp(1rem, 2.2vw, 1.125rem);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.aboutPage__stepBody {
+  margin: 0;
+  max-width: 360px;
+  color: #e5e7eb;
+  line-height: 1.6;
+}
 
 /* Connectors between steps (desktop/tablet) */
-.aboutPage__connector { display: none; }
+.aboutPage__connector {
+  display: none;
+}
+
 @media (min-width: 820px) {
   .aboutPage__steps {
     grid-template-columns: 1fr minmax(80px, 12vw) 1fr minmax(80px, 12vw) 1fr;
     align-items: start;
     column-gap: 24px;
   }
+
   .aboutPage__connector {
     display: block;
     height: clamp(60px, 8vw, 120px);
