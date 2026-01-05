@@ -13,31 +13,46 @@
 /* List block card styling */
 .aboutPage__listBlock {
   border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 15px rgba(205, 248, 187, 0.829);
   padding: 24px 28px;
   display: grid;
   gap: 18px;
   position: relative;
-  border: 2px solid transparent;
-  background:
-    linear-gradient(#ffffff, #ffffff) padding-box,
-    linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82) border-box;
+  background: linear-gradient(150deg, rgb(26, 128, 77), rgb(150, 158, 40));
   background-clip: padding-box, border-box;
   background-size: 300% 300%, 300% 300%;
   animation: about-gradient-border 4s ease infinite;
 }
 
-.aboutPage__listTitle {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #1f2937;
+.aboutPage__listBlock:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 25px rgba(205, 248, 187, 0.9);
 }
 
-.aboutPage__list { margin: 0; padding-left: 1.2rem; list-style: disc; display: grid; gap: 10px; }
+.aboutPage__listTitle {
+  margin: 0;
+  display: grid;
+  font-size: 40px;
+  align-items: start;
+  justify-content: center;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  color: rgb(207, 219, 237);
+  font-family: "Cabin Sketch", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.aboutPage__list {
+  margin: 0;
+  padding-left: 1.2rem;
+  list-style: disc;
+  display: grid;
+  gap: 10px;
+  align-content: space-around
+}
 
 .aboutPage__listItem {
-  color: #4b5563;
+  color: rgb(207, 219, 237);
   line-height: 1.6;
 }
 
@@ -52,11 +67,22 @@
 }
 
 /* Animated gradient border for list cards (hover/focus) handled via element background */
-@keyframes about-gradient-border {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* @keyframes about-gradient-border {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .aboutPage__listBlock { animation: none; }
-}
+  .aboutPage__listBlock {
+    animation: none;
+  }
+} */
