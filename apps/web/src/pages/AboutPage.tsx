@@ -15,39 +15,39 @@ const HOW_IT_WORKS_STEPS: Array<{
   body: string;
   details: string;
 }> = [
-  {
-    id: 1,
-    icon: '📍',
-    title: 'Upload CV & choose location',
-    body: 'Drop a PDF, DOCX, or TXT and pick where to search (or choose Any).',
-    details: 'We read your CV on the server to extract skills, then discard the file. Location guides which listings we fetch.',
-  },
-  {
-    id: 2,
-    icon: '🤖',
-    title: 'AI ranks your matches',
-    body: 'We compare jobs to your profile so the best ones rise to the top.',
-    details: 'The model scores each listing against your skills and titles to explain why it fits.',
-  },
-  {
-    id: 3,
-    icon: '✅',
-    title: 'Apply and stay organised',
-    body: 'Open listings, save favourites, and mark applied — all in one place.',
-    details: 'Your saved/applied status is easy to manage so you can follow up later.',
-  },
-];
+    {
+      id: 1,
+      icon: '📍',
+      title: 'Upload CV & choose location',
+      body: 'Drop a PDF, DOCX, or TXT and pick where to search (or choose Any).',
+      details: 'We read your CV on the server to extract skills, then discard the file. Location guides which listings we fetch.',
+    },
+    {
+      id: 2,
+      icon: '🤖',
+      title: 'AI ranks your matches',
+      body: 'We compare jobs to your profile so the best ones rise to the top.',
+      details: 'The model scores each listing against your skills and titles to explain why it fits.',
+    },
+    {
+      id: 3,
+      icon: '✅',
+      title: 'Apply and stay organised',
+      body: 'Open listings, save favourites, and mark applied — all in one place.',
+      details: 'Your saved/applied status is easy to manage so you can follow up later.',
+    },
+  ];
 
 const WHY_ITEMS: string[] = [
-  'See relevant roles first — skip endless scrolling.',
+  'See the best roles first — tailored to your CV.',
   'Privacy first — your CV text is processed briefly and not stored.',
-  'Works out of the box — optional AI extras when you want them.',
-  'Stay organised — save jobs and track what you’ve applied to.',
+  'No sign-in — upload once, reuse from Recent CVs.',
+  'Stay organised — save jobs and mark applied.',
 ];
 
 const NEXT_ITEMS: string[] = [
-  'Sharper matching and explanations.',
-  'Editable profile summaries.',
+  'Smarter matching with clearer explanations.',
+  'Editable, saved profiles.',
   'Richer job details and insights.',
 ];
 
