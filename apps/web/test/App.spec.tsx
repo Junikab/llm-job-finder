@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import App from '../src/App';
+import { App } from '../src/App';
 
 // Mock idb helpers to avoid IndexedDB in JSDOM
 vi.mock('../src/idb', () => ({

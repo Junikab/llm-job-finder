@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import App from '../src/App';
+import { App } from '../src/App';
 
 // Mock idb helpers to avoid IndexedDB in JSDOM
 vi.mock('../src/idb', () => ({
@@ -35,34 +35,33 @@ afterEach(() => {
 });
 
 describe('Routing', () => {
-  it('lands on /about and shows About content', async () => {
+  it('lands on about and shows About content', async () => {
     const { container } = render(<App />);
     const root = within(container);
-    expect(window.location.pathname).toBe('/about');
     expect(await root.findByText('Know which jobs deserve your energy.')).toBeInTheDocument();
   });
 
-  it('navigates to /live and /saved via TopNav', async () => {
+  it('navigates via hash routes through TopNav', async () => {
     const { container } = render(<App />);
     const root = within(container);
 
     // Live
     const liveBtn = root.getAllByRole('button', { name: /^Live$/i })[0];
     await userEvent.click(liveBtn);
-    expect(window.location.pathname).toBe('/live');
+    expect(window.location.hash).toBe('#/live');
     expect(root.getAllByRole('button', { name: 'Find Jobs' })[0]).toBeInTheDocument();
 
     // Saved
     const savedBtn = root.getAllByRole('button', { name: /^Saved$/i })[0];
     await userEvent.click(savedBtn);
-    expect(window.location.pathname).toBe('/saved');
+    expect(window.location.hash).toBe('#/saved');
     // Saved page shows header and, when empty, a CTA button 'Find jobs'
     expect(root.getByRole('heading', { name: 'Saved Jobs' })).toBeInTheDocument();
 
     // Back to About
     const aboutLink = root.getByRole('link', { name: /About/i });
     await userEvent.click(aboutLink);
-    expect(window.location.pathname).toBe('/about');
+    expect(window.location.hash).toBe('#/about');
     expect(await root.findByText('Know which jobs deserve your energy.')).toBeInTheDocument();
   });
 });

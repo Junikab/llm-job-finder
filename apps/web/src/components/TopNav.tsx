@@ -16,7 +16,7 @@ export default function TopNav({ currentPage, onNavigatePage }: TopNavProps) {
       <div className="topnav__title">LLM Job Finder</div>
       <div className="topnav__links">
         <a
-          href="/about"
+          href="#/about"
           className={`topnav__btn topnav__link ${currentPage === 'about' ? 'topnav__btn--active' : ''}`}
           aria-current={currentPage === 'about' ? 'page' : undefined}
           onClick={event => {

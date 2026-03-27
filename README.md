@@ -15,6 +15,48 @@ A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads,
 - Healthcheck: `curl -sf http://localhost:5174/health`
 - Use it: upload a CV (PDF/DOCX/TXT), set location/days, click Find Jobs
 
+## Publish web app on GitHub Pages (free)
+
+This repo has a monorepo setup. GitHub Pages can host the web UI only (`apps/web`), not the API/scraper.
+
+### Before first push (privacy + safety)
+
+- Do not commit `.env` (already ignored in `.gitignore`).
+- Do not commit local DB files (`db/`) (already ignored in `.gitignore`).
+- Keep API keys only in deployment platform secrets/variables, never in code.
+
+Quick safety check:
+```bash
+git ls-files .env db out.json
+```
+This should print nothing.
+
+### One-time setup on GitHub
+
+1. Create a new GitHub repo (for example `LLm-job-finder`) under your account.
+2. Push this project to that repo:
+```bash
+git remote add origin git@github.com:Junikab/LLm-job-finder.git
+git push -u origin main
+```
+3. In GitHub repo settings:
+   - Go to `Settings` -> `Pages`.
+   - Set `Source` to `GitHub Actions`.
+4. Optional but recommended: add repository variable:
+   - `Settings` -> `Secrets and variables` -> `Actions` -> `Variables`.
+   - Add `VITE_API_BASE_URL` (example: `https://your-api-host.com`).
+
+### Deploy
+
+- Push to `main`.
+- Workflow `.github/workflows/deploy-pages.yml` builds and deploys `apps/web/dist`.
+- Site URL will be:
+  `https://junikab.github.io/LLm-job-finder/`
+
+### Important limitation
+
+The web app calls `/api/...`. For full functionality, deploy `apps/server` separately (free backend host) and set `VITE_API_BASE_URL` to that backend URL.
+
 ## Scripts
 
 - Dev (API + Web): `npm run dev`

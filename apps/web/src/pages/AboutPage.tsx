@@ -61,7 +61,7 @@ export default function AboutPage({ onNavigateHome }: AboutPageProps) {
           LLM Job Finder analyses your CV, ranks new openings in seconds, and keeps everything organised so you can apply with confidence.
         </p>
         <a
-          href="/live"
+          href="#/live"
           className="aboutPage__cta"
           role="button"
           onClick={(e) => {

@@ -3,18 +3,36 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 export type AppPage = 'about' | 'live' | 'saved';
 
 /**
- * Derive a valid AppPage from a pathname string.
+ * Derive a valid AppPage from a route string.
  */
-function pageFromPathname(pathname: string): AppPage {
-  if (pathname.startsWith('/live')) return 'live';
-  if (pathname.startsWith('/saved')) return 'saved';
+function pageFromRoute(route: string): AppPage {
+  if (route.startsWith('/live')) return 'live';
+  if (route.startsWith('/saved')) return 'saved';
   return 'about';
+}
+
+function normalizeRoute(route: string): string {
+  const trimmed = route.trim();
+  if (!trimmed) return '';
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+function routeFromPage(page: AppPage): string {
+  if (page === 'live') return '/live';
+  if (page === 'saved') return '/saved';
+  return '/about';
+}
+
+function pageFromLocation(loc: Location): AppPage {
+  const hashRoute = normalizeRoute(loc.hash.replace(/^#/, ''));
+  if (hashRoute) return pageFromRoute(hashRoute);
+  return pageFromRoute(loc.pathname);
 }
 
 /**
  * usePageRouter
- * - Manages simple history-based routing for three pages: about, live, saved
- * - Synchronizes state with window.location.pathname and popstate
+ * - Manages simple URL routing for three pages: about, live, saved
+ * - Uses hash routes (e.g. #/live) for static hosting compatibility
  */
 export function usePageRouter(): {
   page: AppPage;
@@ -22,24 +40,25 @@ export function usePageRouter(): {
 } {
   const initialPage: AppPage = useMemo(() => {
     if (typeof window === 'undefined') return 'about';
-    return pageFromPathname(window.location.pathname);
+    return pageFromLocation(window.location);
   }, []);
 
   const [page, setPage] = useState<AppPage>(initialPage);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // Ensure state and URL are synced on mount
-    const current = pageFromPathname(window.location.pathname);
+    const current = pageFromLocation(window.location);
     if (current !== page) setPage(current);
 
-    const onPopState = () => {
-      const p = pageFromPathname(window.location.pathname);
+    const syncFromUrl = () => {
+      const p = pageFromLocation(window.location);
       setPage(p);
     };
-    window.addEventListener('popstate', onPopState);
+    window.addEventListener('popstate', syncFromUrl);
+    window.addEventListener('hashchange', syncFromUrl);
     return () => {
-      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('popstate', syncFromUrl);
+      window.removeEventListener('hashchange', syncFromUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -47,9 +66,9 @@ export function usePageRouter(): {
   const navigatePage = useCallback((next: AppPage) => {
     setPage(next);
     if (typeof window === 'undefined') return;
-    const targetPath = next === 'about' ? '/about' : (next === 'live' ? '/live' : '/saved');
-    if (window.location.pathname !== targetPath) {
-      window.history.pushState({ page: next }, '', targetPath);
+    const targetHash = `#${routeFromPage(next)}`;
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
     }
   }, []);
 
