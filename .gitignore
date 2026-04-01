@@ -8,6 +8,7 @@ dist
 .playwright
 out.json
 db/
-SUMMARY.md
-PLAN.md
-DESIGN.md
+/SUMMARY.md
+/PLAN.md
+/DESIGN.md
+/AGENTS.md
