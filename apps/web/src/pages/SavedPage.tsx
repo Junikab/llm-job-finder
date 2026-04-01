@@ -17,15 +17,22 @@ export type SavedPageProps = {
 export default function SavedPage({ saved, loading, error, onRefresh, onRate, onGoLive }: SavedPageProps) {
   return (
     <main className='savedPage'>
-      <SavedHeader items={saved} />
-      <SavedList
-        items={saved}
-        loading={loading}
-        error={error}
-        onRefresh={onRefresh}
-        onRate={onRate}
-        onGoLive={onGoLive}
-      />
+      <section className="savedPage__heroImage">
+        <div className="savedPage__heroContent">
+          <SavedHeader items={saved} />
+        </div>
+      </section>
+
+      <div className="savedPage__content">
+        <SavedList
+          items={saved}
+          loading={loading}
+          error={error}
+          onRefresh={onRefresh}
+          onRate={onRate}
+          onGoLive={onGoLive}
+        />
+      </div>
     </main>
   );
 }
