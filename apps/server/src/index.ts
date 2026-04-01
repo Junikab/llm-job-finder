@@ -2,9 +2,13 @@ import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
 import formbody from '@fastify/formbody';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Load env from repo root so there is a single source of configuration.
+const rootEnvPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../.env');
+dotenv.config({ path: rootEnvPath });
 
 // Import routes AFTER dotenv so any env-derived constants in their modules
 // (e.g. LLM_DEBUG) are computed with the correct values from .env

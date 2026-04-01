@@ -137,6 +137,11 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
 - Limits: Controlled via env vars for speed.
 
 ## 9. Configuration & Environment Variables
+- Local environment source of truth:
+  - The API loads env from root `.env` only (`apps/server/src/index.ts`).
+  - Do not use `apps/server/.env`.
+  - Restart the API process after env changes.
+
 - PORT (default 5174)
 - SCRAPER_HEADLESS (default true-ish; depends on Playwright config)
 - MAX_PAGES (default depends on scraper; recommend 1–2 for dev)
@@ -157,9 +162,13 @@ Current mode: Random by default (fast local iteration). Optional LLM scoring is 
   - LLM_RETRIES: capped retries with exponential backoff on 429/5xx/timeouts (default 2)
   - LLM_MAX_SCORE_JOBS: per-request cap on number of jobs scored by LLM (default 30)
 
+- Production (Render):
+  - Configure env vars in Render service settings (not in committed files).
+  - Typical required vars: `NODE_ENV`, `CORS_ORIGIN`, `SCRAPER_HEADLESS`, `PLAYWRIGHT_BROWSERS_PATH`, `SCORE_MODE`, `OPENAI_API_KEY` (for LLM mode).
+
 ## 10. Running Locally
 - Start API (watch mode):
-  npm --workspace server run dev
+  npm --workspace apps/server run dev
 
 - Test health:
   curl http://localhost:5174/health

@@ -1,6 +1,6 @@
 # Jora LLM Job Finder (Mock Mode)
 
-A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads, and returns a ranked list. LLM scoring is mocked for fast local dev.
+A small monorepo that uploads a CV, builds Jora search queries, scrapes job ads, and returns a ranked list. Default scoring is random for fast local dev, with optional LLM scoring.
 
 - Server: Fastify (TypeScript)
 - Web: React + Vite
@@ -101,6 +101,7 @@ npm install
 cp .env.example .env
 ```
 You can keep the defaults. `OPENAI_API_KEY` is not needed for mock mode.
+This project uses one local env source only: root `.env` (do not use `apps/server/.env`).
 
 
 ## Run (dev)
@@ -148,6 +149,12 @@ More examples are in DESIGN.md.
 
 ## Environment variables
 Use .env.example as your reference. For explanations and defaults, see DESIGN.md (Configuration & LLM sections).
+
+Local env source of truth:
+- The API explicitly loads root `.env` from `apps/server/src/index.ts`.
+- Keep secrets in root `.env` for local development only.
+- Do not create `apps/server/.env` (it is not used).
+- After changing `.env`, restart the API process.
 
 ## Scoring modes
 Default: random (see `.env.example`).
@@ -239,3 +246,33 @@ npx playwright install chromium
 - Default scoring is random unless you enable LLM via env vars.
 - This app does not store CVs in your browser. Your CV file is uploaded to the server only when you click "Find Jobs".
 - This code is for educational/dev purposes. Be mindful of scraping limits and site terms.
+
+## Render Deploy (API)
+Use this when deploying `apps/server` to Render.
+
+Required Render environment variables:
+- `NODE_ENV=production`
+- `CORS_ORIGIN=https://junikab.github.io`
+- `SCRAPER_HEADLESS=true`
+- `PLAYWRIGHT_BROWSERS_PATH=0`
+- `SCORE_MODE=llm` (or `random` if you want non-LLM scoring)
+- `OPENAI_API_KEY=<secret>` (required for `SCORE_MODE=llm`)
+
+Optional Render environment variables:
+- `OPENAI_MODEL=gpt-4o-mini`
+- `OPENAI_BASE_URL=<provider base url>`
+- `LLM_TIMEOUT_MS`, `LLM_CONCURRENCY`, `LLM_MAX_SCORE_JOBS`, `LLM_RETRIES`
+
+Build command:
+```bash
+npm ci && npx playwright install chromium && npm --workspace packages/shared-types run build && npm --workspace apps/server run build
+```
+
+Start command:
+```bash
+npm --workspace apps/server run start
+```
+
+Frontend wiring:
+- Set GitHub Actions repository variable `VITE_API_BASE_URL=https://<your-render-service>.onrender.com`
+- Redeploy GitHub Pages workflow after updating the variable.

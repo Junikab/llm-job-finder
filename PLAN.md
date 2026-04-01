@@ -128,6 +128,7 @@ Last updated: 2025-09-24
 
 - [x] LLM protective measures: capped retries/backoff for OpenAI (LLM_RETRIES) and per-request LLM job cap (LLM_MAX_SCORE_JOBS)
 - [x] Docs: LLM logging & debugging steps (envs, prompt visibility, troubleshooting); scoring modes simplified to random | llm
+- [x] Env policy: single local source of truth is root `.env` (no `apps/server/.env`)
 
 ## 3. Timeline (Suggestive)
 - Week 1: M1–M4 complete (API, scraper, heuristics, ranking)
