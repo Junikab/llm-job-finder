@@ -3,10 +3,10 @@
 /* Two-column lists: Why people use it / What’s next */
 .aboutPage__twoColumn {
   display: grid;
-  gap: 24px;
-  padding-top: 50px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  max-width: 980px;
+  gap: clamp(16px, 3vw, 24px);
+  padding-top: clamp(12px, 3vw, 36px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 980px);
   justify-self: center;
 }
 
@@ -14,75 +14,78 @@
 .aboutPage__listBlock {
   border-radius: 16px;
   box-shadow: 0 0 15px rgba(205, 248, 187, 0.829);
-  padding: 24px 28px;
+  padding: clamp(18px, 3.2vw, 28px);
   display: grid;
-  gap: 18px;
+  gap: clamp(12px, 2vw, 18px);
   position: relative;
   background: linear-gradient(150deg, rgb(26, 128, 77), rgb(150, 158, 40));
   background-clip: padding-box, border-box;
   background-size: 300% 300%, 300% 300%;
   animation: about-gradient-border 4s ease infinite;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .aboutPage__listBlock:hover {
-  transform: scale(1.02);
+  transform: translateY(-2px) scale(1.01);
   box-shadow: 0 0 25px rgba(205, 248, 187, 0.9);
 }
 
 .aboutPage__listTitle {
   margin: 0;
   display: grid;
-  font-size: 40px;
   align-items: start;
   justify-content: center;
-  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-size: clamp(1.9rem, 7vw, 2.75rem);
+  line-height: 1.08;
   color: rgb(207, 219, 237);
   font-family: "Cabin Sketch", sans-serif;
   font-weight: 400;
   font-style: normal;
+  text-align: center;
 }
 
 .aboutPage__list {
   margin: 0;
-  padding-left: 1.2rem;
+  padding-left: 1.1rem;
   list-style: disc;
   display: grid;
   gap: 10px;
-  align-content: space-around
+  align-content: start;
 }
 
 .aboutPage__listItem {
   color: rgb(207, 219, 237);
   line-height: 1.6;
+  font-size: clamp(0.95rem, 2.6vw, 1rem);
 }
 
 .aboutPage__footerNote {
-  padding-top: 100px;
-  margin: 0 0 30px 0;
+  padding-top: clamp(42px, 8vw, 84px);
+  margin: 0 0 clamp(18px, 4vw, 30px) 0;
   font-weight: 650;
-  font-size: 1rem;
+  font-size: clamp(0.95rem, 2.6vw, 1rem);
   text-align: center;
   color: #1f2937;
   z-index: 1;
 }
 
-/* Animated gradient border for list cards (hover/focus) handled via element background */
-/* @keyframes about-gradient-border {
-  0% {
-    background-position: 0% 50%;
+@media (max-width: 780px) {
+  .aboutPage__twoColumn {
+    grid-template-columns: 1fr;
   }
 
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
+  .aboutPage__listBlock {
+    padding: 18px 18px 20px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .aboutPage__listBlock {
     animation: none;
+    transition: none;
   }
-} */
+
+  .aboutPage__listBlock:hover {
+    transform: none;
+  }
+}

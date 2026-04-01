@@ -38,6 +38,30 @@
   color: #455;
 }
 
+@media (max-width: 720px) {
+  .topnav {
+    padding: 10px 12px;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .topnav__title {
+    font-size: clamp(1.1rem, 5.8vw, 1.4rem);
+    line-height: 1.1;
+  }
+
+  .topnav__links {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .topnav__btn {
+    font-size: 14px;
+    padding: 2px 0;
+  }
+}
+
 /* HeroSection */
 .hero {
   position: relative;

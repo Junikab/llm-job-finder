@@ -3,68 +3,56 @@
 /* Shared section spacing for steps block */
 .aboutPage__section {
   display: grid;
-  gap: 24px;
+  gap: clamp(14px, 2.6vw, 24px);
   justify-content: center;
-
+  width: min(100%, 980px);
+  justify-self: center;
 }
 
 .aboutPage__sectionHeader {
   display: grid;
-  gap: 8px;
-
+  gap: 10px;
+  padding-inline: clamp(4px, 1vw, 8px);
 }
 
 .aboutPage__sectionTitle {
   margin: 0;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  color: #1f2937;
-  font-weight: 700;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  color: #000000a5;
   font-family: "Cabin Sketch", sans-serif;
   font-weight: 400;
   font-style: normal;
-  font-size: 60px;
+  line-height: 1.06;
+  text-wrap: balance;
 }
 
 .aboutPage__sectionLead {
   margin: 0;
-  color: #4b5563;
-  font-size: 1rem;
+  color: #000000a5;
+  font-size: clamp(0.95rem, 2.6vw, 1.05rem);
+  line-height: 1.5;
 }
 
 /* Steps (How it works) — landing style */
 .aboutPage__section--steps {
   position: relative;
   isolation: isolate;
-  /* full-bleed pseudo element */
-  padding-block: 24px;
+  padding-block: clamp(8px, 2vw, 24px);
   background: transparent;
-  /* color: #f8fafc; */
-    color: #ffffffd8;
-
+  color: #ffffffd8;
   text-align: center;
-  max-width: 980px;
-  justify-self: center;
-}
-
-/* Full-bleed gradient background for the Steps block */
-
-.aboutPage__section--steps .aboutPage__sectionTitle {
-   color: #000000a5;
-
-}
-
-.aboutPage__section--steps .aboutPage__sectionLead {
-    color: #000000a5;
-
 }
 
 /* Steps layout grid */
 .aboutPage__steps {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 45px;
+  gap: clamp(26px, 5vw, 45px);
   text-align: center;
   position: relative;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
 .aboutPage__step {
@@ -78,28 +66,26 @@
   font-family: "Cabin Sketch", sans-serif;
   font-weight: 700;
   font-style: normal;
-  font-size: 80px;
+  font-size: clamp(2.8rem, 11vw, 5rem);
   line-height: 1;
   color: #000000a5;
-  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.30), 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .aboutPage__stepTitle {
   margin: 0;
-  font-size: clamp(1rem, 2.2vw, 1.125rem);
+  font-size: clamp(1.05rem, 3.2vw, 1.2rem);
   font-weight: 700;
-  /* color: #ffffff; */
-    color: #ffffffd8;
-
+  color: #ffffffd8;
+  max-width: 28ch;
 }
 
 .aboutPage__stepBody {
   margin: 0;
-  max-width: 360px;
-  /* color: #e5e7eb; */
-    color: #ffffffd8;
-
+  max-width: min(100%, 38ch);
+  color: #ffffffd8;
   line-height: 1.6;
+  font-size: clamp(0.95rem, 2.5vw, 1rem);
 }
 
 /* Connectors between steps (desktop/tablet) */
@@ -107,16 +93,30 @@
   display: none;
 }
 
-@media (min-width: 820px) {
+@media (min-width: 960px) {
   .aboutPage__steps {
     grid-template-columns: 1fr minmax(80px, 12vw) 1fr minmax(80px, 12vw) 1fr;
     align-items: start;
-    column-gap: 24px;
+    column-gap: 20px;
   }
 
   .aboutPage__connector {
     display: block;
     height: clamp(60px, 8vw, 120px);
     background: url('../../assets/arrow-curve.svg') no-repeat center / contain;
+  }
+}
+
+@media (max-width: 720px) {
+  .aboutPage__sectionHeader {
+    gap: 8px;
+  }
+
+  .aboutPage__step {
+    gap: 8px;
+  }
+
+  .aboutPage__stepBody {
+    max-width: 34ch;
   }
 }

@@ -3,45 +3,43 @@
   width: 100%;
   margin: 0 auto;
   display: grid;
+  gap: clamp(28px, 5vw, 56px);
   /* Full-bleed background behind all About content */
-  background: linear-gradient(204deg, rgb(133, 110, 39), rgb(243, 165, 76), rgb(244, 241, 96))
-  ;
+  background: linear-gradient(204deg, rgb(133, 110, 39), rgb(243, 165, 76), rgb(244, 241, 96));
   /* Avoid horizontal scrollbars from 100vw on platforms with scrollbars */
   overflow-x: hidden;
   min-height: 100vh;
+  padding: 0 clamp(16px, 4vw, 32px) clamp(28px, 6vw, 56px);
 }
 
 .aboutPage__hero {
   position: relative;
   display: grid;
   text-align: center;
-  width: 100%;
-  padding-bottom: 70px;
-  max-width: 980px;
+  width: min(100%, 980px);
   justify-self: center;
+  padding-top: clamp(92px, 13vw, 124px);
+  padding-bottom: clamp(8px, 3vw, 24px);
 }
 
 .aboutPage__title {
-  margin-top: 6rem;
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  /* color: #1f2937; */
-    color: #000000a5;
+  margin: 0;
+  color: #000000a5;
   font-family: "Cabin Sketch", sans-serif;
   font-weight: 700;
   font-style: normal;
-  font-size: 60px;
+  font-size: clamp(2.2rem, 9vw, 3.75rem);
+  line-height: 1.06;
+  text-wrap: balance;
 }
 
 .aboutPage__subtitle {
-  margin-top: 0;
-  margin-bottom: 50px;
-  max-width: 620px;
-  font-size: 1.05rem;
-  /* color: #374151;
-    color: #000000a5;
- */
-  line-height: 1.6;
-justify-self: center;
+  margin: clamp(14px, 3vw, 20px) auto clamp(24px, 5vw, 40px);
+  max-width: 62ch;
+  font-size: clamp(0.98rem, 2.8vw, 1.1rem);
+  line-height: 1.65;
+  justify-self: center;
+  text-wrap: pretty;
 }
 
 /* Primary CTA — scoped to About only */
@@ -51,8 +49,8 @@ justify-self: center;
   color: #ffffffd8;
   border: none;
   border-radius: 10px;
-  padding: 14px 24px;
-  font-size: 1.1rem;
+  padding: clamp(12px, 2.8vw, 14px) clamp(20px, 4vw, 24px);
+  font-size: clamp(0.95rem, 2.7vw, 1.1rem);
   font-weight: bold;
   box-shadow: 0 0 15px rgba(205, 248, 187, 0.829);
   background-image: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0.75) 50%, rgba(255, 255, 255, 0.1) 58%, rgba(255, 255, 255, 0) 100%),
@@ -67,7 +65,7 @@ justify-self: center;
 }
 
 .aboutPage__cta:hover {
-  transform: scale(1.08);
+  transform: translateY(-1px) scale(1.03);
   box-shadow: 0 0 25px rgba(205, 248, 187, 0.9);
   cursor: pointer;
 }
@@ -85,6 +83,11 @@ justify-self: center;
 @media (prefers-reduced-motion: reduce) {
   .aboutPage__cta {
     animation: none;
+    transition: none;
+  }
+
+  .aboutPage__cta:hover {
+    transform: none;
   }
 }
 
@@ -92,11 +95,21 @@ justify-self: center;
 /* Mobile adjustments (About hero + container) */
 @media (max-width: 720px) {
   .aboutPage {
-    gap: 40px;
-    padding: 100px 16px 0;
+    gap: 28px;
+    padding-inline: 14px;
   }
 
   .aboutPage__hero {
-    padding: 32px 24px;
+    padding-top: 86px;
+  }
+}
+
+@media (max-width: 420px) {
+  .aboutPage__hero {
+    padding-top: 80px;
+  }
+
+  .aboutPage__title {
+    font-size: clamp(2rem, 11vw, 2.45rem);
   }
 }
