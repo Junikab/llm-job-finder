@@ -20,8 +20,7 @@
     "mammoth": "^1.7.1",
     "p-limit": "^5.0.0",
     "pdf-parse": "^1.1.1",
-    "scraper": "file:../../packages/scraper",
-    "vite": "7.2.2"
+    "scraper": "file:../../packages/scraper"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
